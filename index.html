@@ -1,16 +1,656 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f5efdf">
-<title>Potato Factory — Crispy by Design</title><meta name="description" content="Potato Factory turns the humble potato into a hot, crispy, ridiculously satisfying experience.">
-<style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
-:root{--ink:#17150f;--cream:#f5efdf;--yellow:#ffc928;--orange:#f77d2b;--red:#d94127;--green:#345c39;--line:rgba(23,21,15,.14)}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--cream);color:var(--ink);font-family:'DM Sans',sans-serif;overflow-x:hidden}.noise{position:fixed;inset:0;pointer-events:none;opacity:.04;z-index:20;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E")}.nav{position:fixed;z-index:30;top:18px;left:50%;transform:translateX(-50%);width:min(1160px,calc(100% - 28px));height:66px;padding:0 12px 0 20px;border:1px solid rgba(255,255,255,.6);background:rgba(245,239,223,.78);backdrop-filter:blur(18px);border-radius:22px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 10px 40px rgba(60,35,8,.08)}.brand{display:flex;align-items:center;gap:10px;font:700 18px 'Space Grotesk';letter-spacing:-.04em}.brandmark{width:35px;height:35px;border-radius:50% 48% 52% 44%;background:var(--yellow);border:2px solid var(--ink);position:relative;transform:rotate(-8deg)}.brandmark:before,.brandmark:after{content:'';position:absolute;width:4px;height:4px;border:1.5px solid var(--ink);border-radius:50%}.brandmark:before{left:8px;top:9px}.brandmark:after{right:7px;bottom:8px}.links{display:flex;gap:28px}.links a{color:inherit;text-decoration:none;font-size:14px;font-weight:600}.cta{background:var(--ink);color:white!important;padding:12px 18px;border-radius:13px}.hero{min-height:100vh;padding:130px max(5vw,24px) 60px;display:grid;grid-template-columns:1.02fr .98fr;align-items:center;position:relative}.eyebrow{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.11em}.dot{width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 0 5px rgba(217,65,39,.1)}h1{font:700 clamp(60px,8.2vw,132px)/.82 'Space Grotesk';letter-spacing:-.075em;margin:26px 0 30px;max-width:820px}.stroke{color:transparent;-webkit-text-stroke:2px var(--ink);position:relative}.hero p{font-size:clamp(17px,1.4vw,21px);line-height:1.55;max-width:580px;color:#565044}.actions{display:flex;gap:12px;margin-top:34px}.button{display:inline-flex;align-items:center;gap:12px;text-decoration:none;color:white;background:var(--red);padding:17px 22px;border-radius:16px;font-weight:700;box-shadow:0 12px 30px rgba(217,65,39,.18);transition:.25s}.button:hover{transform:translateY(-3px)}.button.alt{color:var(--ink);background:transparent;border:1px solid var(--line);box-shadow:none}.stage{height:min(650px,70vh);position:relative;perspective:1000px}.sun{position:absolute;width:82%;aspect-ratio:1;border-radius:50%;background:var(--yellow);left:9%;top:8%;box-shadow:inset -35px -35px 70px rgba(225,119,22,.18),0 30px 80px rgba(200,125,0,.14)}.pack{position:absolute;width:44%;height:58%;left:28%;top:19%;background:linear-gradient(145deg,#e94c2d,#c92f1e);border:3px solid var(--ink);border-radius:18px 18px 34px 34px;transform:rotate(-7deg);box-shadow:18px 28px 0 rgba(23,21,15,.12),0 45px 70px rgba(75,38,8,.2);display:grid;place-items:center;overflow:hidden;animation:float 4.5s ease-in-out infinite}.pack:before{content:'';position:absolute;inset:12px;border:1px dashed rgba(255,239,190,.45);border-radius:11px 11px 28px 28px}.pack-title{font:700 clamp(34px,4.3vw,72px)/.8 'Space Grotesk';color:#fff4c8;text-align:center;letter-spacing:-.07em;transform:rotate(-2deg);z-index:2}.pack-title small{display:block;font-size:.22em;letter-spacing:.2em;margin-bottom:13px}.fries{position:absolute;inset:0;pointer-events:none}.fry{position:absolute;width:24px;height:150px;background:linear-gradient(90deg,#e8a71d,#ffd950 45%,#e2a31a);border:2px solid var(--ink);border-radius:7px;box-shadow:4px 7px 0 rgba(23,21,15,.12);transform-origin:bottom center}.f1{left:27%;top:6%;transform:rotate(-24deg)}.f2{left:37%;top:1%;transform:rotate(-10deg);height:175px}.f3{left:49%;top:3%;transform:rotate(6deg);height:185px}.f4{left:59%;top:7%;transform:rotate(19deg);height:165px}.f5{left:68%;top:12%;transform:rotate(29deg);height:145px}.chip{position:absolute;width:64px;height:64px;border:2px solid var(--ink);background:#eab02a;border-radius:50% 44% 50% 42%;box-shadow:6px 8px 0 rgba(23,21,15,.13);animation:orbit 7s ease-in-out infinite}.c1{left:7%;top:24%}.c2{right:5%;top:19%;animation-delay:-2s}.c3{right:10%;bottom:13%;width:45px;height:45px;animation-delay:-4s}.seal{position:absolute;right:3%;bottom:20%;width:110px;height:110px;background:var(--green);color:#fff;border-radius:50%;border:2px solid var(--ink);display:grid;place-items:center;text-align:center;font:700 13px/1.1 'Space Grotesk';transform:rotate(12deg);box-shadow:7px 8px 0 var(--ink)}@keyframes float{50%{transform:rotate(-4deg) translateY(-16px)}}@keyframes orbit{50%{transform:translateY(-20px) rotate(35deg)}}.ticker{border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);background:var(--yellow);overflow:hidden;transform:rotate(-1deg);width:102%;margin-left:-1%;padding:15px 0}.track{white-space:nowrap;animation:marquee 18s linear infinite;font:700 17px 'Space Grotesk';text-transform:uppercase;letter-spacing:.08em}.track span{margin:0 24px}.track b{font-size:22px}@keyframes marquee{to{transform:translateX(-50%)}}section{padding:120px max(5vw,24px)}.section-tag{font:700 12px 'Space Grotesk';letter-spacing:.15em;text-transform:uppercase;color:var(--red)}h2{font:700 clamp(46px,6vw,88px)/.94 'Space Grotesk';letter-spacing:-.06em;margin:14px 0 55px}.products{background:var(--ink);color:var(--cream)}.product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.card{min-height:510px;border-radius:30px;padding:26px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;transition:.35s cubic-bezier(.2,.8,.2,1)}.card:hover{transform:translateY(-8px) rotate(.5deg)}.card:nth-child(1){background:#f5c632;color:var(--ink)}.card:nth-child(2){background:#e65331}.card:nth-child(3){background:#416646}.card h3{font:700 34px 'Space Grotesk';letter-spacing:-.05em;margin:0}.card p{max-width:270px;opacity:.78;line-height:1.5}.food-art{height:270px;position:relative;display:grid;place-items:center}.bowl{width:220px;height:150px;border:3px solid var(--ink);border-radius:18px 18px 100px 100px;background:#fff3ce;box-shadow:0 18px 0 rgba(0,0,0,.12);transform:rotate(-5deg);position:relative}.bowl:before{content:'✦  ✦  ✦';position:absolute;left:0;right:0;top:48px;text-align:center;font-size:23px;color:var(--red)}.spiral{width:220px;height:220px;border:25px solid #ffc62f;border-radius:50%;border-left-color:transparent;transform:rotate(30deg);filter:drop-shadow(8px 12px 0 rgba(0,0,0,.13))}.cube-stack{width:220px;height:220px;position:relative}.cube{position:absolute;width:92px;height:92px;background:#f6b82d;border:3px solid var(--ink);border-radius:18px;box-shadow:9px 10px 0 rgba(0,0,0,.15)}.cube:nth-child(1){left:20px;top:60px;transform:rotate(-14deg)}.cube:nth-child(2){right:15px;top:35px;transform:rotate(10deg)}.cube:nth-child(3){left:73px;bottom:5px;transform:rotate(4deg)}.story{display:grid;grid-template-columns:.9fr 1.1fr;gap:8vw;align-items:center}.story-art{aspect-ratio:1;border-radius:50%;background:var(--orange);position:relative;display:grid;place-items:center;box-shadow:inset -30px -30px 70px rgba(110,31,7,.15)}.potato{width:48%;height:58%;background:#d9a72e;border:3px solid var(--ink);border-radius:48% 42% 52% 44%;transform:rotate(18deg);box-shadow:15px 18px 0 rgba(23,21,15,.15);position:relative}.potato:before{content:'•   •\A      •\A  •       •';white-space:pre;position:absolute;inset:25%;font-size:25px;line-height:2}.story-copy p{font-size:20px;line-height:1.7;color:#5a5347}.stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);margin-top:45px}.stat{padding:25px 18px 0 0}.stat strong{font:700 36px 'Space Grotesk';display:block}.stat span{font-size:12px;text-transform:uppercase;letter-spacing:.08em}.final{padding:90px max(5vw,24px) 35px}.final-box{min-height:520px;border-radius:38px;background:var(--red);color:#fff3d1;padding:clamp(30px,6vw,80px);position:relative;overflow:hidden}.final-box h2{max-width:850px;position:relative;z-index:2;margin-bottom:28px}.final-box .button{background:var(--yellow);color:var(--ink);position:relative;z-index:2}.rings{position:absolute;width:650px;height:650px;border:90px solid rgba(255,202,40,.9);border-radius:50%;right:-150px;bottom:-350px}.rings:after{content:'';position:absolute;width:180px;height:180px;border:55px solid rgba(255,243,209,.9);border-radius:50%;left:145px;top:145px}.footer{display:flex;justify-content:space-between;align-items:center;padding:34px 4px 0;font-size:13px;color:#615b4f}.reveal{opacity:0;transform:translateY(35px);transition:.8s cubic-bezier(.2,.7,.2,1)}.reveal.on{opacity:1;transform:none}@media(max-width:850px){.links a:not(.cta){display:none}.hero{grid-template-columns:1fr;padding-top:125px}.stage{height:520px;margin-top:25px}.product-grid{grid-template-columns:1fr}.card{min-height:470px}.story{grid-template-columns:1fr}.story-art{max-width:520px}.seal{right:0}.footer{flex-direction:column;gap:14px;align-items:flex-start}}@media(prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important}.reveal{opacity:1;transform:none}}
-</style></head>
-<body><div class="noise"></div><nav class="nav"><div class="brand"><i class="brandmark"></i>POTATO FACTORY</div><div class="links"><a href="#menu">Menu</a><a href="#story">Our story</a><a class="cta" href="#order">Get crispy ↗</a></div></nav>
-<main><header class="hero"><div><div class="eyebrow"><i class="dot"></i>Fresh batch • made loud</div><h1>CRISPY<br><span class="stroke">BY DESIGN.</span></h1><p>We take the world's most lovable vegetable and turn it into golden, crunchy, can't-stop-eating-it joy.</p><div class="actions"><a class="button" href="#menu">Explore the crunch <span>↘</span></a><a class="button alt" href="#story">Why potatoes?</a></div></div><div class="stage" aria-label="Animated pack of Potato Factory fries"><div class="sun"></div><div class="fries"><i class="fry f1"></i><i class="fry f2"></i><i class="fry f3"></i><i class="fry f4"></i><i class="fry f5"></i></div><div class="pack"><div class="pack-title"><small>POTATO FACTORY</small>HOT<br>STUFF.</div></div><i class="chip c1"></i><i class="chip c2"></i><i class="chip c3"></i><div class="seal">100%<br>POTATO<br>POWER</div></div></header>
-<div class="ticker"><div class="track"><span>CRUNCH LOUDER</span><b>✦</b><span>GOLDEN EVERY TIME</span><b>✦</b><span>ZERO BORING BITES</span><b>✦</b><span>CRUNCH LOUDER</span><b>✦</b><span>GOLDEN EVERY TIME</span><b>✦</b><span>ZERO BORING BITES</span><b>✦</b></div></div>
-<section class="products" id="menu"><div class="section-tag">Pick your potato</div><h2 class="reveal">THREE WAYS TO<br>LOSE YOUR COOL.</h2><div class="product-grid"><article class="card reveal"><div><h3>Factory Fries</h3><p>Skin-on, twice-cooked, aggressively crispy. Our original troublemaker.</p></div><div class="food-art"><div class="bowl"></div></div></article><article class="card reveal"><div><h3>Tornado</h3><p>One potato. One glorious spiral. Seasoned edge to edge.</p></div><div class="food-art"><div class="spiral"></div></div></article><article class="card reveal"><div><h3>Crunch Cubes</h3><p>Fluffy centers, shatter-crisp corners. Tiny blocks of happiness.</p></div><div class="food-art"><div class="cube-stack"><i class="cube"></i><i class="cube"></i><i class="cube"></i></div></div></article></div></section>
-<section class="story" id="story"><div class="story-art reveal"><div class="potato"></div></div><div class="story-copy"><div class="section-tag">The humble hero</div><h2 class="reveal">ONE INGREDIENT.<br>NO SMALL<br>AMBITION.</h2><p class="reveal">No gimmicks. No sad, soggy sides. Potato Factory is a love letter to the spud — cut fresh, cooked with obsessive timing, and finished with flavors that refuse to whisper.</p><div class="stats reveal"><div class="stat"><strong>2×</strong><span>Cooked for crunch</span></div><div class="stat"><strong>100%</strong><span>Real potatoes</span></div><div class="stat"><strong>0%</strong><span>Boring bites</span></div></div></div></section>
-<section class="final" id="order"><div class="final-box reveal"><div class="section-tag" style="color:#ffd34e">Your next obsession</div><h2>HOT. GOLDEN.<br>GONE IN MINUTES.</h2><a class="button" href="#menu">Choose your crunch ↗</a><div class="rings"></div></div><footer class="footer"><div class="brand"><i class="brandmark"></i>POTATO FACTORY</div><div>Made with potatoes & unreasonable standards. © 2026</div><div>Instagram · TikTok</div></footer></section></main>
-<script>const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('on')}),{threshold:.12});document.querySelectorAll('.reveal').forEach(x=>io.observe(x));const stage=document.querySelector('.stage');if(matchMedia('(pointer:fine)').matches)stage.addEventListener('pointermove',e=>{const r=stage.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;stage.querySelector('.pack').style.transform=`rotate(${-7+x*7}deg) rotateY(${x*12}deg) rotateX(${-y*10}deg) translateY(${y*8}px)`});stage.addEventListener('pointerleave',()=>stage.querySelector('.pack').style.transform='');</script></body></html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#082326" />
+    <title>CRISP — Crafted for the crunch.</title>
+    <meta
+      name="description"
+      content="A little potato. A remarkable journey. Explore CRISP, an interactive 3D factory and flavour experience by Hamza Aftab."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CRISP — Crafted for the crunch." />
+    <meta
+      property="og:description"
+      content="Step inside a beautifully orchestrated world of potatoes, precision and possibility. An interactive brand concept by Hamza Aftab."
+    />
+    <meta property="og:image" content="/social-preview.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link
+      rel="preload"
+      as="image"
+      href="/factory-poster.webp"
+      fetchpriority="high"
+    />
+    <script type="module" src="/src/main.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="reading-progress" aria-hidden="true"></div>
+    <header class="site-header" id="site-header">
+      <a class="wordmark" href="#top" aria-label="CRISP home"
+        >crisp<span class="brand-spark" aria-hidden="true">✳</span></a
+      >
+      <nav class="desktop-nav" aria-label="Main navigation">
+        <a href="#process">The process</a>
+        <a href="#flavours">The flavours</a>
+        <a href="#craft">The craft</a>
+      </nav>
+      <a class="header-cta" href="#process"
+        >Enter the factory <span aria-hidden="true">↗</span></a
+      >
+      <button
+        class="menu-toggle"
+        id="menu-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+        aria-label="Open menu"
+      >
+        <span></span><span></span>
+      </button>
+    </header>
+    <nav
+      class="mobile-menu"
+      id="mobile-menu"
+      aria-label="Mobile navigation"
+      hidden
+    >
+      <a href="#process"
+        ><span>01</span>The process <span aria-hidden="true">↗</span></a
+      >
+      <a href="#flavours"
+        ><span>02</span>The flavours <span aria-hidden="true">↗</span></a
+      >
+      <a href="#craft"
+        ><span>03</span>The craft <span aria-hidden="true">↗</span></a
+      >
+      <p>A little potato. A lot of possibility.</p>
+    </nav>
+
+    <main id="main">
+      <section class="hero" id="top" aria-labelledby="hero-title">
+        <div class="hero-orbit" aria-hidden="true"></div>
+        <div class="hero-copy">
+          <p class="eyebrow hero-eyebrow">
+            <span class="live-dot" aria-hidden="true"></span>A study in flavour
+            & motion
+          </p>
+          <h1 id="hero-title">Crafted for<br />the <em>crunch.</em></h1>
+          <p class="hero-description">
+            A little potato. A remarkable journey.<br />Step inside a world
+            where every movement<br class="desktop-break" />
+            makes something golden.
+          </p>
+          <div class="hero-links">
+            <a class="button button-gold" href="#process"
+              >Follow the journey
+              <span class="button-arrow" aria-hidden="true">↗</span></a
+            >
+            <a class="text-link" href="#flavours"
+              >Find your flavour <span aria-hidden="true">↗</span></a
+            >
+          </div>
+        </div>
+        <div
+          class="hero-stage scene-mount"
+          id="hero-mount"
+          aria-label="The complete CRISP factory"
+        >
+          <img
+            class="mount-poster hero-poster"
+            src="/factory-poster.webp"
+            width="1300"
+            height="470"
+            alt="A detailed miniature potato-chip factory with stainless machinery, yellow conveyors, three seasoning drums and colour-coded packaging lines."
+            fetchpriority="high"
+          />
+          <div
+            class="scene-rig"
+            id="scene-rig"
+            data-mode="factory"
+            data-variant="0"
+          >
+            <canvas
+              id="factory-canvas"
+              aria-label="Interactive 3D potato factory. Use the Inspect button to rotate the view."
+              tabindex="0"
+            ></canvas>
+            <div class="scene-topline">
+              <span class="live-dot" aria-hidden="true"></span
+              ><span id="scene-label">A world in motion</span
+              ><span class="scene-rule"></span
+              ><span id="scene-kind">LIVE 3D</span>
+            </div>
+            <div
+              class="scene-controls"
+              aria-label="Animation and audio controls"
+            >
+              <button
+                class="scene-control icon-control"
+                id="play-toggle"
+                type="button"
+                aria-label="Pause animation"
+                aria-pressed="false"
+                disabled
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path class="pause-icon" d="M9 5v14M15 5v14" />
+                  <path class="play-icon" d="m8 5 11 7-11 7Z" />
+                </svg>
+              </button>
+              <button
+                class="scene-control sound-control"
+                id="sound-toggle"
+                type="button"
+                aria-pressed="false"
+                disabled
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M11 5 6 9H3v6h3l5 4Z" />
+                  <path
+                    class="sound-waves"
+                    d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"
+                  />
+                  <path class="sound-off" d="m16 9 5 6m0-6-5 6" /></svg
+                ><span id="sound-label">Sound off</span>
+              </button>
+              <button
+                class="scene-control icon-control"
+                id="music-toggle"
+                type="button"
+                aria-label="Enable background music"
+                aria-pressed="false"
+                disabled
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M9 17V5l11-2v12M9 9l11-2" />
+                  <ellipse cx="6" cy="18" rx="3" ry="2" />
+                  <ellipse cx="17" cy="16" rx="3" ry="2" />
+                </svg>
+              </button>
+              <button
+                class="scene-control inspect-control"
+                id="inspect-toggle"
+                type="button"
+                aria-label="Enable camera inspection"
+                aria-pressed="false"
+                disabled
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4" />
+                  <circle cx="12" cy="12" r="3" /></svg
+                ><span>Inspect</span>
+              </button>
+            </div>
+            <p class="inspect-hint" id="inspect-hint" hidden>
+              Drag to orbit · Arrow keys to rotate · Esc to exit
+            </p>
+          </div>
+        </div>
+        <div class="hero-footer">
+          <a class="scroll-cue" href="#process"
+            ><span class="scroll-line" aria-hidden="true"></span>Scroll to
+            discover <span aria-hidden="true">↓</span></a
+          >
+          <div class="hero-note">
+            <span class="tiny-label">FROM POTATO TO POSSIBILITY</span
+            ><span>Five processes. Three personalities.</span>
+          </div>
+          <span class="concept-pill">An original brand concept</span>
+        </div>
+      </section>
+
+      <section
+        class="process-section"
+        id="process"
+        aria-labelledby="process-title"
+      >
+        <div class="section-intro container">
+          <div>
+            <p class="eyebrow">
+              <span class="section-index">01</span>The process
+            </p>
+            <h2 id="process-title">
+              Ordinary beginnings.<br /><em>Extraordinary rhythm.</em>
+            </h2>
+          </div>
+          <p class="intro-description">
+            From the first rinse to the final seal, follow one connected
+            journey. Scroll slowly. There’s a little satisfaction in every step.
+          </p>
+        </div>
+        <div class="process-story container" id="process-story">
+          <div class="process-visual">
+            <div class="process-status">
+              <span id="process-count">01 / 05</span
+              ><span id="process-name">Wash & peel</span
+              ><span class="status-line" aria-hidden="true"></span
+              ><span>THE JOURNEY</span>
+            </div>
+            <div class="story-stage scene-mount" id="story-mount">
+              <img
+                class="mount-poster"
+                src="/factory-poster.webp"
+                alt="The connected factory line."
+                width="1300"
+                height="470"
+                loading="lazy"
+              />
+            </div>
+            <nav class="process-nav" aria-label="Choose a factory process">
+              <button
+                type="button"
+                data-process="1"
+                aria-label="Go to wash and peel"
+                aria-current="step"
+              >
+                <span>01</span><span>Prepare</span>
+              </button>
+              <button type="button" data-process="2" aria-label="Go to slicing">
+                <span>02</span><span>Slice</span>
+              </button>
+              <button type="button" data-process="3" aria-label="Go to frying">
+                <span>03</span><span>Fry</span>
+              </button>
+              <button
+                type="button"
+                data-process="4"
+                aria-label="Go to seasoning"
+              >
+                <span>04</span><span>Season</span>
+              </button>
+              <button
+                type="button"
+                data-process="5"
+                aria-label="Go to packaging"
+              >
+                <span>05</span><span>Pack</span>
+              </button>
+            </nav>
+            <p class="scene-footnote">
+              <span>One continuous choreography</span
+              ><span
+                >Made entirely with code
+                <span aria-hidden="true">✳</span></span
+              >
+            </p>
+          </div>
+          <div class="process-copy">
+            <article
+              class="story-step is-active"
+              id="step-1"
+              data-step="1"
+              aria-labelledby="step-title-1"
+            >
+              <span class="step-index" aria-hidden="true">01</span>
+              <p class="eyebrow step-category">Water / Rotation / Renewal</p>
+              <h3 id="step-title-1">A fresh<br /><em>start.</em></h3>
+              <p>
+                Potatoes take their first ride. A cascade of water, a turning
+                peeler, and a clean beginning for everything that follows.
+              </p>
+              <div class="step-detail">
+                <span class="detail-symbol" aria-hidden="true">◎</span
+                ><span>Wash jets & a rotating peel drum</span>
+              </div>
+            </article>
+            <article
+              class="story-step"
+              id="step-2"
+              data-step="2"
+              aria-labelledby="step-title-2"
+            >
+              <span class="step-index" aria-hidden="true">02</span>
+              <p class="eyebrow step-category">Precision / Repetition / Form</p>
+              <h3 id="step-title-2">The art of<br /><em>the slice.</em></h3>
+              <p>
+                A rotary blade finds its rhythm. Whole potatoes become fine,
+                curved slices, falling onto the next conveyor in a steady
+                stream.
+              </p>
+              <div class="step-detail">
+                <span class="detail-symbol" aria-hidden="true">⌁</span
+                ><span>Four blade passes in every turn</span>
+              </div>
+            </article>
+            <article
+              class="story-step"
+              id="step-3"
+              data-step="3"
+              aria-labelledby="step-title-3"
+            >
+              <span class="step-index" aria-hidden="true">03</span>
+              <p class="eyebrow step-category">
+                Heat / Bubbles / Transformation
+              </p>
+              <h3 id="step-title-3">The golden<br /><em>moment.</em></h3>
+              <p>
+                Thin slices move through a shimmering bath. Tiny bubbles rise,
+                steam drifts, and pale potatoes emerge with a golden glow.
+              </p>
+              <div class="step-detail">
+                <span class="detail-symbol" aria-hidden="true">☼</span
+                ><span>Rippling oil & rising steam</span>
+              </div>
+            </article>
+            <article
+              class="story-step"
+              id="step-4"
+              data-step="4"
+              aria-labelledby="step-title-4"
+            >
+              <span class="step-index" aria-hidden="true">04</span>
+              <p class="eyebrow step-category">
+                Tumble / Texture / Personality
+              </p>
+              <h3 id="step-title-4">A little<br /><em>character.</em></h3>
+              <p>
+                Three drums. Three directions. Salt, paprika and herbs fall into
+                the rhythm as each rotating drum lifts, tumbles and coats the
+                chips.
+              </p>
+              <div class="step-detail">
+                <span class="detail-symbol" aria-hidden="true">✳</span
+                ><span>Three colour-coded flavour lines</span>
+              </div>
+            </article>
+            <article
+              class="story-step"
+              id="step-5"
+              data-step="5"
+              aria-labelledby="step-title-5"
+            >
+              <span class="step-index" aria-hidden="true">05</span>
+              <p class="eyebrow step-category">Weigh / Fill / Finish</p>
+              <h3 id="step-title-5">Good things,<br /><em>wrapped up.</em></h3>
+              <p>
+                Chips rise into the weighers. Film unfolds, bags fill, and
+                sealing jaws close in sync. A colourful little finish to a
+                beautifully connected journey.
+              </p>
+              <div class="step-detail">
+                <span class="detail-symbol" aria-hidden="true">▱</span
+                ><span>Weighers, film rolls & sealing jaws</span>
+              </div>
+              <a class="text-link step-next" href="#flavours"
+                >Meet the collection <span aria-hidden="true">↗</span></a
+              >
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="flavours-section"
+        id="flavours"
+        aria-labelledby="flavours-title"
+      >
+        <div class="container">
+          <div class="flavours-heading">
+            <div>
+              <p class="eyebrow">
+                <span class="section-index">02</span>The collection
+              </p>
+              <h2 id="flavours-title">
+                Pick your kind<br />of <em>crunch.</em>
+              </h2>
+            </div>
+            <p>Three distinct personalities.<br />Which one feels like you?</p>
+          </div>
+          <div class="flavours-layout">
+            <div class="product-display">
+              <span class="product-edition tiny-label"
+                >CRISP / THE ORIGINAL COLLECTION</span
+              >
+              <div
+                class="compact-flavours"
+                aria-label="Quick flavour selection"
+              >
+                <button
+                  type="button"
+                  data-choice="0"
+                  aria-pressed="true"
+                  class="is-selected"
+                >
+                  Sea Salt
+                </button>
+                <button type="button" data-choice="1" aria-pressed="false">
+                  Paprika
+                </button>
+                <button type="button" data-choice="2" aria-pressed="false">
+                  Herbs
+                </button>
+              </div>
+              <div class="product-orbit" aria-hidden="true"></div>
+              <div class="product-stage scene-mount" id="product-mount">
+                <img
+                  class="mount-poster product-poster"
+                  id="product-poster"
+                  src="/packs/sea-salt.svg"
+                  width="420"
+                  height="540"
+                  alt="Golden Sea Salt CRISP concept packaging."
+                  loading="lazy"
+                />
+              </div>
+              <div class="product-caption">
+                <span id="product-personality">The timeless one.</span
+                ><span id="product-number">01 / 03</span>
+              </div>
+            </div>
+            <div class="flavour-picker" aria-label="Choose a flavour">
+              <button
+                class="flavour-option is-selected"
+                type="button"
+                data-flavour="0"
+                aria-pressed="true"
+                aria-controls="product-mount"
+              >
+                <span class="flavour-number">01</span
+                ><span class="flavour-content"
+                  ><span class="flavour-kicker">Simple. Sunny. Satisfying.</span
+                  ><span class="flavour-title">Golden Sea Salt</span
+                  ><span class="flavour-notes"
+                    >A warm, golden classic. Delicate salt crystals meet a
+                    clean, familiar crunch.<span class="flavour-tasting"
+                      >Bright <i></i> Balanced <i></i> Familiar</span
+                    ></span
+                  ></span
+                ><span class="flavour-arrow" aria-hidden="true">↗</span>
+              </button>
+              <button
+                class="flavour-option"
+                type="button"
+                data-flavour="1"
+                aria-pressed="false"
+                aria-controls="product-mount"
+              >
+                <span class="flavour-number">02</span
+                ><span class="flavour-content"
+                  ><span class="flavour-kicker"
+                    >A little warmth. A lot of character.</span
+                  ><span class="flavour-title">Smoky Paprika</span
+                  ><span class="flavour-notes"
+                    >Rich paprika, a smoky edge, and a deep red finish. For a
+                    bolder kind of bite.<span class="flavour-tasting"
+                      >Warm <i></i> Smoky <i></i> Bold</span
+                    ></span
+                  ></span
+                ><span class="flavour-arrow" aria-hidden="true">↗</span>
+              </button>
+              <button
+                class="flavour-option"
+                type="button"
+                data-flavour="2"
+                aria-pressed="false"
+                aria-controls="product-mount"
+              >
+                <span class="flavour-number">03</span
+                ><span class="flavour-content"
+                  ><span class="flavour-kicker"
+                    >Fresh thinking. Full flavour.</span
+                  ><span class="flavour-title">Garden Herbs</span
+                  ><span class="flavour-notes"
+                    >A green, aromatic personality. Little flecks of herbs bring
+                    a fresh twist to the golden chip.<span
+                      class="flavour-tasting"
+                      >Herbaceous <i></i> Mellow <i></i> Fresh</span
+                    ></span
+                  ></span
+                ><span class="flavour-arrow" aria-hidden="true">↗</span>
+              </button>
+              <button
+                class="text-link flavour-line-link"
+                id="watch-flavour"
+                type="button"
+              >
+                Watch this flavour come to life
+                <span aria-hidden="true">↗</span>
+              </button>
+              <p class="collection-note">
+                Concept flavours & packaging. An exploration of a brand in
+                motion.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="craft-section" id="craft" aria-labelledby="craft-title">
+        <div class="container craft-layout">
+          <div class="craft-copy">
+            <p class="eyebrow">
+              <span class="section-index">03</span>Behind the experience
+            </p>
+            <h2 id="craft-title">
+              A brand world.<br />Built from<br /><em>scratch.</em>
+            </h2>
+            <p>
+              CRISP is a portfolio concept by Hamza Aftab: a playful meeting of
+              art direction, mechanical choreography and creative development.
+            </p>
+            <a
+              class="button button-outline"
+              href="https://github.com/hamzaaftab325-eng/potato-factory-"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Explore the source <span aria-hidden="true">↗</span></a
+            >
+          </div>
+          <div class="craft-details">
+            <div class="craft-stamp" aria-hidden="true">
+              <span>SMALL DETAILS / BIG FEELING</span
+              ><svg viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="55" />
+                <circle cx="70" cy="70" r="34" />
+                <path
+                  d="M70 3v36m0 62v36M3 70h36m62 0h36M22 22l25 25m46 46 25 25M22 118l25-25m46-46 25-25"
+                />
+                <circle cx="70" cy="70" r="8" /></svg
+              ><span>A STUDY IN SATISFACTION</span>
+            </div>
+            <details class="craft-item" open>
+              <summary>
+                <span>01</span>The choreography<span
+                  class="accordion-plus"
+                  aria-hidden="true"
+                  >+</span
+                >
+              </summary>
+              <p>
+                Conveyors, blades, seasoning drums and sealers share a single
+                clock. The factory repeats in a continuous 16-second cycle, with
+                every moving part built and animated in code.
+              </p>
+            </details>
+            <details class="craft-item">
+              <summary>
+                <span>02</span>The material study<span
+                  class="accordion-plus"
+                  aria-hidden="true"
+                  >+</span
+                >
+              </summary>
+              <p>
+                Brushed steel, enamel, curved chips and softly folded packaging.
+                Procedural textures and a studio lighting rig give the tiny
+                factory its own tactile world.
+              </p>
+            </details>
+            <details class="craft-item">
+              <summary>
+                <span>03</span>The soundscape<span
+                  class="accordion-plus"
+                  aria-hidden="true"
+                  >+</span
+                >
+              </summary>
+              <p>
+                Water, blade ticks, frying, tumbling and sealing are generated
+                as separate sound layers. Enable sound to hear the process in
+                focus, or add the original rhythmic music loop.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="contact-section" aria-labelledby="contact-title">
+        <div class="container contact-layout">
+          <div>
+            <p class="eyebrow">Good ideas deserve a little motion.</p>
+            <h2 id="contact-title">
+              Have a bold idea?<br />Let’s make it <em>move.</em>
+            </h2>
+          </div>
+          <a
+            class="contact-button"
+            href="https://github.com/hamzaaftab325-eng"
+            target="_blank"
+            rel="noopener noreferrer"
+            ><span>Meet the creator</span><span aria-hidden="true">↗</span></a
+          >
+        </div>
+      </section>
+    </main>
+    <footer class="site-footer container">
+      <a class="wordmark" href="#top" aria-label="CRISP back to top"
+        >crisp<span class="brand-spark" aria-hidden="true">✳</span></a
+      >
+      <p>A little potato. A lot of possibility.</p>
+      <span class="footer-credit"
+        >An original portfolio concept · Hamza Aftab</span
+      >
+      <a class="back-top" href="#top" aria-label="Back to top">↑</a>
+    </footer>
+    <div class="toast" id="toast" role="status" hidden></div>
+    <div
+      class="sr-only"
+      id="experience-status"
+      role="status"
+      aria-live="polite"
+    >
+      The factory experience is loading. The page is ready to explore.
+    </div>
+    <noscript
+      ><style>
+        .story-step {
+          opacity: 1;
+        }
+        .flavour-notes {
+          display: block;
+        }
+        .compact-flavours {
+          display: none !important;
+        }
+      </style>
+      <p class="noscript-note">
+        The factory is shown as a still image. Enable JavaScript for the
+        interactive 3D experience, flavour selection and sound.
+      </p></noscript
+    >
+  </body>
+</html>
