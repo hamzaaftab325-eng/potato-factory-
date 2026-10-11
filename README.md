@@ -91,6 +91,6 @@ All animation repeats on a 16-second clock. A bag cycle takes two seconds and a 
 
 Three.js is MIT licensed. Instrument Serif and DM Sans are distributed under the SIL Open Font License. Their license texts are included in `docs/licenses/`. No stock audio, external HDR maps, paid models or external image services are required.
 
-## Scroll layout restoration
+## Animation restoration
 
-The active entry is `src/main.js`. The earlier sticky factory view and scroll-driven process chapters have been restored, with the original collection layout and camera framing. Current machinery and packaging models are retained. The React entry and its components remain in the repository for future work, but are not mounted by this page. The build uses Vite directly. No preview, build, tests or visual QA were run for this restoration, as requested.
+The complete earlier scroll-led version has been restored. Camera easing now measures elapsed time between rendered frames, and unchanged viewport sizes and scroll positions no longer trigger redundant renderer work. The original visual style, models, sound, collection and process layout are restored. No preview, build, tests or visual QA were run for this change, at the owner's request.

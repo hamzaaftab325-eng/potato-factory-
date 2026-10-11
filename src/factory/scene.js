@@ -13,8 +13,6 @@ import { FactorySound } from "./audio.js";
 import { chipGeometry, bagGeometry, potatoGeometry } from "./geometry.js";
 import { addProcessMachines } from "./machines.js";
 import { addShippingLine } from "./shipping.js";
-import { addDeliveryScene } from "./delivery.js";
-import { createBagMaterials } from "./packaging.js";
 import { createSurfaceTextures } from "./surfaces.js";
 import { LOOP_SECONDS, bagPhase, jawClosure } from "./timing.js";
 import { cameraAt, FLAVOURS } from "../lib/journey.js";
@@ -82,9 +80,9 @@ export function createFactory(canvas, options = {}) {
     red: mat("#ba3430", 0.35, 0.32),
     green: mat("#739333", 0.32, 0.35),
     copper: mat("#b17433", 0.8, 0.28),
-    potato: mat("#cdb692", 0, 0.86, { map: potatoTex }),
-    peeled: mat("#e3d0a7", 0, 0.52, { bumpMap: potatoTex, bumpScale: 0.0015 }),
-    raw: mat("#dfce9f", 0, 0.53),
+    potato: mat("#ffffff", 0, 0.86, { map: potatoTex }),
+    peeled: mat("#efdfb7", 0, 0.52, { bumpMap: potatoTex, bumpScale: 0.0015 }),
+    raw: mat("#eddcaf", 0, 0.55),
     chip: mat("#e8b340", 0, 0.58, { map: chipTex }),
     redChip: mat("#dc8434", 0, 0.6, { map: chipTex }),
     herbChip: mat("#d9b344", 0, 0.62, { map: chipTex }),
@@ -127,12 +125,9 @@ export function createFactory(canvas, options = {}) {
   }
   M.steel.bumpMap = metalTex;
   M.steel.bumpScale = 0.0015;
-  M.steel.roughness = 0.31;
-  M.steel.color.set("#aebdbc");
-  M.chip.color.set("#f9dc92");
-  M.chip.vertexColors = true;
-  M.redChip.vertexColors = true;
-  M.herbChip.vertexColors = true;
+  M.steel.roughness = 0.38;
+  M.steel.color.set("#d0d9d8");
+  M.chip.color.set("#fff5dc");
   M.redChip.color.set("#f1c09a");
   M.herbChip.color.set("#f2e3ad");
   M.yellow = new THREE.MeshPhysicalMaterial({
@@ -180,7 +175,7 @@ export function createFactory(canvas, options = {}) {
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(env, 0.04).texture;
   pmrem.dispose();
-  scene.environmentIntensity = 1.2;
+  scene.environmentIntensity = 1.08;
   scene.add(new THREE.HemisphereLight("#b8e9e2", "#101417", 0.38));
   function light(color, power, x, y, z) {
     let l = new THREE.DirectionalLight(color, power);
@@ -204,7 +199,7 @@ export function createFactory(canvas, options = {}) {
   });
   key.shadow.bias = -0.00015;
   key.shadow.normalBias = 0.03;
-  light("#b4e1e9", 1.1, 10, 9, -12);
+  light("#9ccce1", 1.3, 10, 9, -12);
   light("#fff5dc", 1.2, 3, 7, 13);
   const geoCache = new Map();
   function roundGeo(w, h, d, r = 0.05) {
@@ -447,19 +442,16 @@ export function createFactory(canvas, options = {}) {
   }
   function label(text, x, y, z, w = 1.5) {
     let c = document.createElement("canvas");
-    c.width = 1024;
-    c.height = 256;
+    c.width = 512;
+    c.height = 128;
     let a = c.getContext("2d");
     a.fillStyle = "#193139";
-    a.fillRect(0, 0, 1024, 256);
+    a.fillRect(0, 0, 512, 128);
     a.fillStyle = "#ecc869";
-    a.font = "500 76px DM Sans";
+    a.font = "bold 32px Arial";
     a.textAlign = "center";
-    a.fillText(text, 512, 157);
-    const map = new THREE.CanvasTexture(c);
-    map.colorSpace = THREE.SRGBColorSpace;
-    map.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-    let m = new THREE.MeshBasicMaterial({ map });
+    a.fillText(text, 256, 75);
+    let m = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c) });
     let o = mesh(new THREE.PlaneGeometry(w, w / 4), m, x, y, z);
     o.rotation.x = -Math.PI / 2;
     return o;
@@ -472,7 +464,7 @@ export function createFactory(canvas, options = {}) {
     ["05  /  PACK", 10.4],
     ["CASE & DISPATCH", 17.65],
   ])
-    label(text, x, 0.59, 3.08, 2.35);
+    label(text, x, 0.59, 3.08, 1.8);
   const process = addProcessMachines({
     scene,
     M,
@@ -653,11 +645,101 @@ export function createFactory(canvas, options = {}) {
   // 05: multihead weighing, film roll, forming collar, draw rollers and sealing jaws.
   const bagG = bagGeometry();
   function bagMaterial(f) {
-    return createBagMaterials(
-      f,
-      textures,
-      Math.min(8, renderer.capabilities.getMaxAnisotropy()),
+    const c = document.createElement("canvas");
+    c.width = 768;
+    c.height = 1024;
+    const a = c.getContext("2d");
+    const grad = a.createLinearGradient(0, 0, 768, 1024);
+    grad.addColorStop(0, ["#f2c34a", "#d64d32", "#9cac49"][f]);
+    grad.addColorStop(1, ["#c28a15", "#9f231c", "#4b6d32"][f]);
+    a.fillStyle = grad;
+    a.fillRect(0, 0, 768, 1024);
+    a.fillStyle = "#1e282311";
+    for (let x = -900; x < 1200; x += 70) {
+      a.save();
+      a.translate(x, 0);
+      a.rotate(-0.4);
+      a.fillRect(0, 0, 24, 1500);
+      a.restore();
+    }
+    a.fillStyle = "#fff4d8";
+    a.textAlign = "center";
+    a.font = "185px Instrument Serif";
+    a.fillText("crisp", 384, 382);
+    a.font = "20px Arial";
+    a.font = "17px DM Sans";
+    a.fillText(
+      "A  L I T T L E  P O T A T O .  A  L O T  O F  P O S S I B I L I T Y .",
+      384,
+      439,
     );
+    a.font = "30px DM Sans";
+    a.fillText(
+      ["GOLDEN SEA SALT", "SMOKY PAPRIKA", "GARDEN HERBS"][f],
+      384,
+      520,
+    );
+    a.strokeStyle = "#fff4d888";
+    a.lineWidth = 2;
+    a.beginPath();
+    a.moveTo(180, 556);
+    a.lineTo(588, 556);
+    a.stroke();
+    for (let i = 0; i < 3; i++) {
+      a.save();
+      a.translate(344 + i * 38, 704 - i * 13);
+      a.rotate(-0.3 + i * 0.25);
+      let g = a.createRadialGradient(-20, -20, 0, 0, 0, 110);
+      g.addColorStop(0, "#ffe2a0");
+      g.addColorStop(0.8, "#eab644");
+      g.addColorStop(1, "#bb7920");
+      a.fillStyle = g;
+      a.beginPath();
+      a.ellipse(0, 0, 94, 65, 0, 0, TAU);
+      a.fill();
+      a.strokeStyle = "#e3a035";
+      a.stroke();
+      for (let j = 0; j < 40; j++) {
+        a.fillStyle = j % 3 ? "#edc369" : "#aa762d";
+        a.globalAlpha = 0.6;
+        a.beginPath();
+        a.arc(
+          (random() - 0.5) * 125,
+          (random() - 0.5) * 75,
+          random() * 2 + 1,
+          0,
+          TAU,
+        );
+        a.fill();
+      }
+      a.restore();
+    }
+    a.globalAlpha = 1;
+    a.fillStyle = "#fff1ce";
+    a.font = "19px Arial";
+    a.fillText("THE ORIGINAL COLLECTION · 40 g", 384, 866);
+    for (let y of [45, 970]) {
+      a.fillStyle = "#d5bf8d";
+      a.fillRect(0, y - 25, 768, 48);
+      a.strokeStyle = "#65533144";
+      for (let x = 0; x < 768; x += 8) {
+        a.beginPath();
+        a.moveTo(x, y - 25);
+        a.lineTo(x, y + 23);
+        a.stroke();
+      }
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    return new THREE.MeshPhysicalMaterial({
+      map: t,
+      metalness: 0.38,
+      roughness: 0.32,
+      clearcoat: 0.8,
+      clearcoatRoughness: 0.22,
+      side: THREE.DoubleSide,
+    });
   }
   const packAnims = [],
     bagMaterials = [0, 1, 2].map(bagMaterial);
@@ -682,7 +764,7 @@ export function createFactory(canvas, options = {}) {
     spinAnims.push({ o: roll, axis: "x", turns: 8 });
     for (let dx of [-0.58, 0.58])
       cylinder(x + dx, 3.53, z - 0.47, 0.11, 0.08, M.dark, scene, "x");
-    let film = box(x, 3.02, z - 0.16, 0.69, 0.7, 0.015, bagMat[0]);
+    let film = box(x, 3.02, z - 0.16, 0.69, 0.7, 0.015, bagMat);
     film.rotation.x = -0.25;
     cylinder(x, 2.7, z, 0.23, 0.28, M.chrome);
     mesh(
@@ -883,10 +965,7 @@ export function createFactory(canvas, options = {}) {
         if (!Audio) throw new Error("Audio is unavailable in this browser.");
         ctx = new Audio();
         sound = new FactorySound(ctx);
-        sound.setFocus(
-          mode === "delivery" ? 7 : mode === "product" ? 6 : stage,
-          true,
-        );
+        sound.setFocus(mode === "product" ? 6 : stage, true);
         sound.setMusic(musicOn);
       }
       await ctx.resume();
@@ -900,40 +979,34 @@ export function createFactory(canvas, options = {}) {
     desired =
       mode === "product"
         ? { target: [0, 2.7, 0], radius: 10.1, yaw: 0.12, elev: 0.13 }
-        : mode === "delivery"
-          ? { target: [-2.1, 1.6, 0], radius: 18.4, yaw: -0.45, elev: 0.31 }
-          : cameraAt(journey, flavour);
+        : cameraAt(journey, flavour);
     dirty = true;
   }
   function setJourney(value) {
-    journey = Math.max(0, Math.min(5, value));
+    const position = Math.max(0, Math.min(5, value));
+    if (position === journey) return;
+    journey = position;
     const next = Math.round(journey);
     if (next !== stage) {
       stage = next;
     }
-    sound?.setFocus(mode === "delivery" ? 7 : mode === "product" ? 6 : journey);
+    sound?.setFocus(mode === "product" ? 6 : journey);
     if (!inspect && mode === "factory") updateCamera();
   }
   function setMode(next) {
     if (mode === next) return;
-    mode = ["factory", "product", "delivery"].includes(next) ? next : "factory";
+    mode = next;
     inspect = false;
-    if (mode === "delivery") {
-      align(0);
-      syncAudio(0);
-      delivery.update(0);
-    }
     const product = mode === "product";
     factoryObjects.forEach((o) => {
-      o.visible = mode === "factory";
+      o.visible = !product;
     });
-    studioFloor.visible = mode === "factory" && width > 700;
-    delivery.group.visible = mode === "delivery";
+    studioFloor.visible = !product && width > 700;
     productGroup.visible = product;
     scene.background.set(product ? "#eee8dc" : "#082326");
     scene.fog.color.copy(scene.background);
     scene.fog.density = product ? 0.004 : 0.009;
-    sound?.setFocus(mode === "delivery" ? 7 : product ? 6 : stage);
+    sound?.setFocus(product ? 6 : stage);
     updateCamera();
     target.set(...desired.target);
     radius = desired.radius;
@@ -1115,7 +1188,7 @@ export function createFactory(canvas, options = {}) {
     uniforms: THREE.UniformsUtils.clone(Reflector.ReflectorShader.uniforms),
     vertexShader: Reflector.ReflectorShader.vertexShader,
     fragmentShader:
-      `uniform vec3 color;uniform sampler2D tDiffuse;varying vec4 vUv;void main(){vec2 uv=vUv.xy/vUv.w;vec3 r=vec3(0.0);for(int i=-2;i<=2;i++){for(int j=-2;j<=2;j++){r+=texture2D(tDiffuse,uv+vec2(float(i),float(j))*.0016).rgb;}}r/=25.0;gl_FragColor=vec4(mix(color,r,.09),1.0);#include <tonemapping_fragment>
+      `uniform vec3 color;uniform sampler2D tDiffuse;varying vec4 vUv;void main(){vec2 uv=vUv.xy/vUv.w;vec3 r=vec3(0.0);for(int i=-2;i<=2;i++){for(int j=-2;j<=2;j++){r+=texture2D(tDiffuse,uv+vec2(float(i),float(j))*.0016).rgb;}}r/=25.0;gl_FragColor=vec4(mix(color,r,.16),1.0);#include <tonemapping_fragment>
 #include <colorspace_fragment>}`.replace(";#include", ";\n#include"),
   };
   const studioFloor = new Reflector(new THREE.PlaneGeometry(160, 160), {
@@ -1160,15 +1233,6 @@ export function createFactory(canvas, options = {}) {
   const fxaa = new ShaderPass(FXAAShader);
   composer.addPass(fxaa);
   const factoryObjects = scene.children.filter((o) => !o.isLight);
-  const delivery = addDeliveryScene({
-    scene,
-    M,
-    box,
-    mesh,
-    cylinder,
-    pipe,
-    textures,
-  });
   const productGroup = new THREE.Group();
   productGroup.visible = false;
   scene.add(productGroup);
@@ -1183,7 +1247,7 @@ export function createFactory(canvas, options = {}) {
   productFloor.receiveShadow = true;
   productGroup.add(productFloor);
   for (let i = 0; i < 3; i++) {
-    const bag = mesh(bagG, bagMaterial(i), 0, 2.41, 0, productGroup);
+    const bag = mesh(bagG, bagMaterial(i), 0, 2.76, 0, productGroup);
     bag.scale.setScalar(4.25);
     bag.rotation.set(-0.03, -0.14, -0.07);
     bag.visible = i === 0;
@@ -1231,11 +1295,14 @@ export function createFactory(canvas, options = {}) {
     productChips.push(c);
   }
   function resize() {
-    width = Math.max(1, canvas.clientWidth || canvas.parentElement.clientWidth);
-    height = Math.max(
+    const nextWidth = Math.max(1, canvas.clientWidth || canvas.parentElement.clientWidth);
+    const nextHeight = Math.max(
       1,
       canvas.clientHeight || canvas.parentElement.clientHeight,
     );
+    if (nextWidth === width && nextHeight === height) return;
+    width = nextWidth;
+    height = nextHeight;
     renderer.setSize(width, height, false);
     composer.setSize(width, height);
     fxaa.uniforms.resolution.value.set(
@@ -1252,13 +1319,10 @@ export function createFactory(canvas, options = {}) {
   observer.observe(canvas);
   resize();
   const temp = new THREE.Object3D();
-  let last = performance.now() / 1000;
   function frame() {
     if (disposed) return;
     raf = requestAnimationFrame(frame);
-    const real = performance.now() / 1000,
-      dt = Math.min(0.1, real - last);
-    last = real;
+    const real = performance.now() / 1000;
     if (!visible || !pageVisible || contextLost) return;
     const cameraMoving =
       target.distanceTo(v3(...desired.target)) > 0.004 ||
@@ -1268,6 +1332,9 @@ export function createFactory(canvas, options = {}) {
     if (!active() && !dirty && !cameraMoving && frameCount >= 2) return;
     const fps = window.innerWidth < 700 ? 30 : 60;
     if (active() && !dirty && real - lastRendered < 1 / fps - 0.002) return;
+    // Camera easing uses elapsed time between rendered frames, including
+    // callbacks skipped by the mobile frame limiter.
+    const dt = Math.min(0.1, Math.max(0, real - lastRendered));
     lastRendered = real;
     let t = ((now() % LOOP) + LOOP) % LOOP,
       p = t / LOOP,
@@ -1286,11 +1353,9 @@ export function createFactory(canvas, options = {}) {
       radius *
       (mode === "product"
         ? Math.max(1, 0.95 / camera.aspect)
-        : mode === "delivery"
-          ? Math.max(1, 1.2 / camera.aspect)
-          : stage === 0
-            ? Math.max(1, 1.55 / camera.aspect)
-            : Math.max(1, 0.98 / camera.aspect));
+        : stage === 0
+          ? Math.max(1, 1.55 / camera.aspect)
+          : Math.max(1, 0.98 / camera.aspect));
     camera.position
       .copy(target)
       .add(
@@ -1301,10 +1366,9 @@ export function createFactory(canvas, options = {}) {
         ),
       );
     camera.lookAt(target);
-    if (mode === "delivery") delivery.update(t);
     if (mode === "product") {
       productBags.forEach((b) => {
-        b.position.y = 2.41 + (reducedMotion ? 0 : 0.025 * Math.sin(p * TAU));
+        b.position.y = 2.76 + (reducedMotion ? 0 : 0.07 * Math.sin(p * TAU));
         b.rotation.y =
           -0.14 + (reducedMotion || inspect ? 0 : 0.05 * Math.sin(p * TAU));
       });

@@ -23,22 +23,21 @@ export function chipGeometry() {
     uv = [],
     colors = [],
     index = [],
-    N = 40,
-    R = 8;
+    N = 32,
+    R = 6;
   const vertex = (ring, j, back) => {
     let r = ring / R,
       a = (j / N) * TAU,
-      edge = 1 + 0.026 * Math.sin(a * 5) + 0.019 * Math.cos(a * 9);
-    let x = Math.cos(a) * r * 0.169 * edge,
-      y = Math.sin(a) * r * 0.133 * edge;
+      edge = 1 + 0.045 * Math.sin(a * 5) + 0.025 * Math.cos(a * 9);
+    let x = Math.cos(a) * r * 0.218 * edge,
+      y = Math.sin(a) * r * 0.173 * edge;
     let z =
-      0.013 * Math.sin(x * 12) +
-      0.009 * Math.sin(y * 17) +
-      0.025 * (x / 0.169) ** 2 +
-      0.012 * (y / 0.133) ** 2;
-    z += (back ? -1 : 1) * (0.0026 + 0.0008 * Math.sin(a * 7) * r);
+      0.049 * Math.sin(x * 12) +
+      0.025 * Math.cos(y * 18) +
+      0.047 * (x / 0.218) ** 2;
+    z += (back ? -1 : 1) * (0.0055 + 0.002 * Math.sin(a * 7) * r);
     pos.push(x, y, z);
-    uv.push(x / 0.36 + 0.5, y / 0.29 + 0.5);
+    uv.push(x / 0.46 + 0.5, y / 0.38 + 0.5);
     const mottled =
         0.92 + 0.08 * Math.sin(x * 134 + y * 86) * Math.cos(y * 137),
       rim = 1 - 0.2 * r ** 8;
@@ -77,20 +76,20 @@ export function bagGeometry() {
   const p = [],
     uv = [],
     idx = [],
-    W = 28,
-    H = 40;
+    W = 20,
+    H = 32;
   for (let b = 0; b < 2; b++)
     for (let j = 0; j <= H; j++)
       for (let i = 0; i <= W; i++) {
         const u = i / W,
           v = j / H,
           x = (u - 0.5) * 0.75,
-          y = (v - 0.5) * 1.07 + 0.003 * Math.sin(u * TAU * 6);
+          y = (v - 0.5) * 1.07;
         const inflate =
-          Math.pow(Math.max(0, Math.sin(u * Math.PI)), 0.52) *
-          Math.pow(Math.max(0, Math.sin(v * Math.PI)), 0.56);
-        const seam = v < 0.052 || v > 0.948;
-        const crimp = seam ? 0.0022 * Math.cos(u * TAU * 31) : 0;
+          Math.pow(Math.max(0, Math.sin(u * Math.PI)), 0.35) *
+          Math.pow(Math.max(0, Math.sin(v * Math.PI)), 0.48);
+        const seam = v < 0.06 || v > 0.94;
+        const crimp = seam ? 0.004 * Math.cos(u * TAU * 23) : 0;
         const folds =
           0.012 *
             Math.sin(u * 34 + v * 13) *
@@ -99,10 +98,9 @@ export function bagGeometry() {
             Math.sin(u * 22 + v * 42) *
             Math.exp(-Math.min(v, 1 - v) * 15);
         const z =
-          (b ? -1 : 1) * (seam ? 0.007 : 0.154 * inflate + folds + 0.009) +
-          crimp -
-          (b ? 0.009 * Math.exp(-Math.abs(u - 0.5) * 100) * inflate : 0);
-        p.push(x * (1 - 0.085 * Math.sin(v * Math.PI)), y, z);
+          (b ? -1 : 1) * (seam ? 0.008 : 0.125 * inflate + folds + 0.009) +
+          crimp;
+        p.push(x * (1 - 0.06 * Math.sin(v * Math.PI)), y, z);
         uv.push(b ? 1 - u : u, v);
       }
   const stride = (W + 1) * (H + 1);
@@ -132,10 +130,6 @@ export function bagGeometry() {
   g.setAttribute("position", new THREE.Float32BufferAttribute(p, 3));
   g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
   g.setIndex(idx);
-  const faceCount = W * H * 6;
-  g.addGroup(0, faceCount, 0);
-  g.addGroup(faceCount, faceCount, 1);
-  g.addGroup(faceCount * 2, idx.length - faceCount * 2, 2);
   g.computeVertexNormals();
   return g;
 }

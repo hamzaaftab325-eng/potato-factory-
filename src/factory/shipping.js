@@ -116,28 +116,13 @@ export function addShippingLine(C) {
       major.push({ o: lid, s });
     }
     const strip = box(0, H + 0.02, 0, W + 0.025, 0.008, 0.105, tape, g, 0.002);
-    for (const side of [-1, 1]) {
-      box(side * (W / 2 - 0.01), H + 0.015, 0, 0.014, 0.006, D, edge, g, 0.002);
-      if (closed)
-        box(
-          side * (W / 2 + 0.017),
-          H - 0.074,
-          0,
-          0.008,
-          0.14,
-          0.105,
-          tape,
-          g,
-          0.002,
-        );
-    }
     const contents = [];
     for (let i = 0; i < 4; i++) {
       const b = mesh(
         bagG,
         bagMaterials[f],
         i % 2 ? 0.29 : -0.29,
-        0.153 + Math.floor(i / 2) * 0.224,
+        0.15 + Math.floor(i / 2) * 0.2,
         0,
         g,
       );
@@ -162,15 +147,6 @@ export function addShippingLine(C) {
   }
   for (let f = 0; f < 3; f++) {
     const z = (f - 1) * 2.25;
-    // Carton-forming magazine and a guarded entry explain where empty cases arise.
-    box(14.62, 1.37, z - 0.8, 0.78, 0.72, 0.12, M.steel);
-    for (let n = 0; n < 7; n++)
-      box(14.63, 1.24 + n * 0.06, z - 0.49, 0.73, 0.028, 0.5, paper);
-    box(14.77, 1.87, z - 0.73, 0.85, 0.08, 0.23, M.dark);
-    for (const side of [-1, 1]) {
-      box(14.74, 1.29, z + side * 0.69, 0.56, 0.43, 0.07, M.steel);
-      cylinder(15.26, 1.55, z + side * 0.73, 0.055, 0.42, M.rubber, scene, "y");
-    }
     // Outfeed inspection arch has a dark tunnel, lens and status light.
     box(12.67, 1.54, z, 0.3, 0.15, 1.19, M.steel);
     for (const s of [-1, 1])
@@ -194,7 +170,7 @@ export function addShippingLine(C) {
       cylinder(0, -0.1, dz, 0.04, 0.08, M.dark, head);
       cylinder(0, -0.155, dz, 0.065, 0.025, M.rubber, head);
     }
-    const carried = mesh(bagG, bagMaterials[f], 0, -0.269, 0, head);
+    const carried = mesh(bagG, bagMaterials[f], 0, -0.23, 0, head);
     carried.scale.setScalar(0.69);
     carried.rotation.x = -Math.PI / 2;
     const rod = cylinder(14, 2.5, z, 0.026, 1, M.chrome);
@@ -234,10 +210,6 @@ export function addShippingLine(C) {
     );
     lines.push({ f, z, head, carried, rod, carriage, boxes });
     // Finished cartons sit squarely on an actual slatted pallet after the belt.
-    for (let x = 19.47; x < 20.44; x += 0.13)
-      cylinder(x, 1.11, z, 0.052, 1.22, M.chrome, scene, "z");
-    for (const side of [-1, 1])
-      box(19.89, 0.98, z + side * 0.71, 1.13, 0.16, 0.07, M.steel);
     const px = 21.2;
     for (const dx of [-0.62, 0, 0.62]) {
       box(px + dx, 0.7, z, 0.16, 0.15, 1.51, wood);
@@ -272,15 +244,13 @@ export function addShippingLine(C) {
           x = destinationX;
           y =
             2.39 -
-            (0.852 - Math.floor(which / 2) * 0.22424) *
-              smooth((p - 0.43) / 0.224);
+            (0.85 - Math.floor(which / 2) * 0.2) * smooth((p - 0.43) / 0.2);
         } else if (p < 0.76) {
           x = destinationX;
           y =
-            1.537 +
-            Math.floor(which / 2) * 0.224 +
-            (0.852 - Math.floor(which / 2) * 0.22424) *
-              smooth((p - 0.63) / 0.13);
+            1.54 +
+            Math.floor(which / 2) * 0.2 +
+            (0.85 - Math.floor(which / 2) * 0.2) * smooth((p - 0.63) / 0.13);
         } else {
           x = destinationX + (13.85 - destinationX) * smooth((p - 0.76) / 0.24);
           y = 2.39 - 0.92 * smooth((p - 0.9) / 0.1);
@@ -300,7 +270,7 @@ export function addShippingLine(C) {
             c.contents.forEach((b, j) => (b.visible = cp > (j + 0.63) / 4));
           } else if (k === 1) {
             flapPose(c, smooth(cp / 0.12), smooth((cp - 0.16) / 0.24));
-            const taped = smooth((advance - 0.224) / 0.65);
+            const taped = smooth((advance - 0.2) / 0.65);
             c.strip.visible = taped > 0;
             c.strip.scale.x = Math.max(0.001, taped);
             c.strip.position.x = (W + 0.025) * (1 - taped) * 0.5;
