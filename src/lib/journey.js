@@ -7,12 +7,12 @@ export const PROCESS_NAMES = [
 ];
 
 export const CAMERAS = [
-  { target: [3.1, 1.75, 0], radius: 34.0, yaw: 0.43, elev: 0.42 },
+  { target: [3.1, 1.75, 0], radius: 43.5, yaw: 0.55, elev: 0.46 },
   { target: [-10.1, 1.65, 0], radius: 9.8, yaw: 0.48, elev: 0.35 },
   { target: [-5.35, 1.92, 0], radius: 7.9, yaw: 0.42, elev: 0.34 },
-  { target: [-0.2, 1.76, 0], radius: 10.5, yaw: 0.45, elev: 0.24 },
-  { target: [5.9, 2.03, 0], radius: 10.8, yaw: 0.49, elev: 0.32 },
-  { target: [15.3, 1.92, 0], radius: 17.8, yaw: 0.32, elev: 0.32 },
+  { target: [-0.2, 1.86, 0], radius: 10.5, yaw: 0.62, elev: 0.32 },
+  { target: [5.9, 1.97, 0], radius: 9.7, yaw: 0.63, elev: 0.4 },
+  { target: [15.4, 2.05, 0], radius: 19.0, yaw: 0.38, elev: 0.4 },
 ];
 
 export const FLAVOURS = [

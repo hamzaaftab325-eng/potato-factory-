@@ -1,27 +1,30 @@
 # CRISP — Crafted for the crunch.
 
-An original potato-chip brand world by **Hamza Aftab**, built with **React 19, Tailwind CSS 4, Three.js and Vite**. Machines, food, packaging, textures, animation, delivery truck and stereo audio are created in code.
+An original potato-chip brand concept and interactive factory experience by **Hamza Aftab**. Built with vanilla JavaScript, Three.js and Vite. All machinery, food geometry, textures, choreography and audio are created in code.
+
+![CRISP factory and brand direction](public/social-preview.png)
 
 ## The experience
 
-- A complete miniature process: washing and peeling, enclosed precision cutting, continuous frying, three flavour drums, weighing, film forming, sealing, inspection and carton packing.
-- Sculpted printed-film bags with separate front and back artwork, pillowy volume, crimped heat seals, small folds and a rear fin seam. Four individual bags enter each labelled carton before its flaps fold and its top seam is taped.
-- A final delivery chapter: a detailed CRISP box truck with cab glazing, mirrors, headlights, three axles, wheels, hinged cargo doors and a loading dock. A transfer pallet enters the truck before the doors close and the truck departs. The route graphic illustrates Karachi, Quetta, Lahore, Islamabad and Peshawar.
-- One stable factory canvas. Process buttons choose a focused camera view; packaging switches into its own product studio, and delivery switches to the loading dock. The page never moves the renderer between scrolling containers.
-- Three selectable concept flavours: Golden Sea Salt, Smoky Paprika and Garden Herbs.
-- Seven original stereo procedural sound layers: water, cutting, frying, tumbling, packing, optional music and delivery. Machinery and audio share the same clock; the product studio silences machine foley. Sound requires an explicit visitor action.
-- Readable process descriptions outside the canvas, responsive Tailwind layouts, a native mobile navigation dialog, keyboard controls, reduced-motion support and illustrated fallbacks when WebGL is unavailable.
-- Complete HTML generated during the production build, followed by React hydration. Local fonts and packaging assets avoid external asset dependencies. Rendering and audio stop when the experience is offscreen or the browser tab is hidden.
+- A stainless-steel miniature factory with framed wash windows, a perforated abrasive peeler, an enclosed centrifugal cutter, a hooded continuous fryer, oil-drain conveyors, seasoning drums and three packaging lines.
+- An end-of-line sequence with inspection arches, vacuum bag transfer, labelled corrugated cartons, folding flaps, tape heads, roller outfeeds and finished boxes on slatted wooden pallets.
+- A scroll-directed camera journey through five processes. Process buttons also jump to any step.
+- Three selectable flavours: Golden Sea Salt, Smoky Paprika and Garden Herbs. The same renderer switches from the factory to sculpted product packaging.
+- Original stereo procedural foley: filtered water, wet slicing, layered oil crackle, chip rustle, pneumatic contact, film movement and carton handling. Optional sparse felt-key music. Audio starts only after a visitor enables it and stays on the animation's clock. Sound layers crossfade as the camera moves, with short fades when playback starts or stops.
+- Desktop and mobile layouts, an accessible mobile menu, keyboard camera inspection, reduced-motion support and still-image fallbacks.
+- Local fonts and assets. Rendering and machine audio stop while the experience is offscreen or the tab is hidden.
 
-This is a portfolio concept with fictional products and an illustrative delivery network. It does not process orders. The creator link opens Hamza's GitHub profile.
+This is a portfolio concept. The collection presents fictional packaging and flavours; the site does not process orders. The creator button opens Hamza's GitHub profile.
 
-## Vercel
+## Deploy to Vercel
 
-The existing project is configured for the `main` branch of `hamzaaftab325-eng/potato-factory-`.
+1. Open [Vercel's new project page](https://vercel.com/new) and import **hamzaaftab325-eng/potato-factory-**.
+2. Use the repository root and the `main` branch.
+3. Confirm these settings, then deploy:
 
 | Setting               | Value           |
 | --------------------- | --------------- |
-| Framework             | Vite            |
+| Framework preset      | Vite            |
 | Root directory        | Repository root |
 | Node.js               | 24.x            |
 | Install command       | `npm ci`        |
@@ -29,53 +32,65 @@ The existing project is configured for the `main` branch of `hamzaaftab325-eng/p
 | Output directory      | `dist`          |
 | Environment variables | None required   |
 
-`vercel.json` configures immutable asset caching and response headers. The page uses anchor navigation and requires no SPA routing rewrite. The canonical URL and social image are configured for `https://potato-factory.vercel.app/`.
+`vercel.json` already sets the framework, build command, output directory, immutable caching for generated assets, and response headers. The page uses anchor navigation, so no SPA rewrite is necessary. Vercel's Git integration can build future commits automatically.
 
-## Local development
+After your domain is assigned, set `og:image` in `index.html` to the absolute public URL of `/social-preview.png` and add a canonical link for that domain. The relative preview image is included now, without inventing a domain.
+
+Official references: [Vite on Vercel](https://vercel.com/docs/frameworks/frontend/vite), [supported Node versions](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions).
+
+## Run locally
+
+Install Node.js 24, then:
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open `http://localhost:4173` through a web server. ES modules do not work by opening `index.html` directly.
+Open `http://localhost:4173`. A web server is required for ES modules; opening `index.html` as a local file will not load the application.
 
 ```sh
-npm run build    # Vite assets and prerendered page in dist/
-npm run preview  # Serve production output locally
-npm test         # Repository interaction, geometry, camera and audio suites
+npm test          # Functional, geometry, camera-path and audio checks
+npm run build    # Production assets in dist/
+npm run preview  # Serve the production build locally
 ```
 
 ## Source guide
 
-| File                                | Purpose                                                            |
-| ----------------------------------- | ------------------------------------------------------------------ |
-| `src/App.jsx`                       | React page, factory controls, collection and delivery story        |
-| `src/hooks/useFactory.js`           | Scene lifecycle, motion preferences, visibility and audio actions  |
-| `src/components/FactoryDiagram.jsx` | Code-built process and delivery illustrations for loading/fallback |
-| `src/components/DeliveryMap.jsx`    | Illustrative Pakistan delivery network                             |
-| `src/styles.css`                    | Tailwind theme, typography, responsive materials and motion        |
-| `src/factory/scene.js`              | Three.js scene, cameras, lighting, animation and product studio    |
-| `src/factory/machines.js`           | Wash, peel, cutter, fryer and connected food transfers             |
-| `src/factory/details.js`            | Weighers, elevators, bagger hardware and secondary movement        |
-| `src/factory/packaging.js`          | Front/back printed-film material artwork                           |
-| `src/factory/shipping.js`           | Bag pickup, cartons, folding, taping and pallets                   |
-| `src/factory/delivery.js`           | Truck, loading dock, cargo doors, road and destination signage     |
-| `src/factory/timing.js`             | Shared loop, sealing, carton and truck choreography                |
-| `src/factory/geometry.js`           | Organic potatoes, gently curved chips and inflated packaging       |
-| `src/factory/surfaces.js`           | Brushed metal, food, belt, paper, wood and perforation textures    |
-| `src/factory/audio.js`              | Seven procedural stereo sound layers                               |
-| `src/lib/journey.js`                | Camera presets and flavour metadata                                |
-| `scripts/prerender.mjs`             | Static React content for production hydration and SEO              |
+| File                      | Purpose                                                                     |
+| ------------------------- | --------------------------------------------------------------------------- |
+| `index.html`              | Page content, SEO metadata and semantic controls                            |
+| `src/styles.css`          | Typography, layout, materials palette and responsive design                 |
+| `src/lib/page.js`         | Navigation, sound controls, flavour selection and scene placement           |
+| `src/lib/journey.js`      | Scroll progression, camera presets and flavour metadata                     |
+| `src/factory/scene.js`    | Lighting, machinery, animation, postprocessing and product view             |
+| `src/factory/details.js`  | Drum and bagger engineering, weighers and secondary movement                |
+| `src/factory/machines.js` | Washer, peeler, centrifugal cutter, hooded fryer and connected transfers    |
+| `src/factory/shipping.js` | Vacuum heads, carton choreography, flap closing, taping and pallets         |
+| `src/factory/surfaces.js` | Brushed metal, perforations, food skin, belt, kraft paper and wood textures |
+| `src/factory/timing.js`   | Shared loop, knife, sealing-jaw and carton timing                           |
+| `src/factory/geometry.js` | Curved chips and inflated, crimped film geometry                            |
+| `src/factory/audio.js`    | The six procedural sound layers                                             |
+| `public/`                 | Factory still, vector packaging, social image and favicon                   |
+| `tests/`                  | Automated checks                                                            |
+| `archive/`                | The previous repository prototype, preserved for reference                  |
 
-Copy lives in `src/App.jsx`. Keep flavour metadata, procedural printed artwork and `public/packs/` vector artwork aligned when changing the collection.
+Change the brand copy and profile links in `index.html`. Flavour names/colours and camera framing are in `src/lib/journey.js`; procedural label artwork is in `bagMaterial()` in `src/factory/scene.js`. Update the HTML flavour descriptions and fallback SVG packs alongside any flavour changes.
 
-## Revision notes
+The still factory poster is a crop of the previous code-rendered scene; it has not yet been refreshed for the revised machinery. It provides immediate content and a fallback; the interactive experience renders real geometry, with no video backdrop or remote model downloads.
 
-This revision completes the React/Tailwind page and integrates the truck into the live scene API. It refines chip proportions, guarded transfers, fryer visibility, brushed steel, bag surfaces, carton loading and readable captions.
+## Current revision
 
-**At the owner's request, no QA, local production build, browser preview, screenshots or audio review were performed for this final revision.** The existing GitHub workflow remains available and runs its standard checks on pushes. Its React suite has been migrated away from the retired imperative controller. Source implementation is not a claim of visual perfection or verified runtime behaviour.
+The machinery and audio refinement is implemented in source. **No QA, automated tests, production build or browser/audio review was run for this revision, at the owner's request.** The existing checks remain available through `npm test` and `npm run build`; GitHub's existing workflow will run when commits are pushed.
 
-The factory is an original portfolio interpretation, not a manufacturing simulation. All motion repeats on a 16-second clock. Bag cycles last two seconds and carton cycles eight seconds; the three lanes are phase-offset. The truck loads, closes, departs and returns on the same periodic clock.
+The mechanical models are an original, compact portfolio interpretation, not a manufacturing simulation. Design references include [Urschel's enclosed centrifugal slicer](https://www.urschel.com/cutting-machines/model-cc-slicer/) and [Heat and Control's continuous potato-chip fryer](https://www.heatandcontrol.com/model/potato-chip-fryer). No manufacturer models, logos or audio have been copied.
 
-Three.js, React, Vite and Tailwind CSS are MIT licensed. Instrument Serif and DM Sans use the SIL Open Font License; font license files are in `docs/licenses/`. No stock audio, remote models or paid assets are required.
+All animation repeats on a 16-second clock. A bag cycle takes two seconds and a carton cycle takes eight seconds; the three flavour lines are phase-offset. `timing.js` owns those timing values. The sound is synthesized from band-limited noise, shaped transient envelopes and short stereo reflections, with no stock recordings. The optional music is an original procedural arrangement.
+
+## Dependency credits
+
+Three.js is MIT licensed. Instrument Serif and DM Sans are distributed under the SIL Open Font License. Their license texts are included in `docs/licenses/`. No stock audio, external HDR maps, paid models or external image services are required.
+
+## Scroll layout restoration
+
+The active entry is `src/main.js`. The earlier sticky factory view and scroll-driven process chapters have been restored, with the original collection layout and camera framing. Current machinery and packaging models are retained. The React entry and its components remain in the repository for future work, but are not mounted by this page. The build uses Vite directly. No preview, build, tests or visual QA were run for this restoration, as requested.

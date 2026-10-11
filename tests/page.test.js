@@ -1,40 +1,45 @@
-import test, { after } from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { JSDOM } from "jsdom";
-import React, { act } from "react";
-import { createRoot } from "react-dom/client";
-import { renderToString } from "react-dom/server";
-import { createServer } from "vite";
+import { initPage } from "../src/lib/page.js";
 
-// The existing interaction suite now targets the React entry, not the retired
-// imperative HTML controller. It remains available to the repository's CI.
-const server = await createServer({
-  server: { middlewareMode: true },
-  appType: "custom",
-});
-const { default: App } = await server.ssrLoadModule("/src/App.jsx");
-after(() => server.close());
+const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-async function setup({ reduced = false, fail = false } = {}) {
-  const dom = new JSDOM('<div id="root"></div>', {
+function setup({ reduced = false, fail = false, width = 1440 } = {}) {
+  const dom = new JSDOM(html, {
     pretendToBeVisual: true,
     url: "https://crisp.example/",
   });
-  const w = dom.window;
-  globalThis.window = w;
-  globalThis.document = w.document;
-  globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  globalThis.window = dom.window;
+  globalThis.document = dom.window.document;
+  const w = dom.window,
+    $ = (s) => w.document.querySelector(s);
+  w.innerWidth = width;
+  w.innerHeight = 900;
   const media = new w.EventTarget();
   media.matches = reduced;
   w.matchMedia = () => media;
-  w.HTMLElement.prototype.scrollIntoView = function () {};
-  w.HTMLDialogElement.prototype.showModal = function () {
-    this.setAttribute("open", "");
+  w.scrollTo = ({ top }) => {
+    w.scrollY = top;
   };
-  w.HTMLDialogElement.prototype.close = function () {
-    this.removeAttribute("open");
-  };
+  const rect = (top, height) => () => ({
+    top: top - w.scrollY,
+    bottom: top + height - w.scrollY,
+    height,
+    width: 900,
+    left: 0,
+    right: 900,
+  });
+  $("#top").getBoundingClientRect = rect(0, 865);
+  $("#process-story").getBoundingClientRect = rect(1600, 3650);
+  $("#flavours").getBoundingClientRect = rect(5300, 1800);
+  $("#product-mount").getBoundingClientRect = rect(5600, 600);
+  $(".contact-section").getBoundingClientRect = rect(7400, 600);
+  [...w.document.querySelectorAll("[data-step]")].forEach((el, i) => {
+    el.getBoundingClientRect = rect(1600 + i * 730, 730);
+  });
   const state = {
     playing: !reduced,
     audioOn: false,
@@ -43,176 +48,235 @@ async function setup({ reduced = false, fail = false } = {}) {
     stage: 0,
     flavour: 0,
     mode: "factory",
+    visible: true,
   };
-  const calls = { disposed: 0 };
-  const engine = {
+  const calls = { resized: 0, disposed: 0 };
+  const fake = {
     get state() {
       return state;
     },
     setPlaying(v) {
       state.playing = v;
     },
-    setFlavour(v) {
-      state.flavour = v;
-    },
-    setJourney(v) {
-      state.stage = v;
-    },
-    setMode(v) {
-      state.mode = v;
-    },
-    setInspect(v) {
-      state.inspect = v;
+    setAudio(v) {
+      state.audioOn = v;
+      return Promise.resolve();
     },
     setMusic(v) {
       state.musicOn = v;
     },
-    async setAudio(v) {
-      state.audioOn = v;
+    setInspect(v) {
+      state.inspect = v;
+    },
+    setJourney(v) {
+      state.stage = Math.round(v);
+    },
+    setMode(v) {
+      state.mode = v;
+    },
+    setFlavour(v) {
+      state.flavour = v;
+    },
+    setVisible(v) {
+      state.visible = v;
+    },
+    setPageVisible(v) {
+      state.pageVisible = v;
     },
     setReducedMotion(v) {
       if (v) state.playing = false;
     },
-    setPageVisible() {},
-    setVisible() {},
+    resize() {
+      calls.resized++;
+    },
     dispose() {
       calls.disposed++;
     },
   };
-  const loadFactory = async () => ({
-    createFactory(canvas, options) {
-      if (fail) throw new Error("Graphics unavailable");
-      queueMicrotask(options.onReady);
-      return engine;
+  const ui = initPage({
+    autoStart: false,
+    loadFactory: async () => {
+      if (fail) throw new Error("WebGL unavailable");
+      return {
+        createFactory(canvas, options) {
+          queueMicrotask(options.onReady);
+          return fake;
+        },
+      };
     },
   });
-  const root = createRoot(w.document.getElementById("root"));
-  await act(async () => {
-    root.render(React.createElement(App, { loadFactory }));
-  });
-  const button = (name) =>
-    [...w.document.querySelectorAll("button")].find(
-      (b) =>
-        b.getAttribute("aria-label") === name || b.textContent.includes(name),
-    );
-  const click = async (name) => {
-    const b = button(name);
-    assert.ok(b, name);
-    await act(async () => {
-      b.click();
-    });
+  const close = () => {
+    ui.destroy();
+    dom.window.close();
+    delete globalThis.window;
+    delete globalThis.document;
   };
-  return {
-    w,
-    state,
-    calls,
-    media,
-    button,
-    click,
-    async close() {
-      await act(async () => root.unmount());
-      dom.window.close();
-    },
-  };
+  return { ui, $, w, media, state, calls, close };
 }
 
-test("the factory, product collection and truck share one stable canvas", async () => {
-  const t = await setup();
+test("factory loads muted, transfers between sections, and stops when offscreen", async () => {
+  const t = setup();
   try {
-    const canvas = t.w.document.querySelector("canvas");
-    await t.click("Deliver");
-    assert.equal(t.state.mode, "delivery");
-    await t.click("Inspect the packaging");
-    assert.equal(t.state.mode, "product");
-    await t.click("Slice");
-    assert.equal(t.state.mode, "factory");
-    assert.equal(t.state.stage, 2);
-    assert.equal(t.w.document.querySelector("canvas"), canvas);
-    assert.equal(t.w.document.querySelectorAll("canvas").length, 1);
-  } finally {
-    await t.close();
-  }
-  assert.equal(t.calls.disposed, 1);
-});
-
-test("flavours update the renderer and the product artwork", async () => {
-  const t = await setup();
-  try {
-    await t.click("Garden Herbs");
-    assert.equal(t.state.flavour, 2);
-    await t.click("Inspect the packaging");
-    assert.ok(
-      t.w.document
-        .querySelector(".scene-fallback img")
-        .src.endsWith("/packs/herbs.svg"),
-    );
-  } finally {
-    await t.close();
-  }
-});
-
-test("audio, optional music and pause remain synchronized with engine state", async () => {
-  const t = await setup();
-  try {
-    await t.click("Enable music");
-    assert.equal(t.state.musicOn, true);
-    assert.equal(t.state.audioOn, true);
-    await t.click("Turn sound off");
+    await t.ui.start();
+    assert.equal(t.ui.state.ready, true);
+    assert.equal(t.$("#scene-rig").parentElement.id, "hero-mount");
     assert.equal(t.state.audioOn, false);
-    await t.click("Pause animation");
-    assert.equal(t.state.playing, false);
-    await t.click("Play animation");
-    assert.equal(t.state.playing, true);
-  } finally {
-    await t.close();
-  }
-});
-
-test("reduced motion starts paused and preference changes pause playback", async () => {
-  const t = await setup({ reduced: true });
-  try {
-    assert.equal(t.state.playing, false);
-    await t.click("Play animation");
-    await act(async () => t.media.dispatchEvent(new t.w.Event("change")));
-    assert.equal(t.state.playing, false);
-  } finally {
-    await t.close();
-  }
-});
-
-test("a failed graphics engine leaves process, delivery and packaging usable", async () => {
-  const t = await setup({ fail: true });
-  try {
+    t.ui.scrollToStep(3);
+    t.ui.refresh();
+    assert.equal(t.$("#scene-rig").parentElement.id, "story-mount");
+    assert.equal(t.state.stage, 3);
+    assert.equal(t.$("#process-name").textContent, "Golden frying");
     assert.equal(
-      t.w.document.querySelector("[data-renderer]").dataset.renderer,
-      "diagram",
+      t.$('[data-process="3"]').getAttribute("aria-current"),
+      "step",
     );
-    await t.click("Deliver");
-    assert.ok(t.w.document.querySelector(".delivery-truck-drawing"));
-    await t.click("Pause animation");
-    assert.ok(t.w.document.querySelector(".diagram.is-paused"));
-    await t.click("Smoky Paprika");
-    await t.click("Inspect the packaging");
-    assert.ok(
-      t.w.document
-        .querySelector(".scene-fallback img")
-        .src.endsWith("/packs/paprika.svg"),
-    );
-    assert.equal(t.button("Turn sound on").disabled, true);
+    t.w.scrollY = 5400;
+    t.ui.refresh();
+    assert.equal(t.state.mode, "product");
+    assert.equal(t.$("#scene-rig").parentElement.id, "product-mount");
+    t.w.scrollY = 7200;
+    t.ui.refresh();
+    assert.equal(t.state.visible, false);
+    t.w.scrollY = 0;
+    t.ui.refresh();
+    assert.equal(t.state.visible, true);
+    assert.equal(t.state.mode, "factory");
+    assert.ok(t.calls.resized >= 3);
   } finally {
-    await t.close();
+    t.close();
   }
 });
 
-test("rendered page links and ARIA controls resolve, and packaging assets exist", () => {
-  const dom = new JSDOM(
-    `<html lang="en"><body>${renderToString(React.createElement(App))}</body></html>`,
-  );
-  const d = dom.window.document;
+test("flavour choice updates the bag, notes, keyboard selection and matching factory line", async () => {
+  const t = setup({ width: 390 });
+  try {
+    await t.ui.start();
+    t.$('[data-choice="1"]').click();
+    assert.equal(t.state.flavour, 1);
+    assert.ok(t.$("#product-poster").src.endsWith("/packs/paprika.svg"));
+    assert.equal(
+      t.$('[data-flavour="1"]').getAttribute("aria-pressed"),
+      "true",
+    );
+    assert.equal(
+      t.$('[data-flavour="0"]').getAttribute("aria-pressed"),
+      "false",
+    );
+    t.$('[data-flavour="1"]').dispatchEvent(
+      new t.w.KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+    );
+    assert.equal(t.state.flavour, 2);
+    assert.equal(t.$("#product-personality").textContent, "The fresh one.");
+    t.$("#watch-flavour").click();
+    t.ui.refresh();
+    assert.equal(t.state.stage, 4);
+    assert.equal(t.state.flavour, 2);
+  } finally {
+    t.close();
+  }
+});
+
+test("play, sound, optional music and inspect controls report their state", async () => {
+  const t = setup();
+  try {
+    await t.ui.start();
+    t.$("#play-toggle").click();
+    assert.equal(t.state.playing, false);
+    assert.equal(
+      t.$("#play-toggle").getAttribute("aria-label"),
+      "Play animation",
+    );
+    t.$("#sound-toggle").click();
+    await tick();
+    assert.equal(t.state.audioOn, true);
+    assert.equal(t.$("#sound-label").textContent, "Sound on");
+    t.$("#music-toggle").click();
+    await tick();
+    assert.equal(t.state.musicOn, true);
+    t.$("#sound-toggle").click();
+    await tick();
+    assert.equal(t.state.audioOn, false);
+    t.$("#inspect-toggle").click();
+    assert.equal(t.state.inspect, true);
+    assert.equal(t.$("#inspect-hint").hidden, false);
+    t.w.document.dispatchEvent(
+      new t.w.KeyboardEvent("keydown", { key: "Escape" }),
+    );
+    assert.equal(t.state.inspect, false);
+    assert.equal(t.$("#inspect-hint").hidden, true);
+  } finally {
+    t.close();
+  }
+});
+
+test("mobile menu opens, traps focus, follows a link, and closes with Escape", () => {
+  const t = setup({ width: 390 });
+  try {
+    t.$("#menu-toggle").click();
+    assert.equal(t.$("#mobile-menu").hidden, false);
+    assert.equal(t.$("#main").inert, true);
+    assert.equal(t.$("#menu-toggle").getAttribute("aria-expanded"), "true");
+    t.$("#mobile-menu a:last-of-type").focus();
+    t.w.document.dispatchEvent(
+      new t.w.KeyboardEvent("keydown", {
+        key: "Tab",
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    assert.equal(t.w.document.activeElement.id, "menu-toggle");
+    t.w.document.dispatchEvent(
+      new t.w.KeyboardEvent("keydown", { key: "Escape" }),
+    );
+    assert.equal(t.$("#mobile-menu").hidden, true);
+    assert.equal(t.$("#main").inert, false);
+    t.$("#menu-toggle").click();
+    t.$("#mobile-menu a").click();
+    assert.equal(t.$("#mobile-menu").hidden, true);
+  } finally {
+    t.close();
+  }
+});
+
+test("reduced motion starts paused and changes of preference pause a playing scene", async () => {
+  const t = setup({ reduced: true });
+  try {
+    await t.ui.start();
+    assert.equal(t.state.playing, false);
+    assert.equal(
+      t.$("#play-toggle").getAttribute("aria-label"),
+      "Play animation",
+    );
+    t.$("#play-toggle").click();
+    assert.equal(t.state.playing, true);
+    t.media.dispatchEvent(new t.w.Event("change"));
+    assert.equal(t.state.playing, false);
+  } finally {
+    t.close();
+  }
+});
+
+test("a failed 3D engine leaves a usable page, still packaging and flavour controls", async () => {
+  const t = setup({ fail: true });
+  try {
+    await t.ui.start();
+    assert.equal(t.$("#scene-rig").hidden, true);
+    assert.match(t.$("#experience-status").textContent, /Still previews/);
+    t.$('[data-flavour="2"]').click();
+    assert.ok(t.$("#product-poster").src.endsWith("/packs/herbs.svg"));
+    assert.equal(t.$("#play-toggle").disabled, true);
+  } finally {
+    t.close();
+  }
+});
+
+test("every internal link, image and ARIA control has a real target", () => {
+  const dom = new JSDOM(html),
+    d = dom.window.document;
   const ids = [...d.querySelectorAll("[id]")].map((e) => e.id);
   assert.equal(new Set(ids).size, ids.length);
-  for (const e of d.querySelectorAll('a[href^="#"]'))
-    assert.ok(d.getElementById(e.getAttribute("href").slice(1)));
+  for (const link of d.querySelectorAll('a[href^="#"]'))
+    assert.ok(d.getElementById(link.getAttribute("href").slice(1)));
   for (const e of d.querySelectorAll("[aria-controls]"))
     assert.ok(d.getElementById(e.getAttribute("aria-controls")));
   for (const img of d.querySelectorAll("img")) {
@@ -224,5 +288,6 @@ test("rendered page links and ARIA controls resolve, and packaging assets exist"
     );
   }
   assert.equal(d.querySelectorAll("h1").length, 1);
+  assert.equal(d.documentElement.lang, "en");
   dom.window.close();
 });
