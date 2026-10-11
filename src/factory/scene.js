@@ -15,7 +15,9 @@ import { addProcessMachines } from "./machines.js";
 import { addShippingLine } from "./shipping.js";
 import { createSurfaceTextures } from "./surfaces.js";
 import { LOOP_SECONDS, bagPhase, jawClosure } from "./timing.js";
-import { cameraAt, FLAVOURS } from "../lib/journey.js";
+import { cameraAt, FLAVOURS, CAMERAS } from "../lib/journey.js";
+import { addFactoryCampus, droneCamera } from "./campus.js";
+import { createBagMaterials } from "./packaging.js";
 
 export function createFactory(canvas, options = {}) {
   const TAU = Math.PI * 2,
@@ -37,7 +39,10 @@ export function createFactory(canvas, options = {}) {
     powerPreference: "high-performance",
   });
   renderer.setPixelRatio(
-    Math.min(window.devicePixelRatio || 1, window.innerWidth < 700 ? 1.5 : 2),
+    Math.min(
+      window.devicePixelRatio || 1,
+      window.innerWidth < 700 ? 1.25 : 1.5,
+    ),
   );
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -45,8 +50,8 @@ export function createFactory(canvas, options = {}) {
   renderer.toneMappingExposure = 1.05;
   const scene = new THREE.Scene();
   scene.background = new THREE.Color("#082326");
-  scene.fog = new THREE.FogExp2("#082326", 0.009);
-  const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 180),
+  scene.fog = new THREE.FogExp2("#082326", 0.004);
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.15, 280),
     v3 = (x, y, z) => new THREE.Vector3(x, y, z);
   let seed = 132;
   function random() {
@@ -116,6 +121,19 @@ export function createFactory(canvas, options = {}) {
     }),
     floor: mat("#10282d", 0.3, 0.44),
   };
+  M.blue = new THREE.MeshPhysicalMaterial({
+    color: "#336b88",
+    metalness: 0.32,
+    roughness: 0.38,
+    clearcoat: 0.35,
+  });
+  M.teal = new THREE.MeshPhysicalMaterial({
+    color: "#1d6668",
+    metalness: 0.35,
+    roughness: 0.4,
+    clearcoat: 0.3,
+  });
+  M.graphite = mat("#394447", 0.45, 0.5);
   M.motor = mat("#16384b", 0.75, 0.27);
   M.potato.bumpMap = potatoTex;
   M.potato.bumpScale = 0.008;
@@ -183,19 +201,21 @@ export function createFactory(canvas, options = {}) {
     scene.add(l);
     return l;
   }
-  const key = light("#fff0d8", 3.25, -5, 19, 10);
+  const key = light("#fff0d8", 3.15, -18, 42, 28);
+  key.target.position.set(10, 0, 0);
+  scene.add(key.target);
   key.castShadow = true;
   key.shadow.mapSize.set(
     window.innerWidth < 700 ? 1536 : 2048,
     window.innerWidth < 700 ? 1536 : 2048,
   );
   Object.assign(key.shadow.camera, {
-    left: -27,
-    right: 27,
-    top: 16,
-    bottom: -16,
+    left: -42,
+    right: 64,
+    top: 31,
+    bottom: -31,
     near: 1,
-    far: 60,
+    far: 140,
   });
   key.shadow.bias = -0.00015;
   key.shadow.normalBias = 0.03;
@@ -428,18 +448,10 @@ export function createFactory(canvas, options = {}) {
       });
     flows.push({ a, b, z, y, n, type, inst, meta });
   }
-  // Ground and the rounded presentation plinth.
-  box(0, -0.31, 0, 170, 0.12, 170, M.floor, scene, 0.02);
-  box(3.3, 0.13, 0, 38.0, 0.78, 8.9, M.dark, scene, 0.24);
-  box(3.3, 0.48, 0, 37.7, 0.1, 8.7, M.steel, scene, 0.12);
-  box(3.3, 0.55, 0, 37.45, 0.03, 8.5, M.dark, scene, 0.1);
-  for (let s of [-1, 1]) {
-    box(3.3, 0.575, s * 3.92, 36.8, 0.02, 0.028, M.yellow);
-    box(3.3 + s * 18.4, 0.575, 0, 0.028, 0.02, 7.84, M.yellow);
-  }
-  for (let x = -14; x <= 20; x += 2) {
-    box(x, 0.582, 3.52, 0.62, 0.015, 0.17, M.yellow).rotation.y = -0.5;
-  }
+  // The process is installed inside a real building footprint, not a plinth.
+  const ground = mat("#233c3b", 0.02, 0.97);
+  box(10, -0.39, 2, 200, 0.12, 170, ground, scene, 0.02);
+  const campus = addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG });
   function label(text, x, y, z, w = 1.5) {
     let c = document.createElement("canvas");
     c.width = 512;
@@ -624,12 +636,12 @@ export function createFactory(canvas, options = {}) {
       M.chrome,
     );
     const tumblers = [],
-      tBatch = new THREE.InstancedMesh(chipG, chipColors[f], 32);
+      tBatch = new THREE.InstancedMesh(chipG, chipColors[f], 96);
     tBatch.castShadow = tBatch.receiveShadow = true;
     g.add(tBatch);
-    for (let i = 0; i < 32; i++) {
+    for (let i = 0; i < 96; i++) {
       let o = new THREE.Object3D();
-      o.scale.setScalar(0.55 + random() * 0.18);
+      o.scale.setScalar(0.25 + random() * 0.08);
       tumblers.push({
         o,
         phase: random() * TAU,
@@ -645,101 +657,11 @@ export function createFactory(canvas, options = {}) {
   // 05: multihead weighing, film roll, forming collar, draw rollers and sealing jaws.
   const bagG = bagGeometry();
   function bagMaterial(f) {
-    const c = document.createElement("canvas");
-    c.width = 768;
-    c.height = 1024;
-    const a = c.getContext("2d");
-    const grad = a.createLinearGradient(0, 0, 768, 1024);
-    grad.addColorStop(0, ["#f2c34a", "#d64d32", "#9cac49"][f]);
-    grad.addColorStop(1, ["#c28a15", "#9f231c", "#4b6d32"][f]);
-    a.fillStyle = grad;
-    a.fillRect(0, 0, 768, 1024);
-    a.fillStyle = "#1e282311";
-    for (let x = -900; x < 1200; x += 70) {
-      a.save();
-      a.translate(x, 0);
-      a.rotate(-0.4);
-      a.fillRect(0, 0, 24, 1500);
-      a.restore();
-    }
-    a.fillStyle = "#fff4d8";
-    a.textAlign = "center";
-    a.font = "185px Instrument Serif";
-    a.fillText("crisp", 384, 382);
-    a.font = "20px Arial";
-    a.font = "17px DM Sans";
-    a.fillText(
-      "A  L I T T L E  P O T A T O .  A  L O T  O F  P O S S I B I L I T Y .",
-      384,
-      439,
+    return createBagMaterials(
+      f,
+      textures,
+      Math.min(8, renderer.capabilities.getMaxAnisotropy()),
     );
-    a.font = "30px DM Sans";
-    a.fillText(
-      ["GOLDEN SEA SALT", "SMOKY PAPRIKA", "GARDEN HERBS"][f],
-      384,
-      520,
-    );
-    a.strokeStyle = "#fff4d888";
-    a.lineWidth = 2;
-    a.beginPath();
-    a.moveTo(180, 556);
-    a.lineTo(588, 556);
-    a.stroke();
-    for (let i = 0; i < 3; i++) {
-      a.save();
-      a.translate(344 + i * 38, 704 - i * 13);
-      a.rotate(-0.3 + i * 0.25);
-      let g = a.createRadialGradient(-20, -20, 0, 0, 0, 110);
-      g.addColorStop(0, "#ffe2a0");
-      g.addColorStop(0.8, "#eab644");
-      g.addColorStop(1, "#bb7920");
-      a.fillStyle = g;
-      a.beginPath();
-      a.ellipse(0, 0, 94, 65, 0, 0, TAU);
-      a.fill();
-      a.strokeStyle = "#e3a035";
-      a.stroke();
-      for (let j = 0; j < 40; j++) {
-        a.fillStyle = j % 3 ? "#edc369" : "#aa762d";
-        a.globalAlpha = 0.6;
-        a.beginPath();
-        a.arc(
-          (random() - 0.5) * 125,
-          (random() - 0.5) * 75,
-          random() * 2 + 1,
-          0,
-          TAU,
-        );
-        a.fill();
-      }
-      a.restore();
-    }
-    a.globalAlpha = 1;
-    a.fillStyle = "#fff1ce";
-    a.font = "19px Arial";
-    a.fillText("THE ORIGINAL COLLECTION · 40 g", 384, 866);
-    for (let y of [45, 970]) {
-      a.fillStyle = "#d5bf8d";
-      a.fillRect(0, y - 25, 768, 48);
-      a.strokeStyle = "#65533144";
-      for (let x = 0; x < 768; x += 8) {
-        a.beginPath();
-        a.moveTo(x, y - 25);
-        a.lineTo(x, y + 23);
-        a.stroke();
-      }
-    }
-    const t = new THREE.CanvasTexture(c);
-    t.colorSpace = THREE.SRGBColorSpace;
-    t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-    return new THREE.MeshPhysicalMaterial({
-      map: t,
-      metalness: 0.38,
-      roughness: 0.32,
-      clearcoat: 0.8,
-      clearcoatRoughness: 0.22,
-      side: THREE.DoubleSide,
-    });
   }
   const packAnims = [],
     bagMaterials = [0, 1, 2].map(bagMaterial);
@@ -753,28 +675,28 @@ export function createFactory(canvas, options = {}) {
       paint = flavourColors[f],
       bagMat = bagMaterials[f];
     feet(x, z, 1.35, 1.3, 1.2);
-    box(x, 1.05, z, 1.5, 0.16, 1.64, M.steel);
+    box(x, 1.05, z, 1.5, 0.16, 1.64, M.teal);
     for (let dx of [-0.67, 0.67])
       for (let dz of [-0.71, 0.71])
         box(x + dx, 2.25, z + dz, 0.075, 2.48, 0.075, M.chrome);
     box(x, 3.5, z, 1.6, 0.15, 1.76, M.steel);
     box(x, 3.32, z - 0.58, 0.95, 0.95, 0.31, M.dark);
     cylinder(x, 3.62, z, 0.28, 0.44, M.steel);
-    let roll = cylinder(x, 3.53, z - 0.47, 0.36, 1.08, paint, scene, "x");
+    let roll = cylinder(x, 3.53, z - 0.47, 0.24, 0.46, paint, scene, "x");
     spinAnims.push({ o: roll, axis: "x", turns: 8 });
     for (let dx of [-0.58, 0.58])
       cylinder(x + dx, 3.53, z - 0.47, 0.11, 0.08, M.dark, scene, "x");
-    let film = box(x, 3.02, z - 0.16, 0.69, 0.7, 0.015, bagMat);
+    let film = box(x, 3.02, z - 0.16, 0.33, 0.7, 0.015, bagMat[0]);
     film.rotation.x = -0.25;
-    cylinder(x, 2.7, z, 0.23, 0.28, M.chrome);
+    cylinder(x, 2.7, z, 0.11, 0.28, M.chrome);
     mesh(
-      new THREE.CylinderGeometry(0.41, 0.235, 0.27, 48, 1, true),
+      new THREE.CylinderGeometry(0.23, 0.11, 0.27, 48, 1, true),
       M.steel,
       x,
       2.83,
       z,
     );
-    cylinder(x, 2.36, z, 0.2, 0.55, paint);
+    cylinder(x, 2.36, z, 0.11, 0.55, paint);
     for (let dx of [-0.3, 0.3]) cylinder(x + dx, 2.19, z, 0.11, 0.55, M.rubber);
     let a = box(x, 1.87, z - 0.22, 0.87, 0.17, 0.18, M.steel),
       b = box(x, 1.87, z + 0.22, 0.87, 0.17, 0.18, M.steel);
@@ -782,7 +704,7 @@ export function createFactory(canvas, options = {}) {
     mesh(sealFace, M.chrome, 0, 0, -0.092, b).rotation.y = Math.PI;
     sealers.push({ a, b, z, f });
     let formed = mesh(bagG, bagMat, x, 1.67, z);
-    formed.scale.set(0.72, 0.72, 0.8);
+    formed.scale.set(0.28, 0.28, 0.3);
     packAnims.push({ o: formed, f });
     panel(x + 0.62, 2.89, z + 0.8, 0.32, 0.67, M.dark);
     box(x + 0.62, 3.02, z + 0.865, 0.2, 0.17, 0.022, M.led);
@@ -794,7 +716,7 @@ export function createFactory(canvas, options = {}) {
       scene.add(g);
       let o = mesh(bagG, bagMat, 0, 0, 0, g);
       o.rotation.x = -Math.PI / 2;
-      o.scale.setScalar(0.69);
+      o.scale.setScalar(0.28);
       bags.push(g);
     }
     packAnims.push({ bags, f, z });
@@ -958,19 +880,21 @@ export function createFactory(canvas, options = {}) {
     dirty = true;
   }
   async function setAudio(enabled) {
-    const t = now();
+    let t = now();
     if (enabled) {
       if (!ctx) {
         const Audio = window.AudioContext || window.webkitAudioContext;
         if (!Audio) throw new Error("Audio is unavailable in this browser.");
         ctx = new Audio();
-        sound = new FactorySound(ctx);
-        sound.setFocus(mode === "product" ? 6 : stage, true);
+        await ctx.resume();
+        sound = await FactorySound.create(ctx);
+        sound.setFocus(mode === "product" ? 7 : stage, true);
         sound.setMusic(musicOn);
       }
       await ctx.resume();
       if (disposed) return;
     }
+    t = now();
     audioOn = enabled;
     align(t);
     syncAudio(t);
@@ -983,14 +907,14 @@ export function createFactory(canvas, options = {}) {
     dirty = true;
   }
   function setJourney(value) {
-    const position = Math.max(0, Math.min(5, value));
+    const position = Math.max(0, Math.min(CAMERAS.length - 1, value));
     if (position === journey) return;
     journey = position;
     const next = Math.round(journey);
     if (next !== stage) {
       stage = next;
     }
-    sound?.setFocus(mode === "product" ? 6 : journey);
+    sound?.setFocus(mode === "product" ? 7 : journey);
     if (!inspect && mode === "factory") updateCamera();
   }
   function setMode(next) {
@@ -1001,12 +925,12 @@ export function createFactory(canvas, options = {}) {
     factoryObjects.forEach((o) => {
       o.visible = !product;
     });
-    studioFloor.visible = !product && width > 700;
+    studioFloor.visible = false;
     productGroup.visible = product;
     scene.background.set(product ? "#eee8dc" : "#082326");
     scene.fog.color.copy(scene.background);
-    scene.fog.density = product ? 0.004 : 0.009;
-    sound?.setFocus(product ? 6 : stage);
+    scene.fog.density = product ? 0.004 : 0.004;
+    sound?.setFocus(product ? 7 : stage);
     updateCamera();
     target.set(...desired.target);
     radius = desired.radius;
@@ -1103,6 +1027,7 @@ export function createFactory(canvas, options = {}) {
     ...detail.dynamic,
     ...process.dynamic,
     ...shipping.dynamic,
+    ...campus.dynamic,
     ...bubbles.map((a) => a.o),
     ...drums.map((a) => a.g),
     ...sealers.flatMap((a) => [a.a, a.b]),
@@ -1201,6 +1126,7 @@ export function createFactory(canvas, options = {}) {
   });
   studioFloor.rotation.x = -Math.PI / 2;
   studioFloor.position.y = -0.244;
+  studioFloor.visible = false;
   scene.add(studioFloor);
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
@@ -1295,7 +1221,10 @@ export function createFactory(canvas, options = {}) {
     productChips.push(c);
   }
   function resize() {
-    const nextWidth = Math.max(1, canvas.clientWidth || canvas.parentElement.clientWidth);
+    const nextWidth = Math.max(
+      1,
+      canvas.clientWidth || canvas.parentElement.clientWidth,
+    );
     const nextHeight = Math.max(
       1,
       canvas.clientHeight || canvas.parentElement.clientHeight,
@@ -1311,14 +1240,18 @@ export function createFactory(canvas, options = {}) {
     );
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    ao.enabled = window.innerWidth > 700;
-    studioFloor.visible = mode === "factory" && window.innerWidth > 700;
+    ao.enabled = window.innerWidth > 900;
+    studioFloor.visible = false;
     dirty = true;
   }
   const observer = new ResizeObserver(resize);
   observer.observe(canvas);
   resize();
   const temp = new THREE.Object3D();
+  const foodColor = new THREE.Color(),
+    paleChip = new THREE.Color("#f4e5c4"),
+    goldenChip = new THREE.Color("#dfa443");
+  let logisticsLabel = "";
   function frame() {
     if (disposed) return;
     raf = requestAnimationFrame(frame);
@@ -1336,9 +1269,43 @@ export function createFactory(canvas, options = {}) {
     // callbacks skipped by the mobile frame limiter.
     const dt = Math.min(0.1, Math.max(0, real - lastRendered));
     lastRendered = real;
-    let t = ((now() % LOOP) + LOOP) % LOOP,
+    const worldTime = now();
+    let t = ((worldTime % LOOP) + LOOP) % LOOP,
       p = t / LOOP,
       beat = TAU * t * 2;
+    if (mode === "factory") {
+      const logistics = campus.update(reducedMotion ? 26 : worldTime, journey);
+      const label =
+        logistics.time < 12
+          ? "Truck arriving at the factory"
+          : logistics.time < 18
+            ? "Reversing into loading bay 01"
+            : logistics.time < 22
+              ? "Vehicle secured · Dock bridge connecting"
+              : logistics.time < 48
+                ? "Forklift loading wrapped pallets"
+                : logistics.time < 52
+                  ? "Bridge retracting · Cargo doors closing"
+                  : "Cargo ready · Departing across Pakistan";
+      if (label !== logisticsLabel) {
+        logisticsLabel = label;
+        options.onLogistics?.(label);
+      }
+      if (journey > 5.5 && !inspect) {
+        desired = cameraAt(journey, flavour);
+        const follow = Math.min(1, (journey - 5.5) * 2);
+        desired.target[0] +=
+          (logistics.position[0] - desired.target[0]) *
+          follow *
+          (logistics.moving ? 1 : 0.2);
+        desired.target[2] +=
+          (logistics.position[2] - desired.target[2]) *
+          follow *
+          (logistics.moving ? 1 : 0.2);
+      }
+      if (journey === 0 && !inspect && !reducedMotion)
+        desired = droneCamera(worldTime);
+    }
     const smooth = reducedMotion ? 1 : 1 - Math.exp(-dt * 6);
     target.lerp(v3(...desired.target), smooth);
     radius += (desired.radius - radius) * smooth;
@@ -1368,7 +1335,7 @@ export function createFactory(canvas, options = {}) {
     camera.lookAt(target);
     if (mode === "product") {
       productBags.forEach((b) => {
-        b.position.y = 2.76 + (reducedMotion ? 0 : 0.07 * Math.sin(p * TAU));
+        b.position.y = 2.76 + (reducedMotion ? 0 : 0.025 * Math.sin(p * TAU));
         b.rotation.y =
           -0.14 + (reducedMotion || inspect ? 0 : 0.05 * Math.sin(p * TAU));
       });
@@ -1405,18 +1372,21 @@ export function createFactory(canvas, options = {}) {
               m.angle,
             );
             temp.scale.set(
-              m.scale * (0.58 + m.variant * 0.1),
-              m.scale * (0.58 + Math.sin(m.angle) * 0.05),
-              m.scale * 0.62,
+              m.scale * (0.25 + m.variant * 0.045),
+              m.scale * (0.25 + Math.sin(m.angle) * 0.02),
+              m.scale * 0.27,
             );
           } else {
             temp.rotation.set(m.angle, beat * 0.25, m.angle * 0.5);
-            temp.scale.set(0.12 * m.scale, 0.092 * m.scale, 0.095 * m.scale);
+            temp.scale.set(0.052 * m.scale, 0.041 * m.scale, 0.043 * m.scale);
           }
           temp.updateMatrix();
           f.inst.setMatrixAt(i, temp.matrix);
+          if (f.a < -2.5 && f.b > 1 && f.type === "chip")
+            f.inst.setColorAt(i, foodColor.copy(paleChip).lerp(goldenChip, u));
         }
         f.inst.instanceMatrix.needsUpdate = true;
+        if (f.inst.instanceColor) f.inst.instanceColor.needsUpdate = true;
       }
       for (let a of spinAnims) {
         if (a.o === peeler) a.o.rotation.y = p * TAU * a.turns;
@@ -1472,11 +1442,11 @@ export function createFactory(canvas, options = {}) {
         if (a.o) {
           let phase = bagPhase(t, a.f);
           a.o.scale.y = 0.38 + 0.34 * Math.min(1, phase / 0.31);
-          a.o.position.y = 1.8 - 0.18 * Math.min(1, phase / 0.31);
+          a.o.position.y = 1.92 - 0.2 * Math.min(1, phase / 0.31);
         } else
           a.bags.forEach((g, i) => {
             let u = (i / 4 + t / 8 + a.f / 12) % 1;
-            g.position.set(10.65 + u * 3.2, 1.18, a.z);
+            g.position.set(10.65 + u * 3.2, 1.14, a.z);
             g.rotation.set(0, 0.025 * Math.sin(beat + i), 0);
           });
       }

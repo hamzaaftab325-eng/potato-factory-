@@ -126,5 +126,20 @@ export function createSurfaceTextures(random, anisotropy = 4) {
       a.stroke();
     }
   }, true);
-  return { metal, potato, chip, belt, perforation, paper, wood };
+  const concrete = make((a, s) => {
+    a.fillStyle = "#b0b0b0";
+    a.fillRect(0, 0, s, s);
+    for (let i = 0; i < 22000; i++) {
+      const n = Math.round(135 + random() * 70);
+      a.fillStyle = `rgba(${n},${n},${n},.24)`;
+      a.fillRect(
+        random() * s,
+        random() * s,
+        0.4 + random() * 1.3,
+        0.4 + random() * 1.3,
+      );
+    }
+  });
+  concrete.repeat.set(6, 6);
+  return { metal, potato, chip, belt, perforation, paper, wood, concrete };
 }

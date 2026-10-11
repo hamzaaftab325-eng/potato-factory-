@@ -15,8 +15,7 @@ body {
   min-width: 320px;
   background:
     radial-gradient(circle at 72% 12%, #18413a30 0 18%, transparent 45%),
-    radial-gradient(circle at 8% 34%, #d8b3690b, transparent 30%),
-    var(--ink);
+    radial-gradient(circle at 8% 34%, #d8b3690b, transparent 30%), var(--ink);
   overflow-x: clip;
 }
 
@@ -31,7 +30,9 @@ body::before {
   background-image:
     radial-gradient(circle at 20% 20%, #fff 0 0.55px, transparent 0.7px),
     radial-gradient(circle at 80% 60%, #fff 0 0.45px, transparent 0.65px);
-  background-size: 7px 7px, 11px 11px;
+  background-size:
+    7px 7px,
+    11px 11px;
   mask-image: linear-gradient(to bottom, #0008, transparent 72%);
 }
 
@@ -46,7 +47,13 @@ body::before {
   position: absolute;
   inset: auto 0 -1px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #ffffff2d 28%, #ffffff2d 72%, transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #ffffff2d 28%,
+    #ffffff2d 72%,
+    transparent
+  );
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -87,7 +94,11 @@ body::before {
   min-height: max(820px, 100svh);
   padding-top: 166px;
   background:
-    radial-gradient(circle at calc(72% + var(--hero-x, 0px)) calc(42% + var(--hero-y, 0px)), #b7cda812 0 12%, transparent 38%),
+    radial-gradient(
+      circle at calc(72% + var(--hero-x, 0px)) calc(42% + var(--hero-y, 0px)),
+      #b7cda812 0 12%,
+      transparent 38%
+    ),
     linear-gradient(180deg, #0a2a2d00 60%, #061f2180 100%);
 }
 
@@ -110,7 +121,12 @@ body::before {
   inset: 92px 0 auto;
   height: 1px;
   opacity: 0.35;
-  background: linear-gradient(90deg, transparent 5%, #ffffff20 34%, transparent 72%);
+  background: linear-gradient(
+    90deg,
+    transparent 5%,
+    #ffffff20 34%,
+    transparent 72%
+  );
 }
 
 .hero-copy {
@@ -175,7 +191,12 @@ body::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(110deg, transparent 20%, #ffffff55 48%, transparent 72%);
+  background: linear-gradient(
+    110deg,
+    transparent 20%,
+    #ffffff55 48%,
+    transparent 72%
+  );
   transform: translateX(-140%);
   transition: transform 0.7s var(--ease-out);
 }
@@ -209,13 +230,30 @@ body::before {
 }
 
 .hero-stage canvas {
-  mask-image: radial-gradient(ellipse at 56% 50%, #000 48%, #000 66%, transparent 88%);
+  mask-image: radial-gradient(
+    ellipse at 56% 50%,
+    #000 48%,
+    #000 66%,
+    transparent 88%
+  );
 }
 
 .hero-stage .scene-rig::after {
   background:
-    linear-gradient(180deg, var(--ink) 0, transparent 11%, transparent 88%, var(--ink) 100%),
-    linear-gradient(90deg, var(--ink) 0, transparent 15%, transparent 94%, var(--ink) 100%);
+    linear-gradient(
+      180deg,
+      var(--ink) 0,
+      transparent 11%,
+      transparent 88%,
+      var(--ink) 100%
+    ),
+    linear-gradient(
+      90deg,
+      var(--ink) 0,
+      transparent 15%,
+      transparent 94%,
+      var(--ink) 100%
+    );
 }
 
 .scene-topline {
@@ -281,7 +319,10 @@ body::before {
 }
 
 @keyframes scroll-scan {
-  55%, 100% { transform: translateX(110%); }
+  55%,
+  100% {
+    transform: translateX(110%);
+  }
 }
 
 .concept-pill {
@@ -338,8 +379,7 @@ body::before {
 .story-stage {
   border-radius: 18px;
   background:
-    radial-gradient(circle at 52% 48%, #799b8b10, transparent 50%),
-    #061f2117;
+    radial-gradient(circle at 52% 48%, #799b8b10, transparent 50%), #061f2117;
 }
 
 .process-nav {
@@ -401,7 +441,11 @@ body::before {
   left: -250px;
   top: 16%;
   border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--flavour) 10%, transparent), transparent 67%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--flavour) 10%, transparent),
+    transparent 67%
+  );
   filter: blur(8px);
   pointer-events: none;
 }
@@ -459,7 +503,12 @@ body::before {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent 49.9%, #ffffff09 50%, transparent 50.1%);
+  background: linear-gradient(
+    90deg,
+    transparent 49.9%,
+    #ffffff09 50%,
+    transparent 50.1%
+  );
 }
 
 .craft-item summary {
@@ -478,7 +527,8 @@ body::before {
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(circle at 82% 24%, #fff7 0 1px, transparent 2px) 0 0 / 18px 18px,
+    radial-gradient(circle at 82% 24%, #fff7 0 1px, transparent 2px) 0 0 / 18px
+      18px,
     linear-gradient(135deg, #efc476, #e5b461 62%, #dba854);
 }
 
@@ -491,7 +541,9 @@ body::before {
   border-radius: 50%;
   right: -110px;
   top: -210px;
-  box-shadow: 0 0 0 72px #08232607, 0 0 0 150px #08232604;
+  box-shadow:
+    0 0 0 72px #08232607,
+    0 0 0 150px #08232604;
 }
 
 .contact-button {
@@ -531,9 +583,15 @@ html.js-polish .reveal-item.is-visible {
   transform: translateY(0);
 }
 
-html.js-polish .reveal-item.reveal-delay-1 { transition-delay: 80ms; }
-html.js-polish .reveal-item.reveal-delay-2 { transition-delay: 150ms; }
-html.js-polish .reveal-item.reveal-delay-3 { transition-delay: 220ms; }
+html.js-polish .reveal-item.reveal-delay-1 {
+  transition-delay: 80ms;
+}
+html.js-polish .reveal-item.reveal-delay-2 {
+  transition-delay: 150ms;
+}
+html.js-polish .reveal-item.reveal-delay-3 {
+  transition-delay: 220ms;
+}
 
 @media (hover: hover) and (pointer: fine) {
   .button,
@@ -578,8 +636,7 @@ html.js-polish .reveal-item.reveal-delay-3 { transition-delay: 220ms; }
     min-height: 860px;
     padding-top: 122px;
     background:
-      radial-gradient(circle at 68% 52%, #8eae9b10, transparent 36%),
-      var(--ink);
+      radial-gradient(circle at 68% 52%, #8eae9b10, transparent 36%), var(--ink);
   }
 
   .hero::after {
@@ -620,7 +677,12 @@ html.js-polish .reveal-item.reveal-delay-3 { transition-delay: 220ms; }
   }
 
   .hero-stage canvas {
-    mask-image: radial-gradient(ellipse at center, #000 48%, #000 64%, transparent 86%);
+    mask-image: radial-gradient(
+      ellipse at center,
+      #000 48%,
+      #000 64%,
+      transparent 86%
+    );
   }
 
   .scene-topline {
@@ -703,5 +765,47 @@ html.js-polish .reveal-item.reveal-delay-3 { transition-delay: 220ms; }
     opacity: 1;
     transform: none !important;
     transition: none !important;
+  }
+}
+
+/* Six scroll chapters retain the original sticky scene and readable copy. */
+.process-nav {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.process-nav button {
+  gap: 6px;
+  padding-inline: 5px;
+}
+.story-stage canvas {
+  mask-image: none;
+}
+.hero-stage canvas {
+  mask-image: none;
+}
+.story-step > p:not(.eyebrow) {
+  line-height: 1.95;
+}
+.story-step .delivery-destinations {
+  font-size: 11px;
+  line-height: 2;
+  letter-spacing: 0.05em;
+  color: var(--gold);
+  margin-top: 22px;
+}
+@media (max-width: 800px) {
+  .process-nav {
+    display: flex;
+    overflow-x: auto;
+    border-radius: 10px;
+    scrollbar-width: none;
+  }
+  .process-nav button {
+    flex: 0 0 auto;
+    min-width: 77px;
+    padding-inline: 12px;
+  }
+  .scene-footnote {
+    font-size: 8px;
+    gap: 12px;
   }
 }

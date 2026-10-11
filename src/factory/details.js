@@ -21,7 +21,7 @@ export function addFactoryDetails(C) {
     fanRotors = [];
   const tau = Math.PI * 2;
   const enamel = new THREE.MeshPhysicalMaterial({
-    color: "#a7b5b3",
+    color: "#2b666b",
     metalness: 0.34,
     roughness: 0.26,
     clearcoat: 0.55,

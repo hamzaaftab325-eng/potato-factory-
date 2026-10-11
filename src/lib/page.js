@@ -97,7 +97,8 @@ export function initPage({
   function setStep(step) {
     if (step === currentStep) return;
     currentStep = step;
-    $("#process-count").textContent = `${String(step).padStart(2, "0")} / 05`;
+    $("#process-count").textContent =
+      `${String(step).padStart(2, "0")} / ${String(steps.length).padStart(2, "0")}`;
     $("#process-name").textContent = PROCESS_NAMES[step - 1];
     steps.forEach((el) =>
       el.classList.toggle("is-active", Number(el.dataset.step) === step),
@@ -336,6 +337,11 @@ export function initPage({
         engine = createFactory($("#factory-canvas"), {
           reducedMotion: motion.matches,
           onReady: markReady,
+          onLogistics: (label) => {
+            const caption = $("#dispatch-phase");
+            if (caption && caption.textContent !== label)
+              caption.textContent = label;
+          },
           onInspectExit: syncControls,
           onContextLost: () => {
             ready = false;

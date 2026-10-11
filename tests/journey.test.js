@@ -8,17 +8,17 @@ import {
 } from "../src/lib/journey.js";
 
 test("scroll progression follows readable step centres on desktop and mobile", () => {
-  const rects = Array.from({ length: 5 }, (_, i) => ({
+  const rects = Array.from({ length: 6 }, (_, i) => ({
     top: 250 + i * 700,
     height: 700,
   }));
   let previous = 1;
-  for (let scroll = 0; scroll <= 4200; scroll += 10) {
+  for (let scroll = 0; scroll <= 4900; scroll += 10) {
     const p = journeyPosition(
       rects.map((r) => ({ ...r, top: r.top - scroll })),
       900,
     );
-    assert.ok(Number.isFinite(p) && p >= 1 && p <= 5);
+    assert.ok(Number.isFinite(p) && p >= 1 && p <= 6);
     assert.ok(p >= previous);
     previous = p;
   }
@@ -31,14 +31,14 @@ test("camera path reaches each stage and stays finite through every transition",
   for (let i = 0; i < CAMERAS.length; i++) {
     assert.deepEqual(cameraAt(i, 1), CAMERAS[i]);
   }
-  for (let p = 0; p <= 5; p += 0.005) {
+  for (let p = 0; p <= 6; p += 0.005) {
     const c = cameraAt(p, 2);
     assert.ok([...c.target, c.radius, c.yaw, c.elev].every(Number.isFinite));
     // The expanded end-of-line shipping area needs a wider establishing hero view.
     // Keep a ceiling so accidental camera blow-outs are still caught.
-    assert.ok(c.radius >= 7 && c.radius <= 46);
+    assert.ok(c.radius >= 7 && c.radius <= 90);
     const next = cameraAt(p + 0.005, 2);
-    assert.ok(c.target.every((v, i) => Math.abs(v - next.target[i]) < 0.12));
+    assert.ok(c.target.every((v, i) => Math.abs(v - next.target[i]) < 0.18));
   }
   assert.deepEqual(cameraAt(NaN), cameraAt(0));
   assert.equal(cameraAt(4, 0).target[2], -1.3);

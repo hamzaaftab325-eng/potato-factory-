@@ -168,7 +168,7 @@ export function addProcessMachines(C) {
   hopper(-13.4, 1.91, 0, 1.64, 1.35, 0.65, 0.62);
   feet(-13.4, 0, 1.25, 1.07, 1.66);
   box(-13.4, 1.34, 0, 1.55, 0.2, 1.16, M.steel);
-  for (let i = 0; i < 54; i++) {
+  for (let i = 0; i < 160; i++) {
     const p = mesh(
       potatoG,
       M.potato,
@@ -176,16 +176,16 @@ export function addProcessMachines(C) {
       2.11 + random() * 0.21,
       (random() - 0.5) * 0.99,
     );
-    p.scale.set(0.12, 0.092, 0.095);
+    p.scale.set(0.055, 0.043, 0.046);
     p.rotation.set(random() * 3, random() * 3, random() * 3);
   }
   plate("01 / RECEIVING & WASHING", -13.4, 1.84, 0.6, 1.1, 0.13);
   transfer([-12.9, 1.91, 0], [-11.35, 1.63, 0], 0.88, "potato", M.potato, 15);
-  box(-10.22, 1.18, 0, 2.45, 0.76, 1.62, M.steel);
+  box(-10.22, 1.18, 0, 2.45, 0.76, 1.62, M.blue);
   box(-10.22, 0.8, 0, 2.38, 0.12, 1.56, M.dark);
   feet(-10.2, 0, 2.1, 1.4, 1.3);
   liquid(-10.22, 1.58, 0, 2.25, 1.36, M.water);
-  foodFlow(-11.32, -9.0, 0, 1.67, 28, "potato", M.potato, 1.05);
+  foodFlow(-11.32, -9.0, 0, 1.65, 72, "potato", M.potato, 1.05);
   for (const x of [-11.17, -10.69, -10.21, -9.73, -9.25]) {
     pipe(
       [
@@ -210,7 +210,7 @@ export function addProcessMachines(C) {
     for (const x of [-11.41, -9.03])
       box(x, 1.95, side * 0.87, 0.04, 0.51, 0.04, M.steel);
     for (const x of [-10.95, -10.22, -9.49]) {
-      box(x, 1.18, side * 0.826, 0.67, 0.53, 0.02, M.steel);
+      box(x, 1.18, side * 0.826, 0.67, 0.53, 0.02, M.blue);
       if (side === 1) for (const dx of [-0.28, 0.28]) bolt(x + dx, 1.4, 0.85);
     }
   }
@@ -228,77 +228,44 @@ export function addProcessMachines(C) {
   motor(-9.58, 0.87, -1.13);
   hmi(-9.65, 1.09, 1.05, "WASH PRESSURE", "2.4 BAR");
 
-  // Horizontal abrasive drum, actual perforations, stationary shroud and open
-  // feed/discharge throats. End rings are annular rather than solid yellow discs.
+  // An eight-roll abrasive bed, enclosed by a stationary hygienic housing.
+  // Only the rollers turn; spray bars and the peel-waste pan remain fixed.
   const peeler = new THREE.Group();
-  peeler.position.set(-8.02, 1.76, 0);
-  peeler.rotation.z = Math.PI / 2;
   scene.add(peeler);
-  mesh(
-    new THREE.CylinderGeometry(0.63, 0.63, 1.45, 64, 1, true),
-    perforated,
-    0,
-    0,
-    0,
-    peeler,
-  );
-  mesh(
-    new THREE.CylinderGeometry(0.59, 0.59, 1.42, 48, 1, true),
-    abrasive,
-    0,
-    0,
-    0,
-    peeler,
-  );
+  box(-8.02, 1.16, 0, 1.95, 0.61, 1.65, M.blue, peeler);
+  box(-8.02, 0.9, 0, 1.84, 0.08, 1.56, M.steel, peeler);
+  for (const side of [-1, 1]) {
+    box(-8.02, 1.91, side * 0.83, 1.88, 0.88, 0.025, M.glass, peeler);
+    for (const y of [1.48, 2.35])
+      box(-8.02, y, side * 0.85, 1.96, 0.045, 0.055, M.blue, peeler);
+    for (const x of [-8.97, -7.07])
+      box(x, 1.92, side * 0.85, 0.05, 0.92, 0.055, M.blue, peeler);
+  }
   for (let i = 0; i < 8; i++) {
-    const a = (i * TAU) / 8;
-    const rib = box(
-      Math.sin(a) * 0.57,
-      0,
-      Math.cos(a) * 0.57,
-      0.055,
-      1.38,
-      0.055,
-      M.dark,
-      peeler,
-    );
-    rib.rotation.y = a;
+    const z = (i - 3.5) * 0.185,
+      y = 1.45 + Math.pow(z / 0.8, 2) * 0.16;
+    const roll = cylinder(-8.02, y, z, 0.108, 1.73, abrasive, scene, "x");
+    spinAnims.push({ o: roll, axis: "x", turns: 16 });
+    dynamic.push(roll);
+    for (const x of [-8.94, -7.1]) {
+      cylinder(x, y, z, 0.065, 0.11, M.chrome, scene, "x");
+      box(x, y, z, 0.07, 0.17, 0.16, M.blue, peeler);
+    }
   }
-  spinAnims.push({ o: peeler, axis: "y", turns: 8 });
-  const shroud = mesh(
-    new THREE.CylinderGeometry(0.77, 0.77, 1.56, 64, 1, true, 0.8, TAU - 1.6),
-    steelInside,
-    -8.02,
-    1.76,
-    0,
-  );
-  shroud.rotation.z = Math.PI / 2;
-  const window = mesh(
-    new THREE.CylinderGeometry(0.778, 0.778, 1.5, 32, 1, true, -0.8, 1.6),
-    M.glass,
-    -8.02,
-    1.76,
-    0,
-  );
-  window.rotation.z = Math.PI / 2;
-  for (const x of [-8.82, -7.22]) {
-    const ring = mesh(
-      new THREE.TorusGeometry(0.69, 0.075, 12, 64),
-      M.steel,
-      x,
-      1.76,
-      0,
+  for (const x of [-8.61, -8.03, -7.45]) {
+    pipe(
+      [
+        [x, 1.54, -0.9],
+        [x, 2.29, -0.9],
+        [x, 2.29, 0.9],
+      ],
+      0.03,
+      M.chrome,
     );
-    ring.rotation.y = Math.PI / 2;
-    box(x, 1.17, 0, 0.16, 0.64, 1.44, M.steel);
-    for (const z of [-0.55, 0.55])
-      cylinder(x, 1.2, z, 0.14, 0.21, M.dark, scene, "x");
+    for (const z of [-0.42, 0, 0.42]) sprays.push({ x, y: 2.2, z });
   }
-  box(-8.02, 0.95, 0, 1.88, 0.16, 1.64, M.steel);
   feet(-8.02, 0, 1.65, 1.4, 1.14);
-  box(-8.02, 1.04, 0.84, 1.6, 0.29, 0.04, M.dark);
-  plate("ABRASIVE PEELER / DRUM 08", -8.02, 1.05, 0.868, 1.4, 0.12);
-  box(-8.02, 2.46, 0, 1.52, 0.06, 0.1, M.yellow);
+  plate("ABRASIVE PEELER / EIGHT ROLLS", -8.02, 1.16, 0.848, 1.6, 0.15);
   motor(-8.05, 1.0, -1.04, "x");
   pipe(
     [
@@ -308,14 +275,15 @@ export function addProcessMachines(C) {
     ],
     0.06,
   );
-  foodFlow(-9.15, -7.1, 0, 1.57, 20, "potato", M.peeled, 0.6);
+  box(-8.48, 0.77, -1.3, 0.82, 0.2, 0.45, M.steel);
+  foodFlow(-9.15, -7.1, 0, 1.7, 20, "potato", M.peeled, 0.6);
   transfer([-7.17, 1.43, 0], [-5.58, 3.23, 0], 0.65, "potato", M.peeled, 13);
 
   // Enclosed centrifugal slicer. Eight FIXED knife cartridges surround a
   // cylindrical impeller. The narrow section window reveals the cutting head,
   // without making the machine resemble an exposed fan.
   feet(-5.28, 0, 1.12, 1.35, 1.28);
-  box(-5.28, 1.15, 0, 1.49, 0.3, 1.58, M.steel);
+  box(-5.28, 1.15, 0, 1.49, 0.3, 1.58, M.blue);
   cylinder(-5.28, 1.42, 0, 0.35, 0.3, M.dark);
   const cutShell = mesh(
     new THREE.CylinderGeometry(0.68, 0.68, 0.87, 72, 1, true, 0.58, TAU - 1.16),
@@ -419,16 +387,17 @@ export function addProcessMachines(C) {
 
   // Continuous fryer: insulated vessel, lift-up extraction hood, viewing slots,
   // metering wheels, a submerged mesh belt and a sloping oil-drain discharge.
-  box(-0.5, 1.1, 0, 4.58, 0.87, 2.27, M.steel, scene, 0.1);
+  box(-0.5, 1.1, 0, 4.58, 0.87, 2.27, M.graphite, scene, 0.1);
   liquid(-0.5, 1.52, 0, 4.27, 1.97, M.oil);
   feet(-0.5, 0, 3.95, 1.95, 1.2);
   for (const z of [-1.1, 1.1]) box(-0.5, 1.59, z, 4.75, 0.16, 0.15, M.chrome);
   for (const x of [-2.78, 1.78]) box(x, 1.58, 0, 0.17, 0.16, 2.31, M.chrome);
   for (const x of [-2.0, -0.5, 1.0]) {
-    box(x, 1.1, 1.153, 1.4, 0.67, 0.055, M.steel);
+    box(x, 1.1, 1.153, 1.4, 0.67, 0.055, M.graphite);
     for (const xx of [x - 0.58, x + 0.58])
       for (const y of [0.85, 1.34]) bolt(xx, y, 1.196);
     box(x + 0.48, 1.13, 1.2, 0.034, 0.24, 0.07, M.dark);
+    box(x, 1.43, 1.196, 1.34, 0.065, 0.012, M.yellow);
     plate("INSULATED / HOT SURFACE", x, 0.91, 1.19, 1.02, 0.1);
   }
   // Raised hood leaves a deliberate viewing gap along the near side.
@@ -489,7 +458,7 @@ export function addProcessMachines(C) {
     0,
   );
   submerge.rotation.x = -Math.PI / 2;
-  foodFlow(-2.59, 1.59, 0, 1.55, 112, "chip", M.chip, 1.63);
+  foodFlow(-2.59, 1.59, 0, 1.55, 360, "chip", M.chip, 1.63);
   pipe(
     [
       [-2.2, 0.87, -1.24],
@@ -557,8 +526,8 @@ export function addProcessMachines(C) {
             i * 0.29,
             e.angle,
           );
-          if (e.kind === "potato") dummy.scale.set(0.12, 0.092, 0.095);
-          else dummy.scale.setScalar(0.62);
+          if (e.kind === "potato") dummy.scale.set(0.055, 0.043, 0.046);
+          else dummy.scale.setScalar(0.27);
           dummy.updateMatrix();
           e.food.setMatrixAt(i, dummy.matrix);
         }
@@ -573,7 +542,7 @@ export function addProcessMachines(C) {
           Math.sin(i * 7) * 0.18,
         );
         d.o.rotation.set(-Math.PI / 2 + u * 0.5, i, u * 3);
-        d.o.scale.setScalar(0.61);
+        d.o.scale.setScalar(0.27);
       });
       for (const b of branches) {
         for (let i = 0; i < 18; i++) {
@@ -582,7 +551,7 @@ export function addProcessMachines(C) {
           dummy.position.z += Math.sin(i * 13) * 0.13;
           dummy.position.y += 0.035 + Math.sin(t * Math.PI * 8 + i) * 0.002;
           dummy.rotation.set(-Math.PI / 2, 0, i * 2);
-          dummy.scale.setScalar(0.59);
+          dummy.scale.setScalar(0.27);
           dummy.updateMatrix();
           b.food.setMatrixAt(i, dummy.matrix);
         }

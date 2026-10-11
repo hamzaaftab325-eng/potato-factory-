@@ -4,15 +4,17 @@ export const PROCESS_NAMES = [
   "Golden frying",
   "Season & tumble",
   "Pack & dispatch",
+  "Across Pakistan",
 ];
 
 export const CAMERAS = [
-  { target: [3.1, 1.75, 0], radius: 43.5, yaw: 0.55, elev: 0.46 },
+  { target: [10, 1.8, 1], radius: 83, yaw: 0.57, elev: 0.73 },
   { target: [-10.1, 1.65, 0], radius: 9.8, yaw: 0.48, elev: 0.35 },
   { target: [-5.35, 1.92, 0], radius: 7.9, yaw: 0.42, elev: 0.34 },
   { target: [-0.2, 1.86, 0], radius: 10.5, yaw: 0.62, elev: 0.32 },
   { target: [5.9, 1.97, 0], radius: 9.7, yaw: 0.63, elev: 0.4 },
   { target: [15.4, 2.05, 0], radius: 19.0, yaw: 0.38, elev: 0.4 },
+  { target: [35.4, 2.3, 0.4], radius: 24, yaw: 0.65, elev: 0.47 },
 ];
 
 export const FLAVOURS = [

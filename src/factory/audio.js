@@ -3,14 +3,17 @@ import {
   BAG_SECONDS,
   CASE_SECONDS,
   CUTS_PER_SECOND,
+  CAMPUS_SECONDS,
+  smooth,
 } from "./timing.js";
 
 const TAU = Math.PI * 2;
+const KINDS = ["wash", "cut", "fry", "tumble", "pack", "music", "truck"];
 
 // Original procedural foley, not recordings. All events live on the same clock
 // as the machine animation. Circular filters and wrapped tails preserve the loop.
 export class FactorySound {
-  constructor(ctx) {
+  constructor(ctx, { defer = false } = {}) {
     this.ctx = ctx;
     this.sources = [];
     this.buses = [];
@@ -18,7 +21,7 @@ export class FactorySound {
     this.focus = 0;
     this.music = false;
     this.master = ctx.createGain();
-    this.master.gain.value = 0.78;
+    this.master.gain.value = 0.58;
     const limiter = ctx.createDynamicsCompressor();
     limiter.threshold.value = -10;
     limiter.knee.value = 10;
@@ -27,23 +30,31 @@ export class FactorySound {
     limiter.release.value = 0.22;
     this.master.connect(limiter);
     limiter.connect(ctx.destination);
-    this.stems = ["wash", "cut", "fry", "tumble", "pack", "music"].map(
-      (kind, k) => {
-        const bus = ctx.createGain(),
-          pan = ctx.createStereoPanner();
-        bus.connect(pan);
-        pan.connect(this.master);
-        this.buses.push(bus);
-        this.panners.push(pan);
-        return this.synthesize(kind, k);
-      },
-    );
+    this.stems = KINDS.map((kind, k) => {
+      const bus = ctx.createGain(),
+        pan = ctx.createStereoPanner();
+      bus.connect(pan);
+      pan.connect(this.master);
+      this.buses.push(bus);
+      this.panners.push(pan);
+      return defer ? null : this.synthesize(kind, k);
+    });
     this.setFocus(0, true);
+  }
+
+  static async create(ctx) {
+    const sound = new FactorySound(ctx, { defer: true });
+    for (let i = 0; i < KINDS.length; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      sound.stems[i] = sound.synthesize(KINDS[i], i);
+    }
+    return sound;
   }
 
   synthesize(kind, seed) {
     const sr = this.ctx.sampleRate,
-      n = Math.round(LOOP_SECONDS * sr);
+      seconds = kind === "truck" ? CAMPUS_SECONDS : LOOP_SECONDS,
+      n = Math.round(seconds * sr);
     const buffer = this.ctx.createBuffer(2, n, sr);
     const out = new Float32Array(n),
       side = new Float32Array(n);
@@ -203,11 +214,11 @@ export class FactorySound {
           softBurst(at + 1.51, 0.25, 0.026, 2100, 8, pan);
         }
         for (let i = 0; i < LOOP_SECONDS / CASE_SECONDS; i++) {
-          const at = (i - lane / 12) * CASE_SECONDS;
-          softBurst(at + 1.7, 0.24, 0.034, 1250, 9, pan);
-          softBurst(at + 3.0, 0.28, 0.029, 2000, 10, pan);
-          softBurst(at + 7.57, 0.36, 0.046, 1750, 4, pan);
-          contact(at + 7.92, 0.035, 103, pan);
+          const at = (i - lane / 24) * CASE_SECONDS;
+          softBurst(at + CASE_SECONDS * 0.106, 0.24, 0.034, 1250, 9, pan);
+          softBurst(at + CASE_SECONDS * 0.1875, 0.28, 0.029, 2000, 10, pan);
+          softBurst(at + CASE_SECONDS * 0.94625, 0.36, 0.046, 1750, 4, pan);
+          contact(at + CASE_SECONDS * 0.99, 0.035, 103, pan);
         }
       }
     }
@@ -267,6 +278,45 @@ export class FactorySound {
       }
     }
 
+    if (kind === "truck") {
+      const engine = bandNoise(22, 185),
+        road = bandNoise(180, 960);
+      for (let i = 0; i < n; i++) {
+        const t = i / sr,
+          moving = 1 - smooth((t - 17.5) / 0.5) + smooth((t - 51.7) / 0.3);
+        const phase =
+          TAU *
+          (55 * t +
+            ((6 * CAMPUS_SECONDS) / TAU) *
+              (1 - Math.cos((TAU * t) / CAMPUS_SECONDS)));
+        out[i] +=
+          engine[i] * (0.035 + moving * 0.06) +
+          road[i] * moving * 0.026 +
+          Math.sin(phase) * (0.008 + moving * 0.008) +
+          Math.sin(phase * 2) * 0.003;
+      }
+      softBurst(18.05, 0.44, 0.075, 1700, 5);
+      contact(18.4, 0.025, 93);
+      contact(20.9, 0.032, 108);
+      for (const at of [23.2, 29.74, 37.2, 43.74]) {
+        softBurst(at, 0.3, 0.023, 850, 8);
+        contact(at + 0.1, 0.018, 121);
+      }
+      contact(49.5, 0.03, 98);
+      contact(50.8, 0.04, 86);
+      softBurst(51.75, 0.2, 0.035, 2100, 8);
+      for (let at = 12.4; at < 18; at += 1.2)
+        event(
+          at,
+          0.23,
+          (t) =>
+            0.013 *
+            Math.sin(TAU * 680 * t) *
+            Math.min(1, t / 0.025) *
+            Math.min(1, (0.23 - t) / 0.03),
+        );
+    }
+
     // Restrained stereo room, followed by DC removal and a conservative peak
     // ceiling. Reflections are different at each ear; no metallic comb echo.
     const left = buffer.getChannelData(0),
@@ -311,16 +361,26 @@ export class FactorySound {
           ? this.music
             ? 0.55
             : 0
-          : stage === 6
-            ? 0
-            : stage === 0
-              ? 0.72
-              : 0.12 + 1.03 * Math.max(0, 1 - Math.abs(i + 1 - stage));
+          : i === 6
+            ? stage === 7
+              ? 0
+              : stage >= 5.5
+                ? 0.85
+                : stage === 0
+                  ? 0.3
+                  : 0.07
+            : stage === 7
+              ? 0
+              : stage >= 5.5
+                ? 0.06
+                : stage === 0
+                  ? 0.4
+                  : 0.12 + 1.03 * Math.max(0, 1 - Math.abs(i + 1 - stage));
       parameter(g.gain, value);
       const distance = i + 1 - stage;
       parameter(
         this.panners[i].pan,
-        i === 5
+        i === 5 || i === 6
           ? 0
           : stage === 0
             ? [-0.4, -0.23, 0, 0.23, 0.4][i]
@@ -351,7 +411,7 @@ export class FactorySound {
       };
       s.start(
         this.startedAt,
-        ((time % LOOP_SECONDS) + LOOP_SECONDS) % LOOP_SECONDS,
+        ((time % buffer.duration) + buffer.duration) % buffer.duration,
       );
       this.sources.push(s);
     });

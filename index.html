@@ -21,7 +21,7 @@
     <link
       rel="preload"
       as="image"
-      href="/factory-poster.webp"
+      href="/factory-campus.svg"
       fetchpriority="high"
     />
     <script type="module" src="/src/main.js"></script>
@@ -101,10 +101,10 @@
         >
           <img
             class="mount-poster hero-poster"
-            src="/factory-poster.webp"
+            src="/factory-campus.svg"
             width="1300"
-            height="470"
-            alt="A detailed miniature potato-chip factory with stainless machinery, yellow conveyors, three seasoning drums and colour-coded packaging lines."
+            height="700"
+            alt="The CRISP potato-chip factory: receiving, preparation, frying, seasoning, packaging and dispatch."
             fetchpriority="high"
           />
           <div
@@ -197,7 +197,7 @@
           >
           <div class="hero-note">
             <span class="tiny-label">FROM POTATO TO POSSIBILITY</span
-            ><span>Five processes. Three personalities.</span>
+            ><span>Six processes. Three personalities.</span>
           </div>
           <span class="concept-pill">An original brand concept</span>
         </div>
@@ -225,7 +225,7 @@
         <div class="process-story container" id="process-story">
           <div class="process-visual">
             <div class="process-status">
-              <span id="process-count">01 / 05</span
+              <span id="process-count">01 / 06</span
               ><span id="process-name">Wash & peel</span
               ><span class="status-line" aria-hidden="true"></span
               ><span>THE JOURNEY</span>
@@ -233,10 +233,10 @@
             <div class="story-stage scene-mount" id="story-mount">
               <img
                 class="mount-poster"
-                src="/factory-poster.webp"
+                src="/factory-campus.svg"
                 alt="The connected factory line."
                 width="1300"
-                height="470"
+                height="700"
                 loading="lazy"
               />
             </div>
@@ -269,12 +269,18 @@
               >
                 <span>05</span><span>Pack</span>
               </button>
+              <button
+                type="button"
+                data-process="6"
+                aria-label="Go to dispatch and delivery"
+              >
+                <span>06</span><span>Deliver</span>
+              </button>
             </nav>
             <p class="scene-footnote">
               <span>One continuous choreography</span
               ><span
-                >Made entirely with code
-                <span aria-hidden="true">✳</span></span
+                >Made entirely with code <span aria-hidden="true">✳</span></span
               >
             </p>
           </div>
@@ -289,12 +295,13 @@
               <p class="eyebrow step-category">Water / Rotation / Renewal</p>
               <h3 id="step-title-1">A fresh<br /><em>start.</em></h3>
               <p>
-                Potatoes take their first ride. A cascade of water, a turning
-                peeler, and a clean beginning for everything that follows.
+                Potatoes take their first ride. Metered conveyors, filtered
+                water and eight abrasive rollers wash and peel them for the
+                journey ahead.
               </p>
               <div class="step-detail">
                 <span class="detail-symbol" aria-hidden="true">◎</span
-                ><span>Wash jets & a rotating peel drum</span>
+                ><span>Wash jets & eight abrasive rollers</span>
               </div>
             </article>
             <article
@@ -369,13 +376,38 @@
               <h3 id="step-title-5">Good things,<br /><em>wrapped up.</em></h3>
               <p>
                 Chips rise into the weighers. Freshly sealed bags pass
-                inspection and are lifted into labelled cartons. Flaps fold,
-                tape rolls, and finished boxes wait on wooden pallets.
+                inspection and are lifted into eight-pack cartons. Flaps fold,
+                tape rolls, and a second vacuum carriage builds pallet loads.
               </p>
               <div class="step-detail">
                 <span class="detail-symbol" aria-hidden="true">▱</span
                 ><span>Sealed bags. Taped cartons. Ready to ship.</span>
               </div>
+            </article>
+            <article
+              class="story-step"
+              id="step-6"
+              data-step="6"
+              aria-labelledby="step-title-6"
+            >
+              <span class="step-index" aria-hidden="true">06</span>
+              <p class="eyebrow step-category">Load / Travel / Possibility</p>
+              <h3 id="step-title-6">A bigger<br /><em>journey.</em></h3>
+              <p>
+                The last movement belongs to the road. A CRISP truck reverses
+                into the bay, the dock bridge connects, and a forklift carries
+                wrapped pallet loads into the cargo body. Doors close. A fresh
+                delivery begins.
+              </p>
+              <div class="step-detail">
+                <span class="detail-symbol" aria-hidden="true">↗</span
+                ><span id="dispatch-phase"
+                  >From the loading dock to the open road.</span
+                >
+              </div>
+              <p class="delivery-destinations">
+                Karachi · Lahore · Islamabad<br />Peshawar · Quetta
+              </p>
               <a class="text-link step-next" href="#flavours"
                 >Meet the collection <span aria-hidden="true">↗</span></a
               >

@@ -1,96 +1,72 @@
 # CRISP — Crafted for the crunch.
 
-An original potato-chip brand concept and interactive factory experience by **Hamza Aftab**. Built with vanilla JavaScript, Three.js and Vite. All machinery, food geometry, textures, choreography and audio are created in code.
+An original potato-chip brand and factory experience by Hamza Aftab. Built with JavaScript, Three.js and Vite. Architecture, machines, food, packaging, vehicles, textures, animation and sound are created in code.
 
-![CRISP factory and brand direction](public/social-preview.png)
+## The factory
 
-## The experience
+The original landing-page structure is preserved: a factory overview, six scroll-led chapters beside a sticky 3D view, the single-pack flavour collection, and the craft and creator sections.
 
-- A stainless-steel miniature factory with framed wash windows, a perforated abrasive peeler, an enclosed centrifugal cutter, a hooded continuous fryer, oil-drain conveyors, seasoning drums and three packaging lines.
-- An end-of-line sequence with inspection arches, vacuum bag transfer, labelled corrugated cartons, folding flaps, tape heads, roller outfeeds and finished boxes on slatted wooden pallets.
-- A scroll-directed camera journey through five processes. Process buttons also jump to any step.
-- Three selectable flavours: Golden Sea Salt, Smoky Paprika and Garden Herbs. The same renderer switches from the factory to sculpted product packaging.
-- Original stereo procedural foley: filtered water, wet slicing, layered oil crackle, chip rustle, pneumatic contact, film movement and carton handling. Optional sparse felt-key music. Audio starts only after a visitor enables it and stays on the animation's clock. Sound layers crossfade as the camera moves, with short fades when playback starts or stops.
-- Desktop and mobile layouts, an accessible mobile menu, keyboard camera inspection, reduced-motion support and still-image fallbacks.
-- Local fonts and assets. Rendering and machine audio stop while the experience is offscreen or the tab is hidden.
+The scene now includes a fenced factory campus, receiving yard, security cabin and gate, production building with an architectural roof cutaway, washable partitions, structural columns, utilities, marked aisles, drains, warehouse racks, raised dispatch dock, truck apron and connecting road. Static geometry is combined by material; vehicle assemblies retain only the joints that need independent movement.
 
-This is a portfolio concept. The collection presents fictional packaging and flavours; the site does not process orders. The creator button opens Hamza's GitHub profile.
+The process moves through metered receiving, filtered washing, eight abrasive peeling rollers, an enclosed centrifugal slicer, slice rinsing, continuous frying, draining and cooling, three flavour drums, elevated weighing, film forming, sealing, inspection and carton packing. Blue, teal and graphite frames contrast with stainless food-contact surfaces and three flavour colours. Procedural aggregate, paint, brushed metal, food skin, kraft paper and wood give the surfaces different responses to light.
 
-## Deploy to Vercel
+The collection uses 180 g concept family bags. Printed front and back film, sealed edges, folds and rounded volume share the same artwork across the production line and product view. Eight bags fill each carton over a sixteen-second case cycle. Flaps close, tape advances and a second vacuum carriage transfers finished cartons to staging pallets.
 
-1. Open [Vercel's new project page](https://vercel.com/new) and import **hamzaaftab325-eng/potato-factory-**.
-2. Use the repository root and the `main` branch.
-3. Confirm these settings, then deploy:
+Dispatch includes a detailed cab-over rigid box truck with steering pivots, rolling wheels, rear dual tyres, mirrors, glazing, lights, separate chassis and cargo body, hinged rear doors and pallet loads. A raw-potato tipper uses the receiving yard. The outbound truck arrives, manoeuvres, reverses, secures at the dock, opens its doors, connects the bridge, receives two forklift-carried pallets, closes up and departs. The arrival and exit follow separate road lanes and reset outside the factory perimeter.
 
-| Setting               | Value           |
-| --------------------- | --------------- |
-| Framework preset      | Vite            |
-| Root directory        | Repository root |
-| Node.js               | 24.x            |
-| Install command       | `npm ci`        |
-| Build command         | `npm run build` |
-| Output directory      | `dist`          |
-| Environment variables | None required   |
+## Animation and sound
 
-`vercel.json` already sets the framework, build command, output directory, immutable caching for generated assets, and response headers. The page uses anchor navigation, so no SPA rewrite is necessary. Vercel's Git integration can build future commits automatically.
+Machine animation repeats every sixteen seconds. Logistics and the overview drone tour repeat every sixty-four seconds. Scroll position chooses the process camera, while the delivery chapter follows the truck as it moves. Reduced-motion preferences, pause controls, camera inspection and offscreen suspension remain available.
 
-After your domain is assigned, set `og:image` in `index.html` to the absolute public URL of `/social-preview.png` and add a canonical link for that domain. The relative preview image is included now, without inventing a domain.
+Original procedural stereo sound includes water, slicing, frying, tumbling, packing, optional music and a separate sixty-four-second truck/dock/forklift stem. Audio uses the same elapsed-time clock as the scene. Each stem starts at its corresponding loop offset; source events align with sealing, loading, dock and door actions. Audio generation yields between stems so preparation does not happen in one uninterrupted block. Sound starts only after a visitor enables it.
 
-Official references: [Vite on Vercel](https://vercel.com/docs/frameworks/frontend/vite), [supported Node versions](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions).
+The first-paint and WebGL fallback image is a code-built SVG campus illustration. The interactive view uses real 3D geometry. No remote models, video backgrounds, stock recordings or paid assets are required.
 
-## Run locally
-
-Install Node.js 24, then:
+## Development and Vercel
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open `http://localhost:4173`. A web server is required for ES modules; opening `index.html` as a local file will not load the application.
+Node.js 24 is required. Open the local Vite URL through a web server; ES modules cannot run by opening the HTML file directly.
 
-```sh
-npm test          # Functional, geometry, camera-path and audio checks
-npm run build    # Production assets in dist/
-npm run preview  # Serve the production build locally
-```
+| Setting               | Value           |
+| --------------------- | --------------- |
+| Framework             | Vite            |
+| Root directory        | Repository root |
+| Install               | `npm ci`        |
+| Build                 | `npm run build` |
+| Output                | `dist`          |
+| Environment variables | None            |
+
+The Git repository is `hamzaaftab325-eng/potato-factory-`; the production branch is `main`. Existing Vercel configuration and response headers are preserved. The known site URL is https://potato-factory.vercel.app/.
 
 ## Source guide
 
-| File                      | Purpose                                                                     |
-| ------------------------- | --------------------------------------------------------------------------- |
-| `index.html`              | Page content, SEO metadata and semantic controls                            |
-| `src/styles.css`          | Typography, layout, materials palette and responsive design                 |
-| `src/lib/page.js`         | Navigation, sound controls, flavour selection and scene placement           |
-| `src/lib/journey.js`      | Scroll progression, camera presets and flavour metadata                     |
-| `src/factory/scene.js`    | Lighting, machinery, animation, postprocessing and product view             |
-| `src/factory/details.js`  | Drum and bagger engineering, weighers and secondary movement                |
-| `src/factory/machines.js` | Washer, peeler, centrifugal cutter, hooded fryer and connected transfers    |
-| `src/factory/shipping.js` | Vacuum heads, carton choreography, flap closing, taping and pallets         |
-| `src/factory/surfaces.js` | Brushed metal, perforations, food skin, belt, kraft paper and wood textures |
-| `src/factory/timing.js`   | Shared loop, knife, sealing-jaw and carton timing                           |
-| `src/factory/geometry.js` | Curved chips and inflated, crimped film geometry                            |
-| `src/factory/audio.js`    | The six procedural sound layers                                             |
-| `public/`                 | Factory still, vector packaging, social image and favicon                   |
-| `tests/`                  | Automated checks                                                            |
-| `archive/`                | The previous repository prototype, preserved for reference                  |
+| File                       | Purpose                                               |
+| -------------------------- | ----------------------------------------------------- |
+| `index.html`               | Page content and six scroll chapters                  |
+| `src/lib/page.js`          | Scroll, navigation, collection and controls           |
+| `src/lib/journey.js`       | Camera presets and flavour definitions                |
+| `src/factory/campus.js`    | Architecture, trucks, dock, forklift and drone tour   |
+| `src/factory/batching.js`  | Rigid animated-assembly batching                      |
+| `src/factory/machines.js`  | Preparation, cutting, frying and transfers            |
+| `src/factory/details.js`   | Weighing, guarding and machine details                |
+| `src/factory/shipping.js`  | Eight-bag cartons and pallet transfer                 |
+| `src/factory/packaging.js` | Printed front and back bag materials                  |
+| `src/factory/geometry.js`  | Food and bag geometry                                 |
+| `src/factory/surfaces.js`  | Procedural surface textures                           |
+| `src/factory/timing.js`    | Machine, case and logistics phases                    |
+| `src/factory/audio.js`     | Synchronized original sound stems                     |
+| `src/factory/scene.js`     | Rendering, camera, controls and animation integration |
 
-Change the brand copy and profile links in `index.html`. Flavour names/colours and camera framing are in `src/lib/journey.js`; procedural label artwork is in `bagMaterial()` in `src/factory/scene.js`. Update the HTML flavour descriptions and fallback SVG packs alongside any flavour changes.
+## Revision status
 
-The still factory poster is a crop of the previous code-rendered scene; it has not yet been refreshed for the revised machinery. It provides immediate content and a fallback; the interactive experience renders real geometry, with no video backdrop or remote model downloads.
+The factory-campus upgrade is implemented in source. No preview, production build, automated tests, visual QA or audio listening review was run for this revision, at the owner's request. Existing test expectations were updated for the sixth chapter, eight-bag case timing and separate logistics loop; those tests remain unexecuted in this session. Deployment and runtime behaviour are unverified.
 
-## Current revision
+This is an original portfolio interpretation with fictional packaging and delivery routes, rather than a manufacturing digital twin. Production rates, vehicle travel and handling choreography are compressed for the animation. The site does not process orders.
 
-The machinery and audio refinement is implemented in source. **No QA, automated tests, production build or browser/audio review was run for this revision, at the owner's request.** The existing checks remain available through `npm test` and `npm run build`; GitHub's existing workflow will run when commits are pushed.
+Mechanism references: [Vanmark's roller peeler](https://www.vanmark.com/en-us/Equipment/All-Equipment/Peeler-Scrubber-Washer-2920-2922), [Urschel's Model CC](https://www.urschel.com/cutting-machines/model-cc-slicer/), [Heat and Control's chip fryer](https://www.heatandcontrol.com/model/potato-chip-fryer), [integrated seasoning](https://www.heatandcontrol.com/products/on-machine-seasoning), [Ishida snack packaging](https://www.ishidaeurope.com/en/integrated-solutions/snacks-packaging/integrated-snack-packaging-systems/), [Isuzu's FVR proportions](https://isuzu-intl.com/f-series-model-mena/fvr-mena/), and [ASSA ABLOY docking equipment](https://www.assaabloyentrance.com/global/en/solutions/products/loading-dock-equipment). Manufacturer models, logos and audio were not copied.
 
-The mechanical models are an original, compact portfolio interpretation, not a manufacturing simulation. Design references include [Urschel's enclosed centrifugal slicer](https://www.urschel.com/cutting-machines/model-cc-slicer/) and [Heat and Control's continuous potato-chip fryer](https://www.heatandcontrol.com/model/potato-chip-fryer). No manufacturer models, logos or audio have been copied.
-
-All animation repeats on a 16-second clock. A bag cycle takes two seconds and a carton cycle takes eight seconds; the three flavour lines are phase-offset. `timing.js` owns those timing values. The sound is synthesized from band-limited noise, shaped transient envelopes and short stereo reflections, with no stock recordings. The optional music is an original procedural arrangement.
-
-## Dependency credits
-
-Three.js is MIT licensed. Instrument Serif and DM Sans are distributed under the SIL Open Font License. Their license texts are included in `docs/licenses/`. No stock audio, external HDR maps, paid models or external image services are required.
-
-## Animation restoration
-
-The complete earlier scroll-led version has been restored. Camera easing now measures elapsed time between rendered frames, and unchanged viewport sizes and scroll positions no longer trigger redundant renderer work. The original visual style, models, sound, collection and process layout are restored. No preview, build, tests or visual QA were run for this change, at the owner's request.
+Three.js is MIT licensed. Instrument Serif and DM Sans use the SIL Open Font License. License texts remain in `docs/licenses/`.

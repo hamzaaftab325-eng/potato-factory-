@@ -56,13 +56,14 @@ function context() {
   };
 }
 
-test("all six sound layers share a 16-second loop and exact start phase", () => {
+test("machine and logistics sound layers start at their exact animation phases", () => {
   const ctx = context(),
     sound = new FactorySound(ctx);
-  assert.equal(sound.stems.length, 6);
-  sound.stems.forEach((buffer) => {
-    assert.equal(buffer.duration, 16);
-    assert.equal(buffer.length, 705600);
+  assert.equal(sound.stems.length, 7);
+  sound.stems.forEach((buffer, i) => {
+    const duration = i === 6 ? 64 : 16;
+    assert.equal(buffer.duration, duration);
+    assert.equal(buffer.length, duration * ctx.sampleRate);
     let peak = 0;
     for (const value of buffer.getChannelData(0)) {
       assert.ok(Number.isFinite(value));
@@ -71,10 +72,10 @@ test("all six sound layers share a 16-second loop and exact start phase", () => 
     assert.ok(peak > 0.005 && peak < 0.3, `headroom: ${peak}`);
   });
   sound.start(21.25);
-  assert.equal(sound.sources.length, 6);
-  sound.sources.forEach((s) => {
+  assert.equal(sound.sources.length, 7);
+  sound.sources.forEach((s, i) => {
     assert.equal(s.at, 12);
-    assert.equal(s.offset, 5.25);
+    assert.equal(s.offset, i === 6 ? 21.25 : 5.25);
     assert.equal(s.loop, true);
   });
   const sources = [...sound.sources];
@@ -92,9 +93,12 @@ test("machine focus changes levels, music is optional, and pack views silence ma
   assert.equal(sound.buses[0].gain.value, 0.12);
   sound.setMusic(true);
   assert.equal(sound.buses[5].gain.value, 0.55);
-  sound.setFocus(6);
+  sound.setFocus(7);
   assert.ok(sound.buses.slice(0, 5).every((b) => b.gain.value === 0));
   assert.equal(sound.buses[5].gain.value, 0.55);
+  assert.equal(sound.buses[6].gain.value, 0);
+  sound.setFocus(6);
+  assert.equal(sound.buses[6].gain.value, 0.85);
   sound.setMusic(false);
   assert.equal(sound.buses[5].gain.value, 0);
 });
