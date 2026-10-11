@@ -26,9 +26,15 @@ The first-paint and WebGL fallback image is a code-built SVG campus illustration
 
 ## Render detail
 
-Desktop starts in 4K detail mode. The drawing buffer targets up to 3840 × 2160, preserving the canvas aspect ratio and respecting GPU texture limits. The 4K/HD control switches to a lighter mode when desired. This is a real-time render ceiling, not an exported 4K video or a guarantee for every screen. Mobile defaults to lighter rendering.
+AUTO is the default on desktop and mobile. It respects native screen pixels (up to 1.5× DPR) and caps desktop buffers at 2560 × 1440. The optional **4K MAX** setting allows up to 3840 × 2160. Both modes observe rendered-frame cadence and CPU work: sustained missed frames reduce resolution, and six seconds of headroom allow gradual recovery. This is an adaptive ceiling, not an exported 4K video or a guaranteed frame rate.
 
-Multisampled HDR scene buffers, 4096-pixel desktop shadow maps, 1024-pixel procedural surface maps, texture anisotropy and half-resolution contact-shadow processing preserve crisp edges without repeating the full ambient-occlusion pass at 4K.
+The previous desktop configuration forced UHD-sized buffers, multisampled HDR, 4096-pixel shadow maps and a second full-scene SSAO geometry pass. Mobile avoided much of that cost. The new renderer removes the SSAO and MSAA passes, halves bloom targets, updates tighter 2048/1024 shadow maps at 30/15 Hz, and stops bloom at the lowest budgets. HDR tone mapping, FXAA, metal reflections and 1024-pixel food artwork remain.
+
+Spatial material batches let close-up cameras cull distant equipment. Conveyor contents and bounded effects skip updates when outside the view. The raw truck keeps its visible potato surface and replaces buried duplicate geometry with the existing filled bed. For a native 1920 × 1080 canvas, AUTO starts with one quarter of the UHD drawing-buffer pixels; total GPU savings depend on the visible scene and device.
+
+Camera controls provide zoom in, zoom out and reset. Inspection also supports wheel zoom, +/− and 0; page scrolling stays available outside inspection. Zoom eases smoothly while the animation is paused and respects camera limits. Changing between the factory and product view resets zoom.
+
+Process accents include water jets and surface rings, peel strips in the waste drain, slicing/rinse motion, hood and cooling vapour, amber oil convection, flavour-coloured seasoning grains and packing photoeye signals. Effects use small instance/point batches. New details include enamel finish, pressure/temperature dial faces, cab roof fairings, tank straps, door seals/hinges, turn signals and reverse lamps.
 
 ## Development and Vercel
 
@@ -59,7 +65,8 @@ The Git repository is `hamzaaftab325-eng/potato-factory-`; the production branch
 | `src/lib/journey.js`           | Camera presets and flavour definitions                |
 | `src/factory/campus.js`        | Architecture, trucks, dock, forklift and drone tour   |
 | `src/factory/vehicle-paths.js` | Explicit-radius truck route geometry                  |
-| `src/factory/effects.js`       | Procedural steam, oil rings and warm fryer light      |
+| `src/factory/effects.js`       | Bounded wash, peel, vapour and packing accents        |
+| `src/factory/render-budget.js` | Adaptive drawing-buffer budget and zoom limits        |
 | `src/factory/batching.js`      | Rigid animated-assembly batching                      |
 | `src/factory/machines.js`      | Preparation, cutting, frying and transfers            |
 | `src/factory/details.js`       | Weighing, guarding and machine details                |
@@ -73,7 +80,7 @@ The Git repository is `hamzaaftab325-eng/potato-factory-`; the production branch
 
 ## Revision status
 
-The factory-campus upgrade, slower frying, vapour effects, truck-clearance routes, outward doors, latching interlock and 4K detail mode are implemented in source. The six scroll chapters, page layout, packing choreography and machine sound timing are preserved. Truck/dock audio follows the longer logistics clock. Source test expectations reflect the new duration; tests were not run. No preview, production build, automated tests, visual QA or audio listening review was run for this revision, at the owner's request. Deployment and runtime behaviour are unverified.
+This revision preserves the six scroll chapters, slower frying, packing choreography, ninety-six-second logistics, clear truck routes and outward door/latch sequence. The production build and 19 focused rendering-budget, UI, camera and geometry checks passed. Cab/body clearance and the contained tipper load are corrected. No browser preview, visual QA, GPU measurement on the owner's desktop or audio listening review is included. Actual production frame rate and the Vercel deployment still need confirmation on the target device.
 
 This is an original portfolio interpretation with fictional packaging and delivery routes, rather than a manufacturing digital twin. Production rates, vehicle travel and handling choreography are compressed for the animation. The site does not process orders.
 

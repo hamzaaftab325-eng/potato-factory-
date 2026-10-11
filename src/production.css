@@ -266,6 +266,10 @@ body::before {
 }
 
 .scene-controls {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px;
+  max-width: calc(100% - 24px);
   padding: 5px;
   border-color: #dbe9df2b;
   background: #061f21d8;
@@ -283,6 +287,27 @@ body::before {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.05em;
+}
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  border-left: 1px solid #dbe9df26;
+  padding-left: 4px;
+}
+.zoom-reset {
+  min-width: 48px;
+  padding-inline: 5px;
+  font-variant-numeric: tabular-nums;
+  font-size: 9px;
+}
+.scene-control:focus-visible {
+  outline: 2px solid #f0cf8a;
+  outline-offset: 2px;
+}
+.scene-control:disabled {
+  opacity: 0.4;
 }
 
 .scene-control:hover:not(:disabled) {
@@ -746,11 +771,33 @@ html.js-polish .reveal-item.reveal-delay-3 {
   }
 
   .scene-controls {
-    max-width: calc(100vw - 34px);
+    max-width: calc(100% - 16px);
+    gap: 1px;
+    border-radius: 22px;
   }
 
-  .sound-control span {
+  .sound-control span,
+  .inspect-control span {
     display: none;
+  }
+  .scene-control {
+    min-width: 34px;
+  }
+  .sound-control {
+    width: 34px;
+    padding: 0;
+  }
+  .quality-control {
+    padding-inline: 7px;
+    font-size: 8px;
+  }
+  .zoom-controls {
+    padding-left: 3px;
+  }
+  .zoom-reset {
+    min-width: 42px;
+    padding-inline: 3px;
+    font-size: 8px;
   }
 
   .product-display {
@@ -813,5 +860,15 @@ html.js-polish .reveal-item.reveal-delay-3 {
   .scene-footnote {
     font-size: 8px;
     gap: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .scene-controls {
+    width: 270px;
+  }
+  .hero-stage .inspect-hint,
+  .story-stage .inspect-hint {
+    bottom: 96px;
   }
 }

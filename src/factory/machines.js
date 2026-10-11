@@ -123,6 +123,71 @@ export function addProcessMachines(C) {
       M.rubber,
     );
   }
+  function gauge(x, y, z, units, maximum, reading) {
+    const face = document.createElement("canvas");
+    face.width = face.height = 512;
+    const a = face.getContext("2d");
+    a.fillStyle = "#e7e6dd";
+    a.fillRect(0, 0, 512, 512);
+    a.translate(256, 256);
+    a.strokeStyle = "#768d76";
+    a.lineWidth = 18;
+    a.beginPath();
+    a.arc(0, 0, 190, Math.PI * 0.95, Math.PI * 1.6);
+    a.stroke();
+    a.strokeStyle = "#253538";
+    for (let i = 0; i <= 40; i++) {
+      const angle = Math.PI * 0.75 + (i / 40) * Math.PI * 1.5;
+      const r = i % 5 ? 174 : 155;
+      a.lineWidth = i % 5 ? 2 : 4;
+      a.beginPath();
+      a.moveTo(Math.cos(angle) * r, Math.sin(angle) * r);
+      a.lineTo(Math.cos(angle) * 196, Math.sin(angle) * 196);
+      a.stroke();
+      if (i % 10 === 0) {
+        a.fillStyle = "#253538";
+        a.font = "30px DM Sans";
+        a.textAlign = "center";
+        a.fillText(
+          String((maximum * i) / 40),
+          Math.cos(angle) * 126,
+          Math.sin(angle) * 126 + 10,
+        );
+      }
+    }
+    const angle = Math.PI * 0.75 + (reading / maximum) * Math.PI * 1.5;
+    a.strokeStyle = "#a74635";
+    a.lineWidth = 7;
+    a.beginPath();
+    a.moveTo(-Math.cos(angle) * 23, -Math.sin(angle) * 23);
+    a.lineTo(Math.cos(angle) * 164, Math.sin(angle) * 164);
+    a.stroke();
+    a.fillStyle = "#253538";
+    a.beginPath();
+    a.arc(0, 0, 12, 0, TAU);
+    a.fill();
+    a.font = "26px DM Sans";
+    a.textAlign = "center";
+    a.fillText(units, 0, 77);
+    const map = new THREE.CanvasTexture(face);
+    map.colorSpace = THREE.SRGBColorSpace;
+    cylinder(x, y, z, 0.13, 0.075, M.steel, scene, "z");
+    mesh(
+      new THREE.CircleGeometry(0.113, 32),
+      new THREE.MeshStandardMaterial({ map, roughness: 0.6 }),
+      x,
+      y,
+      z + 0.041,
+    );
+    mesh(
+      new THREE.TorusGeometry(0.117, 0.009, 6, 32),
+      M.chrome,
+      x,
+      y,
+      z + 0.044,
+    );
+    cylinder(x, y - 0.15, z, 0.022, 0.12, M.chrome);
+  }
   function transfer(a, b, width, kind, material, count = 18) {
     const A = new THREE.Vector3(...a),
       B = new THREE.Vector3(...b);
@@ -148,9 +213,13 @@ export function addProcessMachines(C) {
       count,
     );
     food.castShadow = food.receiveShadow = true;
+    cleats.frustumCulled = food.frustumCulled = false;
     scene.add(cleats, food);
     dynamic.push(cleats, food);
-    transfers.push({ A, B, angle, cleats, food, kind, count });
+    const bounds = new THREE.Box3()
+      .setFromPoints([A, B])
+      .expandByScalar(width + 0.3);
+    transfers.push({ A, B, angle, cleats, food, kind, count, bounds });
     for (const u of [0.16, 0.82]) {
       const p = A.clone().lerp(B, u);
       for (const s of [-1, 1])
@@ -229,6 +298,7 @@ export function addProcessMachines(C) {
   cylinder(-10.65, 0.99, -1.04, 0.19, 0.66, M.steel);
   motor(-9.58, 0.87, -1.13);
   hmi(-9.65, 1.09, 1.05, "WASH PRESSURE", "2.4 BAR");
+  gauge(-11.05, 1.15, 1.02, "BAR", 4, 2.4);
 
   // An eight-roll abrasive bed, enclosed by a stationary hygienic housing.
   // Only the rollers turn; spray bars and the peel-waste pan remain fixed.
@@ -499,6 +569,7 @@ export function addProcessMachines(C) {
   cylinder(0.25, 1.12, -1.62, 0.22, 0.64, M.steel);
   motor(0.9, 0.84, -1.69);
   hmi(0.45, 1.24, 1.37, "OIL TEMPERATURE", "175 °C");
+  gauge(-1.0, 1.21, 1.24, "°C", 200, 175);
   transfer([1.6, 1.51, 0], [2.68, 1.86, 0], 1.68, "chip", M.chip, 36);
   box(2.1, 1.34, 0, 1.14, 0.045, 1.62, M.steel);
   transfer([2.68, 1.86, 0], [3.52, 1.34, 0], 1.66, "chip", M.chip, 24);
@@ -524,16 +595,25 @@ export function addProcessMachines(C) {
       box(0, 0.04, side * 0.34, length, 0.16, 0.027, M.steel, g);
     const food = new THREE.InstancedMesh(chipG, M.chip, 18);
     food.castShadow = true;
+    food.frustumCulled = false;
     scene.add(food);
     dynamic.push(food);
-    branches.push({ A, B, food });
+    branches.push({
+      A,
+      B,
+      food,
+      bounds: new THREE.Box3().setFromPoints([A, B]).expandByScalar(0.7),
+    });
   }
 
   return {
     peeler,
     dynamic,
-    update(t) {
+    update(t, frustum) {
       for (const e of transfers) {
+        e.food.visible = e.cleats.visible =
+          !frustum || frustum.intersectsBox(e.bounds);
+        if (!e.food.visible) continue;
         for (let i = 0; i < 18; i++) {
           const u = (i / 18 + t * 0.25) % 1;
           dummy.position.lerpVectors(e.A, e.B, u);
@@ -581,6 +661,8 @@ export function addProcessMachines(C) {
         d.o.scale.setScalar(0.33);
       });
       for (const b of branches) {
+        b.food.visible = !frustum || frustum.intersectsBox(b.bounds);
+        if (!b.food.visible) continue;
         for (let i = 0; i < 18; i++) {
           const u = (i / 18 + t * 0.5) % 1;
           dummy.position.lerpVectors(b.A, b.B, u);

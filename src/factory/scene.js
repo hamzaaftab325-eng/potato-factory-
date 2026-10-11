@@ -1,12 +1,10 @@
 import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
-import { SSAOPass } from "three/addons/postprocessing/SSAOPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { FXAAShader } from "three/addons/shaders/FXAAShader.js";
-import { Reflector } from "three/addons/objects/Reflector.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { addFactoryDetails } from "./details.js";
 import { FactorySound } from "./audio.js";
@@ -18,7 +16,12 @@ import { LOOP_SECONDS, bagPhase, jawClosure } from "./timing.js";
 import { cameraAt, FLAVOURS, CAMERAS } from "../lib/journey.js";
 import { addFactoryCampus, droneCamera } from "./campus.js";
 import { createBagMaterials } from "./packaging.js";
-import { addFryingEffects } from "./effects.js";
+import { addFryingEffects, addProcessEffects } from "./effects.js";
+import {
+  AdaptiveRenderBudget,
+  drawingBudget,
+  zoomDistance,
+} from "./render-budget.js";
 
 export function createFactory(canvas, options = {}) {
   const TAU = Math.PI * 2,
@@ -33,15 +36,20 @@ export function createFactory(canvas, options = {}) {
     frameCount = 0,
     lastRendered = 0;
   let contextLost = false;
-  let ultraQuality = window.innerWidth >= 900;
+  let ultraQuality = false;
+  const budget = new AdaptiveRenderBudget(window.innerWidth < 700 ? 30 : 60);
+  let zoom = 1,
+    desiredZoom = 1,
+    lastShadow = -Infinity;
   const renderer = new THREE.WebGLRenderer({
     canvas,
-    antialias: true,
+    antialias: false,
     alpha: false,
     powerPreference: "high-performance",
   });
   renderer.setPixelRatio(1);
   renderer.shadowMap.enabled = true;
+  renderer.shadowMap.autoUpdate = false;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
@@ -50,6 +58,10 @@ export function createFactory(canvas, options = {}) {
   scene.fog = new THREE.FogExp2("#082326", 0.004);
   const camera = new THREE.PerspectiveCamera(40, 1, 0.15, 280),
     v3 = (x, y, z) => new THREE.Vector3(x, y, z);
+  const cameraTarget = new THREE.Vector3(),
+    cameraOffset = new THREE.Vector3();
+  const viewFrustum = new THREE.Frustum(),
+    viewMatrix = new THREE.Matrix4();
   let seed = 132;
   function random() {
     seed = (seed * 1664525 + 1013904223) >>> 0;
@@ -135,6 +147,11 @@ export function createFactory(canvas, options = {}) {
     clearcoat: 0.3,
   });
   M.graphite = mat("#394447", 0.45, 0.5);
+  for (const paint of [M.blue, M.teal, M.graphite]) {
+    paint.roughnessMap = textures.enamel;
+    paint.bumpMap = textures.enamel;
+    paint.bumpScale = 0.00035;
+  }
   M.motor = mat("#16384b", 0.75, 0.27);
   M.potato.bumpMap = potatoTex;
   M.potato.bumpScale = 0.0014;
@@ -207,8 +224,8 @@ export function createFactory(canvas, options = {}) {
   scene.add(key.target);
   key.castShadow = true;
   key.shadow.mapSize.set(
-    window.innerWidth < 700 ? 2048 : 4096,
-    window.innerWidth < 700 ? 2048 : 4096,
+    window.innerWidth < 700 ? 1024 : 2048,
+    window.innerWidth < 700 ? 1024 : 2048,
   );
   Object.assign(key.shadow.camera, {
     left: -60,
@@ -390,6 +407,7 @@ export function createFactory(canvas, options = {}) {
     inst.castShadow = false;
     inst.receiveShadow = true;
     scene.add(inst);
+    inst.frustumCulled = false;
     beltAnims.push({ a, b, z, y, width, n, inst });
     return { a, b, z, y, width };
   }
@@ -449,6 +467,7 @@ export function createFactory(canvas, options = {}) {
     inst.castShadow = true;
     inst.receiveShadow = true;
     scene.add(inst);
+    inst.frustumCulled = false;
     const meta = [];
     for (let i = 0; i < n; i++)
       meta.push({
@@ -512,6 +531,11 @@ export function createFactory(canvas, options = {}) {
   });
   const { peeler } = process;
   const fryingEffects = addFryingEffects(
+    scene,
+    random,
+    window.innerWidth < 700,
+  );
+  const processEffects = addProcessEffects(
     scene,
     random,
     window.innerWidth < 700,
@@ -728,6 +752,8 @@ export function createFactory(canvas, options = {}) {
     box(x + 0.62, 3.02, z + 0.865, 0.2, 0.17, 0.022, M.led);
     box(x + 0.62, 2.73, z + 0.865, 0.09, 0.05, 0.02, M.red);
     conveyor(10.45, 14.0, z, 1.05, 1.03);
+    box(12.1, 1.12, z + 0.42, 0.035, 0.24, 0.045, M.chrome);
+    box(12.1, 1.25, z + 0.409, 0.085, 0.075, 0.043, M.dark);
     let bags = [];
     for (let i = 0; i < 4; i++) {
       let g = new THREE.Group();
@@ -806,45 +832,33 @@ export function createFactory(canvas, options = {}) {
       size: 0.033,
       transparent: true,
       opacity: 0.64,
+      depthWrite: false,
     }),
   );
   scene.add(points);
   const dustN = 120,
     dustP = new Float32Array(dustN * 3),
     dustG = new THREE.BufferGeometry();
+  const spiceColours = new Float32Array(dustN * 3);
+  const spicePalette = [
+    new THREE.Color("#e9d7a2"),
+    new THREE.Color("#c57b49"),
+    new THREE.Color("#719957"),
+  ];
+  for (let i = 0; i < dustN; i++)
+    spicePalette[i % 3].toArray(spiceColours, i * 3);
+  dustG.setAttribute("color", new THREE.BufferAttribute(spiceColours, 3));
   dustG.setAttribute("position", new THREE.BufferAttribute(dustP, 3));
   scene.add(
     new THREE.Points(
       dustG,
       new THREE.PointsMaterial({
-        color: "#efc878",
+        color: "#ffffff",
+        vertexColors: true,
+        depthWrite: false,
         size: 0.022,
         transparent: true,
         opacity: 0.8,
-      }),
-    ),
-  );
-  const steamN = 68,
-    steamP = new Float32Array(steamN * 3),
-    steamG = new THREE.BufferGeometry();
-  steamG.setAttribute("position", new THREE.BufferAttribute(steamP, 3));
-  const steamCanvas = document.createElement("canvas");
-  steamCanvas.width = steamCanvas.height = 64;
-  const sc = steamCanvas.getContext("2d"),
-    gradient = sc.createRadialGradient(32, 32, 0, 32, 32, 32);
-  gradient.addColorStop(0, "rgba(216,233,226,.35)");
-  gradient.addColorStop(1, "rgba(216,233,226,0)");
-  sc.fillStyle = gradient;
-  sc.fillRect(0, 0, 64, 64);
-  scene.add(
-    new THREE.Points(
-      steamG,
-      new THREE.PointsMaterial({
-        map: new THREE.CanvasTexture(steamCanvas),
-        size: 0.75,
-        transparent: true,
-        opacity: 0.25,
-        depthWrite: false,
       }),
     ),
   );
@@ -892,6 +906,7 @@ export function createFactory(canvas, options = {}) {
   }
   function changeActivity(update) {
     const t = now();
+    budget.reset();
     update();
     align(t);
     syncAudio(t);
@@ -938,12 +953,13 @@ export function createFactory(canvas, options = {}) {
   function setMode(next) {
     if (mode === next) return;
     mode = next;
+    zoom = desiredZoom = 1;
+    options.onZoomChange?.();
     inspect = false;
     const product = mode === "product";
     factoryObjects.forEach((o) => {
       o.visible = !product;
     });
-    studioFloor.visible = false;
     productGroup.visible = product;
     scene.background.set(product ? "#eee8dc" : "#082326");
     scene.fog.color.copy(scene.background);
@@ -972,6 +988,17 @@ export function createFactory(canvas, options = {}) {
     }
     if (!inspect) updateCamera();
     dirty = true;
+  }
+  function zoomBy(factor) {
+    if (!Number.isFinite(factor) || factor <= 0) return;
+    desiredZoom = zoomDistance(desiredZoom, factor);
+    dirty = true;
+    options.onZoomChange?.();
+  }
+  function resetZoom() {
+    desiredZoom = 1;
+    dirty = true;
+    options.onZoomChange?.();
   }
   function setInspect(enabled) {
     inspect = enabled;
@@ -1010,7 +1037,23 @@ export function createFactory(canvas, options = {}) {
   on("pointercancel", () => {
     dragging = false;
   });
+  on(
+    "wheel",
+    (e) => {
+      if (!inspect || e.ctrlKey || e.metaKey) return;
+      e.preventDefault();
+      zoomBy(Math.exp(-Math.max(-100, Math.min(100, e.deltaY)) * 0.003));
+    },
+    { passive: false },
+  );
   on("keydown", (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (["+", "=", "-", "0"].includes(e.key)) {
+      e.preventDefault();
+      if (e.key === "0") resetZoom();
+      else zoomBy(e.key === "-" ? 1 / 1.2 : 1.2);
+      return;
+    }
     if (!inspect) return;
     if (e.key === "Escape") {
       setInspect(false);
@@ -1047,6 +1090,7 @@ export function createFactory(canvas, options = {}) {
     ...shipping.dynamic,
     ...campus.dynamic,
     fryingEffects.group,
+    processEffects.group,
     ...fluidSurfaces,
     ...bubbles.map((a) => a.o),
     ...drums.map((a) => a.g),
@@ -1080,6 +1124,7 @@ export function createFactory(canvas, options = {}) {
   }
   scene.updateMatrixWorld(true);
   const batches = new Map();
+  const batchCentre = new THREE.Vector3();
   scene.traverse((o) => {
     if (
       !o.isMesh ||
@@ -1089,7 +1134,12 @@ export function createFactory(canvas, options = {}) {
     )
       return;
     for (let q = o; q; q = q.parent) if (protectedNodes.has(q)) return;
-    const k = o.material.uuid + "-" + o.castShadow + "-" + o.receiveShadow;
+    // Spatial batches can be culled by the close-up camera. One material batch
+    // spanning the entire campus would draw every machine in every chapter.
+    if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+    o.geometry.boundingBox.getCenter(batchCentre).applyMatrix4(o.matrixWorld);
+    const cell = `${Math.floor(batchCentre.x / 12)}:${Math.floor(batchCentre.z / 12)}`;
+    const k = `${cell}/${o.material.uuid}/${o.castShadow}/${o.receiveShadow}`;
     if (!batches.has(k))
       batches.set(k, {
         material: o.material,
@@ -1129,56 +1179,16 @@ export function createFactory(canvas, options = {}) {
     b.objects.forEach((o) => o.removeFromParent());
     parts.forEach((g) => g.dispose());
   }
-  const mirrorShader = {
-    uniforms: THREE.UniformsUtils.clone(Reflector.ReflectorShader.uniforms),
-    vertexShader: Reflector.ReflectorShader.vertexShader,
-    fragmentShader:
-      `uniform vec3 color;uniform sampler2D tDiffuse;varying vec4 vUv;void main(){vec2 uv=vUv.xy/vUv.w;vec3 r=vec3(0.0);for(int i=-2;i<=2;i++){for(int j=-2;j<=2;j++){r+=texture2D(tDiffuse,uv+vec2(float(i),float(j))*.0016).rgb;}}r/=25.0;gl_FragColor=vec4(mix(color,r,.16),1.0);#include <tonemapping_fragment>
-#include <colorspace_fragment>}`.replace(";#include", ";\n#include"),
-  };
-  const studioFloor = new Reflector(new THREE.PlaneGeometry(160, 160), {
-    color: "#082326",
-    textureWidth: window.innerWidth < 700 ? 256 : 768,
-    textureHeight: window.innerWidth < 700 ? 256 : 768,
-    clipBias: 0.003,
-    multisample: 0,
-    shader: mirrorShader,
-  });
-  studioFloor.rotation.x = -Math.PI / 2;
-  studioFloor.position.y = -0.244;
-  studioFloor.visible = false;
-  scene.add(studioFloor);
   const renderTarget = new THREE.WebGLRenderTarget(1, 1, {
     type: THREE.HalfFloatType,
-    samples:
-      window.innerWidth < 700
-        ? 0
-        : Math.min(2, renderer.capabilities.maxSamples),
+    samples: 0,
   });
   const composer = new EffectComposer(renderer, renderTarget);
   composer.addPass(new RenderPass(scene, camera));
-  const ao = new SSAOPass(scene, camera, 1, 1, 16);
-  ao.kernelRadius = 0.3;
-  ao.minDistance = 0.0005;
-  ao.maxDistance = 0.016;
-  // Contact shadows use half-size buffers; the scene and final output keep
-  // full resolution, preserving the 4K budget for metal edges and artwork.
-  const resizeAO = ao.setSize.bind(ao);
-  ao.setSize = (w, h) =>
-    resizeAO(Math.max(1, Math.ceil(w / 2)), Math.max(1, Math.ceil(h / 2)));
-  composer.addPass(ao);
-  const aoExcluded = [studioFloor];
-  scene.traverse((o) => {
-    if (o.material?.transparent) aoExcluded.push(o);
-  });
-  const renderAO = ao.render.bind(ao);
-  ao.render = (...args) => {
-    const vis = aoExcluded.map((o) => o.visible);
-    aoExcluded.forEach((o) => (o.visible = false));
-    renderAO(...args);
-    aoExcluded.forEach((o, i) => (o.visible = vis[i]));
-  };
   const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.17, 0.38, 2.6);
+  const resizeBloom = bloom.setSize.bind(bloom);
+  bloom.setSize = (w, h) =>
+    resizeBloom(Math.max(1, Math.ceil(w / 2)), Math.max(1, Math.ceil(h / 2)));
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
   const grade = new ShaderPass({
@@ -1264,23 +1274,19 @@ export function createFactory(canvas, options = {}) {
     if (force !== true && nextWidth === width && nextHeight === height) return;
     width = nextWidth;
     height = nextHeight;
-    const gpuLimit = renderer.capabilities.maxTextureSize;
-    const ratio = ultraQuality
-      ? Math.min(
-          4,
-          3840 / width,
-          2160 / height,
-          gpuLimit / width,
-          gpuLimit / height,
-        )
-      : Math.min(
-          window.devicePixelRatio || 1,
-          window.innerWidth < 700 ? 1.5 : 2,
-          Math.sqrt((2560 * 1440) / (width * height)),
-          gpuLimit / width,
-          gpuLimit / height,
-        );
-    renderer.setPixelRatio(Math.max(0.5, ratio));
+    const viewportChanged = camera.aspect !== width / height;
+    budget.fps = window.innerWidth < 700 ? 30 : 60;
+    if (viewportChanged) budget.reset();
+    const { ratio } = drawingBudget({
+      width,
+      height,
+      dpr: window.devicePixelRatio || 1,
+      mobile: window.innerWidth < 700,
+      detail: ultraQuality,
+      scale: budget.scale,
+      maxTextureSize: renderer.capabilities.maxTextureSize,
+    });
+    renderer.setPixelRatio(ratio);
     renderer.setSize(width, height, false);
     composer.setPixelRatio(renderer.getPixelRatio());
     composer.setSize(width, height);
@@ -1290,8 +1296,8 @@ export function createFactory(canvas, options = {}) {
     );
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    ao.enabled = window.innerWidth > 900;
-    studioFloor.visible = false;
+    bloom.enabled = budget.scale >= 0.7;
+    options.onQualityChange?.();
     dirty = true;
   }
   const observer = new ResizeObserver(resize);
@@ -1305,10 +1311,13 @@ export function createFactory(canvas, options = {}) {
   function frame() {
     if (disposed) return;
     raf = requestAnimationFrame(frame);
-    const real = performance.now() / 1000;
+    const frameStart = performance.now();
+    const real = frameStart / 1000;
     if (!visible || !pageVisible || contextLost) return;
+    cameraTarget.set(...desired.target);
     const cameraMoving =
-      target.distanceTo(v3(...desired.target)) > 0.004 ||
+      Math.abs(zoom - desiredZoom) > 0.0005 ||
+      target.distanceTo(cameraTarget) > 0.004 ||
       Math.abs(radius - desired.radius) > 0.004 ||
       Math.abs(yaw - desired.yaw) > 0.0005 ||
       Math.abs(elevation - desired.elev) > 0.0005;
@@ -1317,7 +1326,8 @@ export function createFactory(canvas, options = {}) {
     if (active() && !dirty && real - lastRendered < 1 / fps - 0.002) return;
     // Camera easing uses elapsed time between rendered frames, including
     // callbacks skipped by the mobile frame limiter.
-    const dt = Math.min(0.1, Math.max(0, real - lastRendered));
+    const interval = Math.max(0, (real - lastRendered) * 1000);
+    const dt = Math.min(0.1, interval / 1000);
     lastRendered = real;
     const worldTime = now();
     let t = ((worldTime % LOOP) + LOOP) % LOOP,
@@ -1359,7 +1369,8 @@ export function createFactory(canvas, options = {}) {
         desired = droneCamera(worldTime);
     }
     const smooth = reducedMotion ? 1 : 1 - Math.exp(-dt * 6);
-    target.lerp(v3(...desired.target), smooth);
+    target.lerp(cameraTarget.set(...desired.target), smooth);
+    zoom += (desiredZoom - zoom) * (reducedMotion ? 1 : 1 - Math.exp(-dt * 10));
     radius += (desired.radius - radius) * smooth;
     yaw += (desired.yaw - yaw) * smooth;
     elevation += (desired.elev - elevation) * smooth;
@@ -1370,21 +1381,34 @@ export function createFactory(canvas, options = {}) {
       yaw + swing + (mode === "factory" && portrait && stage === 0 ? 0.48 : 0);
     const rr =
       radius *
+      zoom *
       (mode === "product"
         ? Math.max(1, 0.95 / camera.aspect)
         : stage === 0
           ? Math.max(1, 1.55 / camera.aspect)
           : Math.max(1, 0.98 / camera.aspect));
+    const far = Math.max(280, Math.ceil((rr + 200) / 100) * 100);
+    if (camera.far !== far) {
+      camera.far = far;
+      camera.updateProjectionMatrix();
+    }
     camera.position
       .copy(target)
       .add(
-        v3(
+        cameraOffset.set(
           Math.sin(viewYaw) * rr * Math.cos(elevation),
           Math.sin(elevation) * rr,
           Math.cos(viewYaw) * rr * Math.cos(elevation),
         ),
       );
     camera.lookAt(target);
+    camera.updateMatrixWorld();
+    viewFrustum.setFromProjectionMatrix(
+      viewMatrix.multiplyMatrices(
+        camera.projectionMatrix,
+        camera.matrixWorldInverse,
+      ),
+    );
     if (mode === "product") {
       productBags.forEach((b) => {
         b.position.y = 2.76 + (reducedMotion ? 0 : 0.025 * Math.sin(p * TAU));
@@ -1393,8 +1417,15 @@ export function createFactory(canvas, options = {}) {
       });
     }
     if (mode === "factory") {
-      fryingEffects.update(t, camera);
+      fryingEffects.update(t, camera, target, rr);
+      processEffects.update(t, camera, target, rr);
       for (let b of beltAnims) {
+        b.bounds ??= new THREE.Box3(
+          v3(b.a - 0.1, b.y - 0.1, b.z - b.width),
+          v3(b.b + 0.1, b.y + 0.2, b.z + b.width),
+        );
+        b.inst.visible = viewFrustum.intersectsBox(b.bounds);
+        if (!b.inst.visible) continue;
         let len = b.b - b.a;
         for (let i = 0; i < b.n; i++) {
           temp.position.set(
@@ -1410,6 +1441,12 @@ export function createFactory(canvas, options = {}) {
         b.inst.instanceMatrix.needsUpdate = true;
       }
       for (let f of flows) {
+        f.bounds ??= new THREE.Box3(
+          v3(f.a - 0.2, f.y - 0.3, f.z - 1.5),
+          v3(f.b + 0.2, f.y + 0.3, f.z + 1.5),
+        );
+        f.inst.visible = viewFrustum.intersectsBox(f.bounds);
+        if (!f.inst.visible) continue;
         for (let i = 0; i < f.n; i++) {
           let m = f.meta[i],
             u = (m.offset + p * f.cycles) % 1;
@@ -1451,6 +1488,12 @@ export function createFactory(canvas, options = {}) {
             p * TAU * a.turns + (a.axis === "x" ? Math.PI / 2 : 0);
       }
       for (let d of drums) {
+        d.bounds ??= new THREE.Box3(
+          v3(d.x - 1.3, 0.9, d.z - 1.2),
+          v3(d.x + 1.3, 4.0, d.z + 1.2),
+        );
+        d.g.visible = viewFrustum.intersectsBox(d.bounds);
+        if (!d.g.visible) continue;
         d.shell.rotation.z = p * TAU * 8;
         for (let i = 0; i < d.tumblers.length; i++) {
           let c = d.tumblers[i],
@@ -1523,19 +1566,37 @@ export function createFactory(canvas, options = {}) {
         dustP[i * 3 + 2] = (f - 1) * 2.25 + 0.15 * Math.cos(i * 9) * u;
       }
       dustG.attributes.position.needsUpdate = true;
-      for (let i = 0; i < steamN; i++) {
-        let u = (p * 4 + i * 0.618) % 1;
-        steamP[i * 3] = -0.4 + Math.sin(i * 12) * 1.65 + u * 0.22;
-        steamP[i * 3 + 1] = 1.7 + u * 1.02;
-        steamP[i * 3 + 2] = Math.cos(i * 8) * 0.65;
-      }
-      steamG.attributes.position.needsUpdate = true;
       detail.update(t);
-      process.update(t);
+      process.update(t, viewFrustum);
       shipping.update(t);
       fluidClock.value = t;
     }
+    // Tight close-up shadow coverage gives better machine detail at 2048 than
+    // a 4096 map spread across the whole campus. Shadows update at 30/15 Hz.
+    if (dirty || real - lastShadow >= (rr > 45 ? 1 / 15 : 1 / 30)) {
+      const extent =
+        mode === "product" ? 9 : Math.max(12, Math.min(80, rr * 1.5));
+      const sx = rr > 65 ? 12.5 : target.x,
+        sz = rr > 65 ? 1 : target.z;
+      key.target.position.set(sx, 0, sz);
+      key.position.set(sx - 28, 42, sz + 28);
+      Object.assign(key.shadow.camera, {
+        left: -extent,
+        right: extent,
+        top: extent * 0.7,
+        bottom: -extent * 0.7,
+      });
+      key.shadow.camera.updateProjectionMatrix();
+      renderer.shadowMap.needsUpdate = true;
+      lastShadow = real;
+    }
     composer.render();
+    if (
+      active() &&
+      !dirty &&
+      budget.sample(interval, performance.now() - frameStart)
+    )
+      resize(true);
     dirty = false;
     if (++frameCount >= 2 && !ready) {
       ready = true;
@@ -1575,11 +1636,10 @@ export function createFactory(canvas, options = {}) {
     geoCache.forEach((g) => geometries.add(g));
     textures.add(scene.environment);
     fryingEffects.dispose();
+    processEffects.dispose();
     geometries.forEach((g) => g.dispose());
     materials.forEach((m) => m.dispose());
     textures.forEach((t) => t?.dispose());
-    studioFloor.getRenderTarget().dispose();
-    ao.dispose();
     bloom.dispose();
     composer.dispose();
     renderer.dispose();
@@ -1593,8 +1653,12 @@ export function createFactory(canvas, options = {}) {
     setPageVisible,
     setAudio,
     setInspect,
+    zoomBy,
+    resetZoom,
     setQuality(ultra) {
       ultraQuality = Boolean(ultra);
+      budget.scale = 1;
+      budget.reset();
       resize(true);
     },
     resize,
@@ -1621,6 +1685,8 @@ export function createFactory(canvas, options = {}) {
         musicOn,
         inspect,
         ultraQuality,
+        qualityScale: budget.scale,
+        zoom: Math.round(100 / desiredZoom),
         renderWidth: canvas.width,
         renderHeight: canvas.height,
         stage,

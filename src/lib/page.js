@@ -112,7 +112,17 @@ export function initPage({
 
   function syncControls() {
     if (!engine) return;
-    const { playing, audioOn, musicOn, inspect, ultraQuality } = engine.state;
+    const {
+      playing,
+      audioOn,
+      musicOn,
+      inspect,
+      ultraQuality,
+      zoom = 100,
+      renderWidth,
+      renderHeight,
+      qualityScale = 1,
+    } = engine.state;
     $("#quality-toggle").setAttribute("aria-pressed", String(ultraQuality));
     $("#quality-toggle").setAttribute(
       "aria-label",
@@ -120,7 +130,16 @@ export function initPage({
         ? "Switch to smooth rendering"
         : "Enable detail rendering up to 4K",
     );
-    $("#quality-label").textContent = ultraQuality ? "4K" : "HD";
+    $("#quality-label").textContent = ultraQuality ? "4K MAX" : "AUTO";
+    $("#quality-toggle").title =
+      `${ultraQuality ? "Up to 4K" : "Adaptive native detail"} · ${renderWidth || 0} × ${renderHeight || 0}${qualityScale < 0.99 ? " · adjusted for smooth playback" : ""}`;
+    $("#zoom-label").textContent = `${zoom}%`;
+    $("#zoom-reset").setAttribute(
+      "aria-label",
+      `Reset zoom (currently ${zoom}%)`,
+    );
+    $("#zoom-in").disabled = !ready || zoom >= 250;
+    $("#zoom-out").disabled = !ready || zoom <= 56;
     $("#play-toggle").setAttribute("aria-pressed", String(!playing));
     $("#play-toggle").setAttribute(
       "aria-label",
@@ -325,6 +344,10 @@ export function initPage({
     syncControls();
   });
 
+  on($("#zoom-in"), "click", () => engine?.zoomBy(1.2));
+  on($("#zoom-out"), "click", () => engine?.zoomBy(1 / 1.2));
+  on($("#zoom-reset"), "click", () => engine?.resetZoom());
+
   function markReady() {
     if (destroyed) return;
     ready = true;
@@ -356,6 +379,8 @@ export function initPage({
               caption.textContent = label;
           },
           onInspectExit: syncControls,
+          onZoomChange: syncControls,
+          onQualityChange: syncControls,
           onContextLost: () => {
             ready = false;
             rig.classList.remove("is-ready");

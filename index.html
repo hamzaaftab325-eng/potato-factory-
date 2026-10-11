@@ -126,7 +126,7 @@
             </div>
             <div
               class="scene-controls"
-              aria-label="Animation and audio controls"
+              aria-label="Animation, audio and camera controls"
             >
               <button
                 class="scene-control icon-control"
@@ -192,11 +192,47 @@
                 aria-pressed="false"
                 disabled
               >
-                <span id="quality-label">4K</span>
+                <span id="quality-label">AUTO</span>
               </button>
+              <div class="zoom-controls" role="group" aria-label="Camera zoom">
+                <button
+                  class="scene-control icon-control"
+                  id="zoom-out"
+                  type="button"
+                  aria-label="Zoom out"
+                  title="Zoom out"
+                  disabled
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12h14" />
+                  </svg>
+                </button>
+                <button
+                  class="scene-control zoom-reset"
+                  id="zoom-reset"
+                  type="button"
+                  aria-label="Reset camera zoom"
+                  title="Reset zoom"
+                  disabled
+                >
+                  <span id="zoom-label">100%</span>
+                </button>
+                <button
+                  class="scene-control icon-control"
+                  id="zoom-in"
+                  type="button"
+                  aria-label="Zoom in"
+                  title="Zoom in"
+                  disabled
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12h14M12 5v14" />
+                  </svg>
+                </button>
+              </div>
             </div>
             <p class="inspect-hint" id="inspect-hint" hidden>
-              Drag to orbit · Arrow keys to rotate · Esc to exit
+              Drag to orbit · Scroll or +/− to zoom · 0 to reset · Esc to exit
             </p>
           </div>
         </div>

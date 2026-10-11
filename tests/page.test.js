@@ -45,12 +45,15 @@ function setup({ reduced = false, fail = false, width = 1440 } = {}) {
     audioOn: false,
     musicOn: false,
     inspect: false,
+    ultraQuality: false,
+    zoom: 100,
     stage: 0,
     flavour: 0,
     mode: "factory",
     visible: true,
   };
   const calls = { resized: 0, disposed: 0 };
+  let callbacks;
   const fake = {
     get state() {
       return state;
@@ -67,6 +70,18 @@ function setup({ reduced = false, fail = false, width = 1440 } = {}) {
     },
     setInspect(v) {
       state.inspect = v;
+    },
+    setQuality(v) {
+      state.ultraQuality = v;
+      callbacks.onQualityChange?.();
+    },
+    zoomBy(factor) {
+      state.zoom = Math.max(56, Math.min(250, Math.round(state.zoom * factor)));
+      callbacks.onZoomChange?.();
+    },
+    resetZoom() {
+      state.zoom = 100;
+      callbacks.onZoomChange?.();
     },
     setJourney(v) {
       state.stage = Math.round(v);
@@ -99,6 +114,7 @@ function setup({ reduced = false, fail = false, width = 1440 } = {}) {
       if (fail) throw new Error("WebGL unavailable");
       return {
         createFactory(canvas, options) {
+          callbacks = options;
           queueMicrotask(options.onReady);
           return fake;
         },
@@ -204,6 +220,37 @@ test("play, sound, optional music and inspect controls report their state", asyn
     );
     assert.equal(t.state.inspect, false);
     assert.equal(t.$("#inspect-hint").hidden, true);
+  } finally {
+    t.close();
+  }
+});
+
+test("zoom controls and quality selection stay usable across scroll chapters", async () => {
+  const t = setup();
+  try {
+    await t.ui.start();
+    assert.equal(t.$("#quality-label").textContent, "AUTO");
+    assert.equal(t.$("#zoom-in").disabled, false);
+    t.$("#zoom-in").click();
+    assert.equal(t.state.zoom, 120);
+    assert.equal(t.$("#zoom-label").textContent, "120%");
+    t.ui.scrollToStep(3);
+    t.ui.refresh();
+    assert.equal(
+      t.$("#zoom-in").closest("#scene-rig").parentElement.id,
+      "story-mount",
+    );
+    t.$("#zoom-out").click();
+    assert.equal(t.state.zoom, 100);
+    t.$("#quality-toggle").click();
+    assert.equal(t.state.ultraQuality, true);
+    assert.equal(t.$("#quality-label").textContent, "4K MAX");
+    for (let i = 0; i < 12; i++) t.$("#zoom-in").click();
+    assert.equal(t.state.zoom, 250);
+    assert.equal(t.$("#zoom-in").disabled, true);
+    t.$("#zoom-reset").click();
+    assert.equal(t.state.zoom, 100);
+    assert.equal(t.$("#zoom-in").disabled, false);
   } finally {
     t.close();
   }
