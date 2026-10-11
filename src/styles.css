@@ -296,63 +296,144 @@
     line-height: 1.6;
     min-height: 16px;
   }
-  .flavour-card {
+  .collection-layout {
+    display: grid;
+    grid-template-columns: 53% minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(32px, 5vw, 75px);
+  }
+  .collection-product {
     position: relative;
-    isolation: isolate;
-    border: 1px solid #1c38251b;
-    border-radius: 9px;
-    padding: 23px 24px;
-    background: #eee8db;
-    transition:
-      border-color 0.25s,
-      background 0.25s,
-      transform 0.25s;
+    min-width: 0;
+    height: 650px;
+    overflow: hidden;
+    border: 1px solid #1c382512;
+    border-radius: 24px;
+    background: #eee8dc;
   }
-  .flavour-card:hover {
-    transform: translateY(-4px);
-    border-color: #5d6b4355;
+  .collection-edition {
+    position: absolute;
+    top: 29px;
+    left: 31px;
+    right: 31px;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: #1c382580;
   }
-  .flavour-card.is-selected {
-    border-color: var(--pack-color);
-    background: #f0eadd;
-  }
-  .selection-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    border: 1px solid #47644950;
-  }
-  .is-selected .selection-dot {
-    background: var(--pack-color);
-    border-color: var(--pack-color);
-  }
-  .pack-stage {
-    position: relative;
+  .collection-image {
+    position: absolute;
+    inset: 70px 18px 95px;
     display: grid;
     place-items: center;
-    height: 310px;
-    perspective: 950px;
   }
-  .pack-stage > img {
+  .collection-image > img {
     position: relative;
     z-index: 1;
-    height: 88%;
-    width: auto;
-    filter: drop-shadow(6px 20px 10px #3935222b);
-    transform: rotate(-7deg) rotateY(-7deg);
-    transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    display: block;
+    width: min(78%, 400px);
+    height: 100%;
+    max-height: 480px;
+    object-fit: contain;
+    filter: drop-shadow(8px 23px 15px #39352228);
+    transform: rotate(-5deg);
   }
-  .flavour-card:hover .pack-stage > img,
-  .flavour-card.is-selected .pack-stage > img {
-    transform: rotate(-3deg) rotateY(4deg) translateY(-6px);
-  }
-  .pack-halo {
+  .collection-orbit {
     position: absolute;
-    width: 210px;
-    height: 210px;
+    width: min(90%, 370px);
+    aspect-ratio: 1;
+    border: 1px solid #1c382518;
     border-radius: 50%;
+    background: radial-gradient(circle, var(--pack-color), transparent 70%);
+    opacity: 0.22;
+  }
+  .collection-caption {
+    position: absolute;
+    bottom: 26px;
+    left: 31px;
+    right: 31px;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    border-top: 1px solid #1c382522;
+    padding-top: 20px;
+    font-size: 12px;
+    color: #1c382599;
+  }
+  .collection-picker {
+    min-width: 0;
+    border-bottom: 1px solid #1c382526;
+  }
+  .collection-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    width: 100%;
+    border-top: 1px solid #1c382526;
+    padding: 29px 0;
+    color: #1c382599;
+    transition: color 0.2s;
+  }
+  .collection-option:hover,
+  .collection-option.is-selected {
+    color: #1c3825;
+  }
+  .collection-option:focus-visible {
+    outline: 2px solid var(--pack-color);
+    outline-offset: 5px;
+    border-radius: 3px;
+  }
+  .collection-index {
+    display: grid;
+    place-items: center;
+    flex: 0 0 29px;
+    height: 29px;
+    margin-top: 3px;
+    border: 1px solid #1c382540;
+    border-radius: 50%;
+    font-size: 10px;
+  }
+  .collection-option.is-selected .collection-index {
+    color: #fffaf0;
     background: var(--pack-color);
-    opacity: 0.09;
+    border-color: var(--pack-color);
+  }
+  .collection-copy {
+    display: block;
+    flex: 1;
+    min-width: 0;
+  }
+  .collection-kicker {
+    display: block;
+    font-size: 10px;
+    line-height: 1.8;
+    letter-spacing: 0.13em;
+  }
+  .collection-title {
+    display: block;
+    margin-top: 9px;
+    font-size: clamp(29px, 3.2vw, 44px);
+    line-height: 1.08;
+  }
+  .collection-details {
+    display: grid;
+    gap: 17px;
+    padding-top: 18px;
+    font-size: 13px;
+    line-height: 1.9;
+    color: #1c382599;
+  }
+  .collection-tasting {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .collection-arrow {
+    flex: 0 0 20px;
+    margin-top: 7px;
+    opacity: 0.5;
+  }
+  .collection-option.is-selected .collection-arrow {
+    opacity: 1;
   }
   .route-card {
     border: 1px solid #ffffff17;
@@ -554,11 +635,12 @@
   .factory-viewport {
     height: 420px;
   }
-  .pack-stage {
-    height: 245px;
+  .collection-product {
+    height: 560px;
   }
-  .flavour-card {
-    padding: 19px;
+  .collection-layout {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
   }
   .stage-button {
     gap: 7px;
@@ -620,14 +702,24 @@
   .control-divider {
     margin-inline: 2px;
   }
-  .pack-stage {
-    height: 280px;
+  .collection-layout {
+    grid-template-columns: 1fr;
+    gap: 32px;
   }
-  .flavour-card {
-    padding: 24px;
+  .collection-product {
+    height: 480px;
   }
-  .flavour-card .pack-stage {
-    height: 295px;
+  .collection-edition {
+    left: 24px;
+    right: 24px;
+    font-size: 9px;
+  }
+  .collection-caption {
+    left: 24px;
+    right: 24px;
+  }
+  .collection-title {
+    font-size: 36px;
   }
   .route-card {
     max-width: 380px;
@@ -647,7 +739,6 @@
     animation: none !important;
     transition: none !important;
   }
-  .flavour-card:hover,
   .pill-button:hover {
     transform: none;
   }
@@ -674,11 +765,6 @@
   .stage-description {
     border-bottom: 1px solid #ffffff12;
     padding-bottom: 32px;
-  }
-  .flavour-card {
-    box-shadow:
-      inset 0 1px #ffffff70,
-      0 16px 32px #3e352808;
   }
   .scene-caption {
     font-size: 11px;

@@ -463,50 +463,69 @@ export default function App({ loadFactory }) {
                 The same golden beginning.
               </p>
             </div>
-            <div
-              className="grid gap-5 md:grid-cols-3"
-              role="group"
-              aria-label="Choose a flavour"
-            >
-              {FLAVOURS.map((f, i) => (
-                <button
-                  key={f.name}
-                  type="button"
-                  aria-pressed={flavour === i}
-                  onClick={() => setFlavour(i)}
-                  className={`flavour-card group text-left ${flavour === i ? "is-selected" : ""}`}
-                  style={{ "--pack-color": f.color }}
-                >
-                  <div className="flex items-center justify-between text-[9px] tracking-[.12em]">
-                    <span>
-                      0{i + 1} / {TASTES[i].kicker}
+            <div className="collection-layout">
+              <div
+                id="collection-product"
+                className="collection-product"
+                style={{ "--pack-color": FLAVOURS[flavour].color }}
+              >
+                <p className="collection-edition">
+                  CRISP / THE ORIGINAL COLLECTION
+                </p>
+                <div className="collection-image">
+                  <span className="collection-orbit" aria-hidden="true" />
+                  <img
+                    src={`/packs/${FLAVOURS[flavour].pack}.svg`}
+                    alt={`${FLAVOURS[flavour].name} CRISP chip bag`}
+                    width="420"
+                    height="540"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="collection-caption">
+                  <span>{FLAVOURS[flavour].personality}</span>
+                  <span>0{flavour + 1} / 03</span>
+                </div>
+              </div>
+              <div
+                className="collection-picker"
+                role="group"
+                aria-label="Choose a flavour"
+              >
+                {FLAVOURS.map((f, i) => (
+                  <button
+                    key={f.name}
+                    type="button"
+                    aria-pressed={flavour === i}
+                    aria-controls="collection-product"
+                    onClick={() => setFlavour(i)}
+                    className={`collection-option text-left ${flavour === i ? "is-selected" : ""}`}
+                    style={{ "--pack-color": f.color }}
+                  >
+                    <span className="collection-index">0{i + 1}</span>
+                    <span className="collection-copy">
+                      <span className="collection-kicker">
+                        {TASTES[i].kicker}
+                      </span>
+                      <span className="collection-title font-display">
+                        {f.name}
+                      </span>
+                      {flavour === i && (
+                        <span className="collection-details">
+                          <span>{TASTES[i].description}</span>
+                          <span className="collection-tasting">
+                            {TASTES[i].words}
+                          </span>
+                        </span>
+                      )}
                     </span>
-                    <span className="selection-dot" />
-                  </div>
-                  <div className="pack-stage">
-                    <span className="pack-halo" />
-                    <img
-                      src={`/packs/${f.pack}.svg`}
-                      alt={`${f.name} CRISP chip bag`}
-                      width="420"
-                      height="540"
-                      loading="lazy"
+                    <Icon
+                      name="northeast"
+                      className="collection-arrow h-5 w-5"
                     />
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="font-display text-3xl lg:text-[36px]">
-                      {f.name}
-                    </h3>
-                    <Icon name="northeast" className="h-5 w-5" />
-                  </div>
-                  <p className="mt-3 min-h-[66px] text-xs leading-6 text-ink/60">
-                    {TASTES[i].description}
-                  </p>
-                  <p className="mt-5 border-t border-ink/10 pt-4 text-[9px] uppercase tracking-[.14em] text-ink/55">
-                    {TASTES[i].words}
-                  </p>
-                </button>
-              ))}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="mt-8 flex flex-wrap items-center justify-between gap-5">
               <p className="text-[11px] text-ink/50">
