@@ -3,6 +3,7 @@ import {
   BAG_SECONDS,
   CASE_SECONDS,
   CUTS_PER_SECOND,
+  deliveryMotion,
 } from "./timing.js";
 
 const TAU = Math.PI * 2;
@@ -18,7 +19,7 @@ export class FactorySound {
     this.focus = 0;
     this.music = false;
     this.master = ctx.createGain();
-    this.master.gain.value = 0.78;
+    this.master.gain.value = 0.7;
     const limiter = ctx.createDynamicsCompressor();
     limiter.threshold.value = -10;
     limiter.knee.value = 10;
@@ -27,7 +28,7 @@ export class FactorySound {
     limiter.release.value = 0.22;
     this.master.connect(limiter);
     limiter.connect(ctx.destination);
-    this.stems = ["wash", "cut", "fry", "tumble", "pack", "music"].map(
+    this.stems = ["wash", "cut", "fry", "tumble", "pack", "music", "truck"].map(
       (kind, k) => {
         const bus = ctx.createGain(),
           pan = ctx.createStereoPanner();
@@ -267,6 +268,36 @@ export class FactorySound {
       }
     }
 
+    if (kind === "truck") {
+      const engine = bandNoise(28, 310),
+        road = bandNoise(210, 1350);
+      for (let i = 0; i < n; i++) {
+        const t = i / sr,
+          motion = deliveryMotion(t);
+        const envelope = Math.max(
+          0.04,
+          Math.min(1, 1 - Math.abs(motion.x) / 22),
+        );
+        const throttle = motion.driving ? 0.82 : 0.28;
+        out[i] +=
+          envelope *
+          (engine[i] * 0.11 * throttle +
+            road[i] * 0.038 * (motion.driving ? 1 : 0));
+        out[i] +=
+          envelope *
+          throttle *
+          (0.014 * Math.sin(TAU * 33.75 * t) +
+            0.007 * Math.sin(TAU * 67.5 * t));
+        side[i] += out[i] * Math.max(-0.6, Math.min(0.6, motion.x / 16));
+      }
+      for (const at of [0.1, 5.98]) contact(at, 0.027, 121);
+      softBurst(5.62, 0.3, 0.045, 1400, 12);
+      softBurst(7.12, 0.33, 0.035, 2150, 8);
+      softBurst(15.62, 0.35, 0.055, 1600, 8);
+      for (let i = 0; i < 8; i++)
+        contact(1.72 + i * 0.44, 0.017, 108 + (i % 2) * 22);
+    }
+
     // Restrained stereo room, followed by DC removal and a conservative peak
     // ceiling. Reflections are different at each ear; no metallic comb echo.
     const left = buffer.getChannelData(0),
@@ -311,16 +342,20 @@ export class FactorySound {
           ? this.music
             ? 0.55
             : 0
-          : stage === 6
-            ? 0
-            : stage === 0
-              ? 0.72
-              : 0.12 + 1.03 * Math.max(0, 1 - Math.abs(i + 1 - stage));
+          : i === 6
+            ? stage === 7
+              ? 1.0
+              : 0
+            : stage === 6 || stage === 7
+              ? 0
+              : stage === 0
+                ? 0.72
+                : 0.12 + 1.03 * Math.max(0, 1 - Math.abs(i + 1 - stage));
       parameter(g.gain, value);
       const distance = i + 1 - stage;
       parameter(
         this.panners[i].pan,
-        i === 5
+        i === 5 || i === 6
           ? 0
           : stage === 0
             ? [-0.4, -0.23, 0, 0.23, 0.4][i]

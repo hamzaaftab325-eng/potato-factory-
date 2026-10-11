@@ -1,9 +1,8 @@
 import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  build: {
-    target: "es2020",
-    assetsInlineLimit: 0,
-    chunkSizeWarningLimit: 750,
-  },
+  plugins: [react(), tailwindcss()],
+  build: { target: "es2020", assetsInlineLimit: 0, chunkSizeWarningLimit: 750 },
 });

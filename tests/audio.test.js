@@ -31,13 +31,16 @@ function context() {
       };
     },
     createBuffer(channels, length, sampleRate) {
-      const data = new Float32Array(length);
+      const data = Array.from(
+        { length: channels },
+        () => new Float32Array(length),
+      );
       return {
         duration: length / sampleRate,
         length,
         sampleRate,
-        getChannelData() {
-          return data;
+        getChannelData(channel) {
+          return data[channel];
         },
       };
     },
@@ -56,10 +59,10 @@ function context() {
   };
 }
 
-test("all six sound layers share a 16-second loop and exact start phase", () => {
+test("all seven sound layers share a 16-second loop and exact start phase", () => {
   const ctx = context(),
     sound = new FactorySound(ctx);
-  assert.equal(sound.stems.length, 6);
+  assert.equal(sound.stems.length, 7);
   sound.stems.forEach((buffer) => {
     assert.equal(buffer.duration, 16);
     assert.equal(buffer.length, 705600);
@@ -71,7 +74,7 @@ test("all six sound layers share a 16-second loop and exact start phase", () => 
     assert.ok(peak > 0.005 && peak < 0.3, `headroom: ${peak}`);
   });
   sound.start(21.25);
-  assert.equal(sound.sources.length, 6);
+  assert.equal(sound.sources.length, 7);
   sound.sources.forEach((s) => {
     assert.equal(s.at, 12);
     assert.equal(s.offset, 5.25);
@@ -95,6 +98,9 @@ test("machine focus changes levels, music is optional, and pack views silence ma
   sound.setFocus(6);
   assert.ok(sound.buses.slice(0, 5).every((b) => b.gain.value === 0));
   assert.equal(sound.buses[5].gain.value, 0.55);
+  sound.setFocus(7);
+  assert.equal(sound.buses[6].gain.value, 1);
+  assert.ok(sound.buses.slice(0, 5).every((b) => b.gain.value === 0));
   sound.setMusic(false);
   assert.equal(sound.buses[5].gain.value, 0);
 });

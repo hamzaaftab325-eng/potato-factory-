@@ -148,7 +148,20 @@ export function addProcessMachines(C) {
     food.castShadow = food.receiveShadow = true;
     scene.add(cleats, food);
     dynamic.push(cleats, food);
-    transfers.push({ A, B, angle, cleats, food, kind, count });
+    transfers.push({
+      A,
+      B,
+      angle,
+      cleats,
+      food,
+      kind,
+      count,
+      width,
+      tilt: new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(0, 0, 1),
+        angle,
+      ),
+    });
     for (const u of [0.16, 0.82]) {
       const p = A.clone().lerp(B, u);
       for (const s of [-1, 1])
@@ -441,9 +454,11 @@ export function addProcessMachines(C) {
     motor(x, 1.19, -1.39, "x");
   }
   for (const x of [-1.98, -0.5, 0.98]) {
-    box(x, 2.49, 0.91, 1.35, 0.38, 0.037, M.steel);
-    box(x, 2.5, 0.938, 0.93, 0.21, 0.012, M.dark);
-    box(x, 2.5, 0.95, 0.87, 0.16, 0.012, M.glass);
+    box(x, 2.69, 0.91, 1.35, 0.07, 0.04, M.steel);
+    box(x, 2.32, 0.91, 1.35, 0.045, 0.04, M.steel);
+    for (const dx of [-0.65, 0.65])
+      box(x + dx, 2.5, 0.91, 0.045, 0.35, 0.04, M.chrome);
+    box(x, 2.5, 0.91, 1.25, 0.33, 0.014, M.glass);
     box(x, 2.65, 0.96, 0.26, 0.025, 0.065, M.chrome);
   }
   plate("03 / CONTINUOUS FRYING", -0.5, 2.73, 0.913, 2.15, 0.12);
@@ -489,7 +504,7 @@ export function addProcessMachines(C) {
     0,
   );
   submerge.rotation.x = -Math.PI / 2;
-  foodFlow(-2.59, 1.59, 0, 1.55, 112, "chip", M.chip, 1.63);
+  foodFlow(-2.59, 1.59, 0, 1.55, 84, "chip", M.chip, 1.63);
   pipe(
     [
       [-2.2, 0.87, -1.24],
@@ -550,13 +565,14 @@ export function addProcessMachines(C) {
           const u = (i / e.count + t * 0.25) % 1;
           dummy.position.lerpVectors(e.A, e.B, u);
           dummy.position.z +=
-            Math.sin(i * 7.1) * (e.kind === "potato" ? 0.17 : 0.45);
+            Math.sin(i * 7.1) * Math.max(0.04, (e.width - 0.27) * 0.4);
           dummy.position.y += e.kind === "potato" ? 0.09 : 0.055;
           dummy.rotation.set(
             e.kind === "potato" ? i : -Math.PI / 2,
-            i * 0.29,
-            e.angle,
+            e.kind === "potato" ? i * 0.29 : 0,
+            i * 2.399,
           );
+          if (e.kind !== "potato") dummy.quaternion.premultiply(e.tilt);
           if (e.kind === "potato") dummy.scale.set(0.12, 0.092, 0.095);
           else dummy.scale.setScalar(0.62);
           dummy.updateMatrix();
@@ -572,7 +588,11 @@ export function addProcessMachines(C) {
           1.78 - u * u * 0.17,
           Math.sin(i * 7) * 0.18,
         );
-        d.o.rotation.set(-Math.PI / 2 + u * 0.5, i, u * 3);
+        d.o.rotation.set(
+          -Math.PI / 2 + u * 0.16,
+          0.03 * Math.sin(i),
+          i * 2.399,
+        );
         d.o.scale.setScalar(0.61);
       });
       for (const b of branches) {
