@@ -21,7 +21,7 @@ export function addFactoryDetails(C) {
     fanRotors = [];
   const tau = Math.PI * 2;
   const enamel = new THREE.MeshPhysicalMaterial({
-    color: "#dcaa27",
+    color: "#a7b5b3",
     metalness: 0.34,
     roughness: 0.26,
     clearcoat: 0.55,
@@ -227,215 +227,6 @@ export function addFactoryDetails(C) {
       box(x + (s * w) / 2, y + h / 2, z, 0.055, 0.045, d + 0.08, M.chrome);
     }
   }
-  // Deep receiving hopper, cross braces, gearbox and plumbing under the wash bath.
-  funnel(-13.4, 1.8, 0, 1.62, 1.44, 0.8);
-  for (let z of [-0.65, 0.65]) {
-    box(-13.4, 1.32, z, 1.55, 0.07, 0.08, M.chrome);
-    safetyGuard(-13.4, 1.02, z, 1.2, 0.48);
-  }
-  cabinet(-12.9, 1.01, 0.85, 0.6, 0.63);
-  motor(-13.0, 0.94, -0.95);
-  textPlate("01 / RAW INTAKE", -13.4, 2.1, 0.728, 1.15, 0.18);
-  for (let x of [-11.1, -9.25])
-    for (let z of [-0.74, 0.74]) box(x, 1.06, z, 0.13, 1.04, 0.13, M.chrome);
-  box(-10.2, 0.95, 0.83, 2.1, 0.45, 0.065, M.steel);
-  for (let x = -11.12; x < -9.3; x += 0.09)
-    for (let yy = 1.05; yy < 1.44; yy += 0.09)
-      cylinder(x, yy, 0.887, 0.016, 0.008, M.black, scene, "z");
-  pipe(
-    [
-      [-11.2, 0.75, 0.73],
-      [-10.2, 0.75, 0.73],
-      [-9.15, 0.75, 0.73],
-      [-9.15, 1.16, 0.6],
-    ],
-    0.07,
-  );
-  for (let x of [-10.8, -9.5]) {
-    flange(x, 0.75, 0.75, 0.105);
-    valve(x, 0.75, 0.85, 0.1);
-  }
-  motor(-10.1, 0.77, -1.0);
-  cabinet(-9.58, 0.91, 1.06, 0.62, 0.63);
-  for (let x of [-10.95, -9.35]) {
-    pipe(
-      [
-        [x, 2.46, -0.76],
-        [x, 2.54, -0.76],
-        [x, 2.54, 0.72],
-      ],
-      0.027,
-    );
-    for (let z of [-0.5, 0, 0.5]) {
-      flange(x, 2.38, z, 0.074, "y");
-    }
-  }
-  // Abrasive peeler: access housing, punched shroud, safety cage and drain manifold.
-  box(-8.65, 1.62, 0.83, 0.22, 1.5, 0.22, enamel);
-  box(-7.32, 1.62, 0.83, 0.22, 1.5, 0.22, enamel);
-  for (let xx of [-8.65, -7.32]) {
-    flange(xx, 1.75, 0.87, 0.14);
-    bolt(xx, 2.1, 0.958);
-  }
-  safetyGuard(-7.98, 1.03, 0.98, 1.2, 0.52);
-  cabinet(-8.1, 0.95, -0.88, 0.7, 0.72);
-  pipe(
-    [
-      [-7.82, 1.0, -0.75],
-      [-7.82, 0.76, -0.75],
-      [-7.15, 0.76, -0.75],
-      [-7.15, 0.9, -0.4],
-    ],
-    0.045,
-  );
-  gauge(-8.69, 2.1, 1.01);
-  textPlate("ABRASIVE PEELER", -8, 1.26, 1.02, 0.9, 0.13);
-  // Every transfer has adjustable rails, bearing blocks, drip trays and inspection plates.
-  for (let [a, b, z, w, y] of [
-    [-7.3, -5.9, 0, 1.1, 1.25],
-    [-4.7, -2.9, 0, 1.1, 1.25],
-    [1.6, 3.45, 0, 1.75, 1.33],
-  ]) {
-    for (let s of [-1, 1]) rail(a, b, z + s * (w / 2 - 0.06), y + 0.23);
-    box((a + b) / 2, y - 0.34, z, b - a - 0.1, 0.065, w - 0.11, M.steel);
-    safetyGuard((a + b) / 2, 0.94, z + w / 2 + 0.22, b - a - 0.1, 0.45);
-    for (let x of [a + 0.18, b - 0.18]) {
-      box(x, y - 0.15, z + w / 2 + 0.12, 0.22, 0.3, 0.14, M.steel);
-      flange(x, y - 0.08, z + w / 2 + 0.23, 0.09);
-    }
-  }
-  // Slicer enclosure: central shaft, four radial knives and visible falling slices.
-  cylinder(-5.3, 2.35, 0, 0.08, 1.55, M.chrome);
-  const rotor = new THREE.Group();
-  rotor.position.set(-5.3, 2.2, 0);
-  scene.add(rotor);
-  dynamic.push(rotor);
-  cylinder(0, 0, 0, 0.12, 0.12, M.chrome, rotor);
-  for (let i = 0; i < 4; i++) {
-    const arm = box(0.26, 0, 0, 0.48, 0.03, 0.1, M.chrome, rotor);
-    arm.rotation.y = (i * tau) / 4;
-    arm.position.set(
-      Math.cos((i * tau) / 4) * 0.26,
-      0,
-      Math.sin((i * tau) / 4) * 0.26,
-    );
-    const edge = box(0.44, -0.018, 0, 0.24, 0.014, 0.06, steelDark, rotor);
-    edge.position.set(
-      Math.cos((i * tau) / 4) * 0.44,
-      -0.018,
-      Math.sin((i * tau) / 4) * 0.44,
-    );
-    edge.rotation.y = (-i * tau) / 4;
-  }
-  spinAnims.push({ o: rotor, axis: "y", turns: 16 });
-  cylinder(-5.3, 2.85, 0, 0.21, 0.28, M.steel);
-  funnel(-5.3, 3.11, 0, 0.55, 0.55, 0.35);
-  for (let x of [-5.94, -4.77])
-    for (let z of [-0.77, 0.77]) {
-      box(x, 2.1, z, 0.055, 1.4, 0.055, M.chrome);
-      flange(x, 2.72, z, 0.068);
-    }
-  box(-5.36, 1.47, 0.91, 1.35, 0.5, 0.13, M.steel);
-  textPlate("02 / ROTARY SLICER", -5.35, 1.51, 0.99, 0.98, 0.16);
-  cabinet(-5.94, 1.03, 1.05, 0.48, 0.59);
-  safetyGuard(-5.3, 0.99, 0.82, 0.7, 0.54);
-  for (let i = 0; i < 14; i++) {
-    const o = mesh(chipG, M.raw, -5.25, 2, 0);
-    dynamic.push(o);
-    drops.push({ o, offset: i / 14, angle: random() * tau });
-  }
-  pipe(
-    [
-      [-4.46, 1.4, -0.73],
-      [-4.46, 2.04, -0.73],
-      [-3.1, 2.04, -0.73],
-      [-3.1, 1.48, -0.73],
-    ],
-    0.035,
-  );
-  valve(-3.25, 2.04, -0.67, 0.09);
-  // Fryer service doors, insulated panels, gauges, burner lines and bright guard frames.
-  for (let x of [-2.05, -0.52, 1.01]) {
-    box(x, 1.01, 1.22, 1.4, 0.73, 0.055, M.steel);
-    for (let xx of [x - 0.6, x + 0.6])
-      for (let y of [0.72, 1.31]) bolt(xx, y, 1.26);
-    for (let xx of [x - 0.58, x + 0.58]) {
-      box(xx, 1.07, 1.29, 0.035, 0.17, 0.035, M.chrome);
-      cylinder(xx, 0.88, 1.285, 0.028, 0.08, M.chrome);
-    }
-    box(x + 0.42, 1.09, 1.3, 0.027, 0.25, 0.055, M.black);
-    textPlate("HOT SURFACE", x - 0.16, 0.79, 1.259, 0.39, 0.08, "#e7b745");
-  }
-  rail(-2.8, 1.8, 1.02, 1.72);
-  rail(-2.8, 1.8, -1.02, 1.72);
-  pipe(
-    [
-      [-2.5, 0.79, 1.36],
-      [-2.5, 0.66, 1.53],
-      [1.4, 0.66, 1.53],
-      [1.4, 1.13, 1.32],
-    ],
-    0.05,
-  );
-  gauge(-2.18, 1.22, 1.4);
-  valve(-1.0, 0.66, 1.6, 0.11);
-  valve(0.5, 0.66, 1.6, 0.11);
-  cabinet(0.6, 1.06, -1.35, 0.75, 0.72);
-  for (let x of [-2.7, 1.7]) {
-    safetyGuard(x, 1.05, 1.43, 0.24, 0.67);
-    box(x, 1.59, 1.14, 0.22, 0.26, 0.16, enamel);
-  }
-  for (let x of [-1.85, 0.68])
-    pipe(
-      [
-        [x, 2.34, -1.2],
-        [x, 2.75, -1.2],
-        [x, 2.75, -0.63],
-      ],
-      0.03,
-    );
-  for (let y of [2.83, 3.1, 3.52]) {
-    cylinder(-0.5, y, -1, 0.235, 0.065, M.chrome);
-  }
-  textPlate("03 / CONTINUOUS FRYER", -0.52, 1.31, 1.26, 1.14, 0.11);
-  // Stainless mesh extraction belt, a denser grid underneath the traveling chips.
-  for (let x = 1.62; x < 3.5; x += 0.07)
-    box(x, 1.363, 0, 0.012, 0.011, 1.63, M.chrome);
-  for (let z = -0.79; z < 0.8; z += 0.065)
-    box(2.55, 1.366, z, 1.9, 0.008, 0.011, M.chrome);
-  // Fan-driven cooling bridge with two real rotating impellers.
-  for (let x of [2.1, 2.9]) {
-    box(x, 2.05, 0, 0.5, 0.09, 1.95, M.steel);
-    for (let z of [-0.97, 0.97]) cylinder(x, 1.78, z, 0.027, 0.58, M.chrome);
-    cylinder(x, 2.11, 0, 0.31, 0.07, M.dark);
-    const rotor = new THREE.Group();
-    rotor.position.set(x, 2.155, 0);
-    scene.add(rotor);
-    dynamic.push(rotor);
-    fanRotors.push(rotor);
-    for (let i = 0; i < 5; i++) {
-      let a = (i * tau) / 5,
-        blade = box(
-          Math.cos(a) * 0.15,
-          0,
-          Math.sin(a) * 0.15,
-          0.23,
-          0.016,
-          0.07,
-          M.steel,
-          rotor,
-        );
-      blade.rotation.y = -a;
-    }
-    cylinder(0, 0, 0, 0.05, 0.04, M.chrome, rotor);
-    mesh(
-      new THREE.TorusGeometry(0.29, 0.012, 5, 32),
-      M.chrome,
-      x,
-      2.185,
-      0,
-    ).rotation.x = Math.PI / 2;
-  }
   // Drum frame, geared drive ring, powder auger, access guard and raised control box.
   for (let f = 0; f < 3; f++) {
     let x = 5.95,
@@ -456,8 +247,9 @@ export function addFactoryDetails(C) {
     pipe(
       [
         [x, 3.21, z],
-        [x + 0.21, 3.0, z],
-        [x + 0.21, 2.72, z],
+        [x + 0.9, 3.0, z],
+        [x + 0.93, 2.22, z],
+        [x + 0.65, 2.19, z],
       ],
       0.06,
     );
@@ -560,6 +352,17 @@ export function addFactoryDetails(C) {
     box(x, 3.48, z + 0.78, 1.47, 0.055, 0.07, enamel);
     box(x, 1.03, z + 0.78, 1.47, 0.055, 0.07, enamel);
     box(x, 2.22, z + 0.78, 1.3, 2.35, 0.012, M.glass);
+    // Folded stainless service panels ground the forming assembly in a real cabinet.
+    box(x, 1.23, z + 0.79, 1.33, 0.37, 0.03, M.steel);
+    box(x, 2.4, z - 0.8, 1.38, 1.92, 0.045, M.steel);
+    box(x - 0.69, 2.22, z, 0.035, 2.35, 1.53, M.steel);
+    box(x + 0.69, 2.96, z, 0.035, 0.89, 1.53, M.steel);
+    box(x, 3.36, z + 0.81, 1.31, 0.095, 0.025, paint);
+    // Longitudinal fin seal and two knurled film pull-down rollers.
+    box(x, 2.33, z + 0.215, 0.047, 0.64, 0.04, M.chrome);
+    for (let yy = 1.95; yy < 2.47; yy += 0.034)
+      for (const dx of [-0.31, 0.31])
+        cylinder(x + dx, yy, z, 0.112, 0.013, M.dark);
     for (let y of [1.55, 2.77]) {
       box(x - 0.64, y, z + 0.85, 0.06, 0.22, 0.06, M.chrome);
     }
@@ -586,9 +389,8 @@ export function addFactoryDetails(C) {
     cabinet(x + 0.8, 2.7, z + 0.6, 0.4, 0.65);
     textPlate("05 / FORM · FILL · SEAL", x, 3.38, z + 0.825, 1.19, 0.12);
     safetyGuard(x, 0.85, z + 0.79, 1.3, 0.35);
-    for (let s of [-1, 1]) rail(10.75, 14.2, z + s * 0.46, 1.24);
+    for (let s of [-1, 1]) rail(10.75, 13.98, z + s * 0.46, 1.24);
     for (let xx of [11.0, 13.3]) safetyGuard(xx, 0.84, z + 0.66, 0.3, 0.42);
-    textPlate("VISION / PASS", 13.85, 1.42, z + 0.664, 0.25, 0.095, "#79dfbd");
   }
   // Braced legs and routed services add believable construction beneath the line.
   for (let x of [-12.8, -10.6, -8.2, -6.3, -4.1, -1.7, 1.0, 3.0]) {
@@ -636,7 +438,7 @@ export function addFactoryDetails(C) {
           );
         }
         d.o.rotation.set(d.angle + u * tau, u * 3.14, d.angle);
-        d.o.scale.setScalar(0.9);
+        d.o.scale.setScalar(0.62);
       }
       fanRotors.forEach((o) => (o.rotation.y = t * tau * 3));
       const dummy = new THREE.Object3D();
@@ -656,7 +458,7 @@ export function addFactoryDetails(C) {
           dummy.position.y += 0.09;
           dummy.position.z += Math.sin(i * 7) * 0.18;
           dummy.rotation.set(-Math.PI / 2, Math.sin(i) * 0.2, e.angle);
-          dummy.scale.setScalar(0.83);
+          dummy.scale.setScalar(0.58);
           dummy.updateMatrix();
           e.food.setMatrixAt(i, dummy.matrix);
         }

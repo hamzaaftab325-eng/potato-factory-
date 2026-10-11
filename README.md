@@ -6,10 +6,11 @@ An original potato-chip brand concept and interactive factory experience by **Ha
 
 ## The experience
 
-- A stainless-steel miniature factory with connected conveyors, wash jets, a rotating peeler, guarded slicing, rippling oil, steam, seasoning drums, weighing hoppers and synchronised packaging lines.
+- A stainless-steel miniature factory with framed wash windows, a perforated abrasive peeler, an enclosed centrifugal cutter, a hooded continuous fryer, oil-drain conveyors, seasoning drums and three packaging lines.
+- An end-of-line sequence with inspection arches, vacuum bag transfer, labelled corrugated cartons, folding flaps, tape heads, roller outfeeds and finished boxes on slatted wooden pallets.
 - A scroll-directed camera journey through five processes. Process buttons also jump to any step.
 - Three selectable flavours: Golden Sea Salt, Smoky Paprika and Garden Herbs. The same renderer switches from the factory to sculpted product packaging.
-- Procedural water, cutting, frying, tumbling and packing sounds. Optional original music. Audio starts only after a visitor enables it and stays on the animation's clock.
+- Original stereo procedural foley: filtered water, wet slicing, layered oil crackle, chip rustle, pneumatic contact, film movement and carton handling. Optional sparse felt-key music. Audio starts only after a visitor enables it and stays on the animation's clock. Sound layers crossfade as the camera moves, with short fades when playback starts or stops.
 - Desktop and mobile layouts, an accessible mobile menu, keyboard camera inspection, reduced-motion support and still-image fallbacks.
 - Local fonts and assets. Rendering and machine audio stop while the experience is offscreen or the tab is hidden.
 
@@ -56,29 +57,35 @@ npm run preview  # Serve the production build locally
 
 ## Source guide
 
-| File                      | Purpose                                                           |
-| ------------------------- | ----------------------------------------------------------------- |
-| `index.html`              | Page content, SEO metadata and semantic controls                  |
-| `src/styles.css`          | Typography, layout, materials palette and responsive design       |
-| `src/lib/page.js`         | Navigation, sound controls, flavour selection and scene placement |
-| `src/lib/journey.js`      | Scroll progression, camera presets and flavour metadata           |
-| `src/factory/scene.js`    | Lighting, machinery, animation, postprocessing and product view   |
-| `src/factory/details.js`  | Mechanical detailing and secondary movement                       |
-| `src/factory/geometry.js` | Curved chips and inflated, crimped film geometry                  |
-| `src/factory/audio.js`    | The six procedural sound layers                                   |
-| `public/`                 | Factory still, vector packaging, social image and favicon         |
-| `tests/`                  | Automated checks                                                  |
-| `archive/`                | The previous repository prototype, preserved for reference        |
+| File                      | Purpose                                                                     |
+| ------------------------- | --------------------------------------------------------------------------- |
+| `index.html`              | Page content, SEO metadata and semantic controls                            |
+| `src/styles.css`          | Typography, layout, materials palette and responsive design                 |
+| `src/lib/page.js`         | Navigation, sound controls, flavour selection and scene placement           |
+| `src/lib/journey.js`      | Scroll progression, camera presets and flavour metadata                     |
+| `src/factory/scene.js`    | Lighting, machinery, animation, postprocessing and product view             |
+| `src/factory/details.js`  | Drum and bagger engineering, weighers and secondary movement                |
+| `src/factory/machines.js` | Washer, peeler, centrifugal cutter, hooded fryer and connected transfers    |
+| `src/factory/shipping.js` | Vacuum heads, carton choreography, flap closing, taping and pallets         |
+| `src/factory/surfaces.js` | Brushed metal, perforations, food skin, belt, kraft paper and wood textures |
+| `src/factory/timing.js`   | Shared loop, knife, sealing-jaw and carton timing                           |
+| `src/factory/geometry.js` | Curved chips and inflated, crimped film geometry                            |
+| `src/factory/audio.js`    | The six procedural sound layers                                             |
+| `public/`                 | Factory still, vector packaging, social image and favicon                   |
+| `tests/`                  | Automated checks                                                            |
+| `archive/`                | The previous repository prototype, preserved for reference                  |
 
 Change the brand copy and profile links in `index.html`. Flavour names/colours and camera framing are in `src/lib/journey.js`; procedural label artwork is in `bagMaterial()` in `src/factory/scene.js`. Update the HTML flavour descriptions and fallback SVG packs alongside any flavour changes.
 
-The still factory poster is a crop of the existing code-rendered scene. It provides immediate content and a fallback; the interactive experience renders real geometry, with no video backdrop or remote model downloads.
+The still factory poster is a crop of the previous code-rendered scene; it has not yet been refreshed for the revised machinery. It provides immediate content and a fallback; the interactive experience renders real geometry, with no video backdrop or remote model downloads.
 
-## Verification
+## Current revision
 
-Automated checks cover menu/focus behaviour, selection, controls, reduced-motion state, renderer placement, offscreen handling, missing-3D fallback, internal links/assets, camera continuity, finite geometry and 16-second audio timing. The production build is checked separately.
+The machinery and audio refinement is implemented in source. **No QA, automated tests, production build or browser/audio review was run for this revision, at the owner's request.** The existing checks remain available through `npm test` and `npm run build`; GitHub's existing workflow will run when commits are pushed.
 
-These checks do not replace browser/GPU visual review. Browser preview infrastructure was unavailable during this build. After deploying, check desktop and phone framing, scroll transitions, sound playback and the reduced-motion setting on actual browsers before using this as a public portfolio launch.
+The mechanical models are an original, compact portfolio interpretation, not a manufacturing simulation. Design references include [Urschel's enclosed centrifugal slicer](https://www.urschel.com/cutting-machines/model-cc-slicer/) and [Heat and Control's continuous potato-chip fryer](https://www.heatandcontrol.com/model/potato-chip-fryer). No manufacturer models, logos or audio have been copied.
+
+All animation repeats on a 16-second clock. A bag cycle takes two seconds and a carton cycle takes eight seconds; the three flavour lines are phase-offset. `timing.js` owns those timing values. The sound is synthesized from band-limited noise, shaped transient envelopes and short stereo reflections, with no stock recordings. The optional music is an original procedural arrangement.
 
 ## Dependency credits
 

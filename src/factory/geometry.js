@@ -1,6 +1,23 @@
 import * as THREE from "three";
 const TAU = Math.PI * 2;
 
+export function potatoGeometry() {
+  const g = new THREE.SphereGeometry(1, 28, 20);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i),
+      y = p.getY(i),
+      z = p.getZ(i);
+    const r =
+      1 +
+      0.055 * Math.sin(x * 5 + y * 3) * Math.cos(z * 5) +
+      0.028 * Math.sin(y * 9 - z * 4);
+    p.setXYZ(i, x * r + 0.07 * y * y, y * r, z * r * (1 - 0.07 * y));
+  }
+  g.computeVertexNormals();
+  return g;
+}
+
 export function chipGeometry() {
   const pos = [],
     uv = [],

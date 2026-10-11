@@ -10,12 +10,16 @@ import { Reflector } from "three/addons/objects/Reflector.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { addFactoryDetails } from "./details.js";
 import { FactorySound } from "./audio.js";
-import { chipGeometry, bagGeometry } from "./geometry.js";
+import { chipGeometry, bagGeometry, potatoGeometry } from "./geometry.js";
+import { addProcessMachines } from "./machines.js";
+import { addShippingLine } from "./shipping.js";
+import { createSurfaceTextures } from "./surfaces.js";
+import { LOOP_SECONDS, bagPhase, jawClosure } from "./timing.js";
 import { cameraAt, FLAVOURS } from "../lib/journey.js";
 
 export function createFactory(canvas, options = {}) {
   const TAU = Math.PI * 2,
-    LOOP = 16;
+    LOOP = LOOP_SECONDS;
   let reducedMotion = Boolean(options.reducedMotion);
   let width = 1,
     height = 1,
@@ -33,10 +37,7 @@ export function createFactory(canvas, options = {}) {
     powerPreference: "high-performance",
   });
   renderer.setPixelRatio(
-    Math.min(
-      window.devicePixelRatio || 1,
-      window.innerWidth < 700 ? 1.25 : 1.6,
-    ),
+    Math.min(window.devicePixelRatio || 1, window.innerWidth < 700 ? 1.5 : 2),
   );
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -52,42 +53,13 @@ export function createFactory(canvas, options = {}) {
     seed = (seed * 1664525 + 1013904223) >>> 0;
     return seed / 4294967296;
   }
-  function texture(type) {
-    let c = document.createElement("canvas");
-    c.width = c.height = 256;
-    let a = c.getContext("2d");
-    a.fillStyle =
-      type === "potato" ? "#bca17c" : type === "chip" ? "#e7ae44" : "#aaa";
-    a.fillRect(0, 0, 256, 256);
-    for (let i = 0; i < 5500; i++) {
-      let x = random() * 256,
-        y = random() * 256;
-      a.globalAlpha = random() * 0.25;
-      a.fillStyle = random() > 0.5 ? "#fff" : "#402d15";
-      if (type === "metal") a.fillRect(x, y, random() * 70 + 20, 0.35);
-      else {
-        a.beginPath();
-        a.ellipse(
-          x,
-          y,
-          random() * (type === "chip" ? 3 : 1.6) + 0.3,
-          random() * 2 + 0.3,
-          0,
-          0,
-          TAU,
-        );
-        a.fill();
-      }
-    }
-    a.globalAlpha = 1;
-    let t = new THREE.CanvasTexture(c);
-    t.wrapS = t.wrapT = THREE.RepeatWrapping;
-    t.colorSpace = THREE.SRGBColorSpace;
-    return t;
-  }
-  const metalTex = texture("metal"),
-    potatoTex = texture("potato"),
-    chipTex = texture("chip");
+  const textures = createSurfaceTextures(
+    random,
+    Math.min(8, renderer.capabilities.getMaxAnisotropy()),
+  );
+  const metalTex = textures.metal,
+    potatoTex = textures.potato,
+    chipTex = textures.chip;
   function mat(color, metalness = 0.0, roughness = 0.5, extra = {}) {
     return new THREE.MeshStandardMaterial({
       color,
@@ -100,13 +72,16 @@ export function createFactory(canvas, options = {}) {
     steel: mat("#b2bec0", 0.92, 0.28, { roughnessMap: metalTex }),
     chrome: mat("#d1d9d6", 0.95, 0.18),
     dark: mat("#1c3037", 0.65, 0.37),
-    rubber: mat("#152025", 0.05, 0.78),
+    rubber: mat("#1a2425", 0.02, 0.83, {
+      bumpMap: textures.belt,
+      bumpScale: 0.0018,
+    }),
     yellow: mat("#eeb629", 0.45, 0.29),
     red: mat("#ba3430", 0.35, 0.32),
     green: mat("#739333", 0.32, 0.35),
     copper: mat("#b17433", 0.8, 0.28),
-    potato: mat("#c3a078", 0, 0.85, { map: potatoTex }),
-    peeled: mat("#eee0b0", 0, 0.42),
+    potato: mat("#ffffff", 0, 0.86, { map: potatoTex }),
+    peeled: mat("#efdfb7", 0, 0.52, { bumpMap: potatoTex, bumpScale: 0.0015 }),
     raw: mat("#eddcaf", 0, 0.55),
     chip: mat("#e8b340", 0, 0.58, { map: chipTex }),
     redChip: mat("#dc8434", 0, 0.6, { map: chipTex }),
@@ -125,7 +100,7 @@ export function createFactory(canvas, options = {}) {
       clearcoat: 1,
     }),
     oil: new THREE.MeshPhysicalMaterial({
-      color: "#986118",
+      color: "#875416",
       metalness: 0.15,
       roughness: 0.17,
       clearcoat: 1,
@@ -143,16 +118,16 @@ export function createFactory(canvas, options = {}) {
   };
   M.motor = mat("#16384b", 0.75, 0.27);
   M.potato.bumpMap = potatoTex;
-  M.potato.bumpScale = 0.025;
+  M.potato.bumpScale = 0.008;
   for (const m of [M.chip, M.redChip, M.herbChip]) {
     m.bumpMap = chipTex;
-    m.bumpScale = 0.012;
+    m.bumpScale = 0.004;
   }
   M.steel.bumpMap = metalTex;
   M.steel.bumpScale = 0.0015;
-  M.steel.roughness = 0.3;
-  M.steel.color.set("#d4d1c1");
-  M.chip.color.set("#fff3bb");
+  M.steel.roughness = 0.38;
+  M.steel.color.set("#d0d9d8");
+  M.chip.color.set("#fff5dc");
   M.redChip.color.set("#f1c09a");
   M.herbChip.color.set("#f2e3ad");
   M.yellow = new THREE.MeshPhysicalMaterial({
@@ -208,15 +183,15 @@ export function createFactory(canvas, options = {}) {
     scene.add(l);
     return l;
   }
-  const key = light("#ffe7bc", 3.9, -8, 18, 10);
+  const key = light("#fff0d8", 3.25, -5, 19, 10);
   key.castShadow = true;
   key.shadow.mapSize.set(
     window.innerWidth < 700 ? 1536 : 2048,
     window.innerWidth < 700 ? 1536 : 2048,
   );
   Object.assign(key.shadow.camera, {
-    left: -21,
-    right: 21,
+    left: -27,
+    right: 27,
     top: 16,
     bottom: -16,
     near: 1,
@@ -335,11 +310,22 @@ export function createFactory(canvas, options = {}) {
   function feet(x, z, w = 1.4, d = 1.5, top = 1.2) {
     for (let dx of [-w / 2, w / 2])
       for (let dz of [-d / 2, d / 2]) {
-        cylinder(x + dx, 0.58, z + dz, 0.065, 0.9, M.chrome);
-        cylinder(x + dx, 0.13, z + dz, 0.16, 0.07, M.rubber);
-        box(x + dx, top - 0.14, z + dz, 0.13, 0.25, 0.13, M.steel);
+        const legTop = Math.max(0.84, top - 0.05);
+        cylinder(x + dx, 0.612, z + dz, 0.115, 0.062, M.rubber);
+        cylinder(x + dx, 0.705, z + dz, 0.033, 0.14, M.chrome);
+        cylinder(x + dx, 0.747, z + dz, 0.064, 0.028, M.steel);
+        box(
+          x + dx,
+          (0.77 + legTop) / 2,
+          z + dz,
+          0.085,
+          legTop - 0.77,
+          0.085,
+          M.steel,
+        );
+        box(x + dx, top - 0.05, z + dz, 0.16, 0.1, 0.16, M.steel);
       }
-    box(x, 0.5, z, w, 0.065, 0.09, M.steel);
+    box(x, 0.83, z, w, 0.055, 0.065, M.steel);
   }
   const beltAnims = [],
     spinAnims = [],
@@ -386,7 +372,8 @@ export function createFactory(canvas, options = {}) {
     beltAnims.push({ a, b, z, y, width, n, inst });
     return { a, b, z, y, width };
   }
-  const chipG = chipGeometry();
+  const chipG = chipGeometry(),
+    potatoG = potatoGeometry();
   [M.chip, M.redChip, M.herbChip, M.raw].forEach((m) => {
     m.vertexColors = true;
     m.roughness = 0.48;
@@ -423,7 +410,7 @@ export function createFactory(canvas, options = {}) {
     width = 0.7,
   ) {
     let inst = new THREE.InstancedMesh(
-      type === "chip" ? chipG : sphereGeo,
+      type === "chip" ? chipG : potatoG,
       material,
       n,
     );
@@ -443,14 +430,14 @@ export function createFactory(canvas, options = {}) {
   }
   // Ground and the rounded presentation plinth.
   box(0, -0.31, 0, 170, 0.12, 170, M.floor, scene, 0.02);
-  box(0, 0.13, 0, 31.4, 0.78, 8.9, M.dark, scene, 0.24);
-  box(0, 0.48, 0, 31.1, 0.1, 8.7, M.steel, scene, 0.12);
-  box(0, 0.55, 0, 30.85, 0.03, 8.5, M.dark, scene, 0.1);
+  box(3.3, 0.13, 0, 38.0, 0.78, 8.9, M.dark, scene, 0.24);
+  box(3.3, 0.48, 0, 37.7, 0.1, 8.7, M.steel, scene, 0.12);
+  box(3.3, 0.55, 0, 37.45, 0.03, 8.5, M.dark, scene, 0.1);
   for (let s of [-1, 1]) {
-    box(0, 0.575, s * 3.92, 29.7, 0.02, 0.035, M.yellow);
-    box(s * 14.86, 0.575, 0, 0.035, 0.02, 7.84, M.yellow);
+    box(3.3, 0.575, s * 3.92, 36.8, 0.02, 0.028, M.yellow);
+    box(3.3 + s * 18.4, 0.575, 0, 0.028, 0.02, 7.84, M.yellow);
   }
-  for (let x = -14; x <= 14; x += 2) {
+  for (let x = -14; x <= 20; x += 2) {
     box(x, 0.582, 3.52, 0.62, 0.015, 0.17, M.yellow).rotation.y = -0.5;
   }
   function label(text, x, y, z, w = 1.5) {
@@ -474,123 +461,32 @@ export function createFactory(canvas, options = {}) {
     ["02  /  SLICE", -5.9],
     ["03  /  FRY", -0.5],
     ["04  /  FLAVOUR", 5.3],
-    ["05  /  PACK", 11.7],
+    ["05  /  PACK", 10.4],
+    ["CASE & DISPATCH", 17.65],
   ])
     label(text, x, 0.59, 3.08, 1.8);
-  // 01: raw hopper, cleated elevator, wash bath and abrasive peeler.
-  for (let i = 0; i < 33; i++)
-    sphere(
-      -13.4 + (random() - 0.5) * 1.22,
-      2.02 + random() * 0.3,
-      (random() - 0.5) * 1.05,
-      0.18,
-      0.14,
-      0.15,
-      M.potato,
-    );
-  feet(-13.4, 0, 1.2, 1.0, 1.6);
-  conveyor(-13, -11.2, 0, 1.1, 1.85);
-  foodFlow(-13, -11.2, 0, 2.01, 12, "potato", M.potato, 0.68);
-  box(-10.2, 1.27, 0, 2.25, 0.64, 1.58, M.steel);
-  liquid(-10.2, 1.62, 0, 2.05, 1.4, M.water);
-  feet(-10.2, 0, 1.8, 1.3, 1.3);
-  for (let x = -11; x <= -9.4; x += 0.4) {
-    pipe(
-      [
-        [x, 1.8, -0.84],
-        [x, 2.34, -0.84],
-        [x, 2.45, 0],
-        [x, 2.3, 0.7],
-      ],
-      0.045,
-    );
-    for (let z of [-0.48, 0, 0.48]) {
-      cylinder(x, 2.34, z, 0.055, 0.12, M.chrome);
-      sprays.push({ x, y: 2.26, z });
-    }
-  }
-  panel(-10.2, 1.25, 0.83, 1.9, 0.5);
-  for (let x = -11; x < -9.3; x += 0.16)
-    for (let y of [1.15, 1.31])
-      cylinder(x, y, 0.892, 0.027, 0.012, M.black, scene, "z");
-  foodFlow(-11.15, -9.12, 0, 1.67, 16, "potato", M.potato, 0.9);
-  pipe(
-    [
-      [-11, 1.13, -0.8],
-      [-11, 0.8, -1.25],
-      [-8.0, 0.8, -1.25],
-      [-8.0, 1.5, -0.8],
-    ],
-    0.07,
-  );
-  const peeler = new THREE.Group();
-  peeler.position.set(-8, 1.75, 0);
-  peeler.rotation.z = Math.PI / 2;
-  scene.add(peeler);
-  cylinder(0, 0, 0, 0.7, 1.25, M.steel, peeler);
-  for (let i = 0; i < 22; i++) {
-    let a = (i * TAU) / 22;
-    for (let yy of [-0.45, -0.15, 0.15, 0.45]) {
-      let hole = cylinder(
-        Math.cos(a) * 0.708,
-        yy,
-        Math.sin(a) * 0.708,
-        0.037,
-        0.012,
-        M.black,
-        peeler,
-      );
-      hole.quaternion.setFromUnitVectors(
-        v3(0, 1, 0),
-        v3(Math.cos(a), 0, Math.sin(a)),
-      );
-    }
-  }
-  spinAnims.push({ o: peeler, axis: "y", turns: 8 });
-  for (let x of [-8.65, -7.35]) {
-    cylinder(x, 1.75, 0, 0.73, 0.12, M.yellow, scene, "x");
-    feet(x, 0, 0.12, 1.15, 1.5);
-  }
-  motor(-8.5, 1.23, 0.98);
-  conveyor(-7.4, -5.6, 0, 1.1, 1.25);
-  foodFlow(-7.4, -5.6, 0, 1.45, 12, "potato", M.peeled);
-  // 02: guarded rotary slicer and compact rinse/dewatering section.
-  feet(-5.35, 0, 1.3, 1.3, 1.35);
-  box(-5.35, 1.44, 0, 1.38, 0.42, 1.55, M.steel);
-  for (let z of [-0.76, 0.76]) {
-    box(-5.35, 2.03, z, 1.15, 1.06, 0.035, M.glass);
-    for (let x of [-5.95, -4.75]) cylinder(x, 2.05, z, 0.035, 1.19, M.chrome);
-  }
-  motor(-5.35, 1.88, -1.05, "x");
-  conveyor(-4.74, -2.85, 0, 1.1, 1.25);
-  foodFlow(-4.65, -2.85, 0, 1.3, 23, "chip", M.raw);
-  box(-3.8, 1.85, 0, 0.18, 0.14, 1.42, M.steel);
-  for (let z of [-0.4, 0, 0.4]) sprays.push({ x: -3.8, y: 1.76, z });
-  box(-3.02, 1.64, 0, 0.24, 0.14, 1.35, M.dark);
-  // 03: industrial fryer, oil bubbles, mesh extraction conveyor, steam.
-  box(-0.5, 1.02, 0, 4.6, 0.85, 2.28, M.steel, scene, 0.1);
-  liquid(-0.5, 1.49, 0, 4.28, 2.0, M.oil);
-  for (let z of [-1.15, 1.15]) box(-0.5, 1.49, z, 4.72, 0.14, 0.16, M.chrome);
-  for (let x of [-2.8, 1.8]) box(x, 1.49, 0, 0.16, 0.14, 2.44, M.chrome);
-  feet(-0.5, 0, 3.8, 1.9, 1.3);
-  for (let x of [-1.9, -0.5, 0.9]) {
-    panel(x, 1.02, 1.22, 1.24, 0.65);
-    box(x, 1.14, 1.29, 0.27, 0.14, 0.025, M.black);
-    box(x, 1.15, 1.312, 0.17, 0.055, 0.017, M.led);
-  }
-  box(-0.55, 2.44, -0.83, 3.5, 0.29, 0.86, M.steel);
-  pipe(
-    [
-      [-0.5, 2.5, -1],
-      [-0.5, 3.4, -1],
-      [-0.5, 3.7, -1.55],
-    ],
-    0.22,
-  );
-  cylinder(-0.5, 3.42, -1, 0.3, 0.13, M.chrome);
-  foodFlow(-2.62, 1.53, 0, 1.54, 68, "chip", M.chip, 1.75);
-  conveyor(1.55, 3.5, 0, 1.75, 1.33);
-  foodFlow(1.55, 3.45, 0, 1.4, 24, "chip", M.chip, 1.32);
+  const process = addProcessMachines({
+    scene,
+    M,
+    box,
+    cylinder,
+    sphere,
+    pipe,
+    mesh,
+    motor,
+    feet,
+    bolt,
+    conveyor,
+    foodFlow,
+    liquid,
+    sprays,
+    spinAnims,
+    chipG,
+    potatoG,
+    textures,
+    random,
+  });
+  const { peeler } = process;
   const bubbles = [];
   const bubbleBatch = new THREE.InstancedMesh(
     new THREE.SphereGeometry(1, 12, 8),
@@ -613,15 +509,6 @@ export function createFactory(canvas, options = {}) {
     });
   // 04: distribution manifold and three independently driven seasoning drums.
   for (let z of [-2.25, 0, 2.25]) {
-    pipe(
-      [
-        [3.4, 1.58, 0],
-        [3.9, 1.54, z * 0.6],
-        [4.5, 1.52, z],
-      ],
-      0.12,
-      M.steel,
-    );
     conveyor(4.05, 5.0, z, 0.95, 1.28);
     foodFlow(4.05, 5, z, 1.34, 12, "chip", M.chip, 0.63);
   }
@@ -677,10 +564,23 @@ export function createFactory(canvas, options = {}) {
     box(x, 0.99, z, 2.1, 0.13, 1.65, M.dark);
     let g = new THREE.Group();
     g.position.set(x, 2.01, z);
-    g.rotation.y = Math.PI / 2 - 0.25;
-    g.rotation.x = 0.1;
+    g.rotation.y = Math.PI / 2;
+    g.rotation.x = 0;
+    g.rotation.z = -0.06;
     scene.add(g);
-    let shell = mesh(drumG, flavourColors[f], 0, 0, 0, g);
+    let shell = mesh(drumG, M.steel, 0, 0, 0, g);
+    // Narrow enamel identification bands leave the food drum in stainless steel.
+    for (const zz of [-0.61, 0.61]) {
+      const band = mesh(
+        new THREE.CylinderGeometry(0.796, 0.796, 0.18, 64, 1, true),
+        flavourColors[f],
+        0,
+        0,
+        zz,
+        shell,
+      );
+      band.rotation.x = Math.PI / 2;
+    }
     for (let zz of [-0.77, 0.77]) {
       let rim = mesh(
         new THREE.TorusGeometry(0.775, 0.036, 8, 48),
@@ -716,8 +616,9 @@ export function createFactory(canvas, options = {}) {
     pipe(
       [
         [x, 2.9, z],
-        [x + 0.18, 2.72, z],
-        [x + 0.18, 2.48, z],
+        [x + 0.9, 2.89, z],
+        [x + 0.93, 2.2, z],
+        [x + 0.66, 2.17, z],
       ],
       0.04,
       M.chrome,
@@ -728,7 +629,7 @@ export function createFactory(canvas, options = {}) {
     g.add(tBatch);
     for (let i = 0; i < 32; i++) {
       let o = new THREE.Object3D();
-      o.scale.setScalar(0.85 + random() * 0.3);
+      o.scale.setScalar(0.55 + random() * 0.18);
       tumblers.push({
         o,
         phase: random() * TAU,
@@ -840,12 +741,17 @@ export function createFactory(canvas, options = {}) {
       side: THREE.DoubleSide,
     });
   }
-  const packAnims = [];
+  const packAnims = [],
+    bagMaterials = [0, 1, 2].map(bagMaterial);
+  const sealFace = new THREE.PlaneGeometry(0.79, 0.125, 48, 1);
+  for (let i = 0; i < sealFace.attributes.position.count; i++)
+    sealFace.attributes.position.setZ(i, i % 2 ? 0.006 : 0);
+  sealFace.computeVertexNormals();
   for (let f = 0; f < 3; f++) {
     let z = (f - 1) * 2.25,
       x = 10.0,
       paint = flavourColors[f],
-      bagMat = bagMaterial(f);
+      bagMat = bagMaterials[f];
     feet(x, z, 1.35, 1.3, 1.2);
     box(x, 1.05, z, 1.5, 0.16, 1.64, M.steel);
     for (let dx of [-0.67, 0.67])
@@ -858,35 +764,54 @@ export function createFactory(canvas, options = {}) {
     spinAnims.push({ o: roll, axis: "x", turns: 8 });
     for (let dx of [-0.58, 0.58])
       cylinder(x + dx, 3.53, z - 0.47, 0.11, 0.08, M.dark, scene, "x");
-    let film = box(x, 3.02, z - 0.16, 0.69, 0.7, 0.015, paint);
+    let film = box(x, 3.02, z - 0.16, 0.69, 0.7, 0.015, bagMat);
     film.rotation.x = -0.25;
     cylinder(x, 2.7, z, 0.23, 0.28, M.chrome);
+    mesh(
+      new THREE.CylinderGeometry(0.41, 0.235, 0.27, 48, 1, true),
+      M.steel,
+      x,
+      2.83,
+      z,
+    );
     cylinder(x, 2.36, z, 0.2, 0.55, paint);
     for (let dx of [-0.3, 0.3]) cylinder(x + dx, 2.19, z, 0.11, 0.55, M.rubber);
     let a = box(x, 1.87, z - 0.22, 0.87, 0.17, 0.18, M.steel),
       b = box(x, 1.87, z + 0.22, 0.87, 0.17, 0.18, M.steel);
+    mesh(sealFace, M.chrome, 0, 0, 0.092, a);
+    mesh(sealFace, M.chrome, 0, 0, -0.092, b).rotation.y = Math.PI;
     sealers.push({ a, b, z, f });
     let formed = mesh(bagG, bagMat, x, 1.67, z);
-    formed.scale.set(0.9, 0.8, 1);
+    formed.scale.set(0.72, 0.72, 0.8);
     packAnims.push({ o: formed, f });
     panel(x + 0.62, 2.89, z + 0.8, 0.32, 0.67, M.dark);
     box(x + 0.62, 3.02, z + 0.865, 0.2, 0.17, 0.022, M.led);
     box(x + 0.62, 2.73, z + 0.865, 0.09, 0.05, 0.02, M.red);
-    conveyor(10.6, 14.35, z, 1.05, 1.03);
+    conveyor(10.45, 14.0, z, 1.05, 1.03);
     let bags = [];
     for (let i = 0; i < 4; i++) {
       let g = new THREE.Group();
       scene.add(g);
       let o = mesh(bagG, bagMat, 0, 0, 0, g);
       o.rotation.x = -Math.PI / 2;
+      o.scale.setScalar(0.69);
       bags.push(g);
     }
     packAnims.push({ bags, f, z });
-    box(13.85, 1.4, z, 0.36, 0.22, 1.3, M.dark);
-    for (let dz of [-0.7, 0.7])
-      box(13.85, 1.21, z + dz, 0.14, 0.68, 0.12, M.steel);
-    box(13.85, 1.54, z, 0.16, 0.07, 0.4, M.led);
   }
+  const shipping = addShippingLine({
+    scene,
+    M,
+    box,
+    mesh,
+    cylinder,
+    pipe,
+    conveyor,
+    feet,
+    bagG,
+    bagMaterials,
+    textures,
+  });
   // Hardware, process panels, yellow safety stanchions.
   for (let x of [-12, -8, -4, 0, 4, 8, 12]) {
     box(x, 0.95, -4.15, 1.23, 0.7, 0.46, M.dark);
@@ -903,7 +828,7 @@ export function createFactory(canvas, options = {}) {
       M.rubber,
     );
   }
-  for (let x of [-14.8, 14.8])
+  for (let x of [-14.8, 21.7])
     for (let z of [-3.89, 3.89]) {
       cylinder(x, 0.95, z, 0.05, 0.77, M.chrome);
       cylinder(x, 1.37, z, 0.085, 0.18, M.led);
@@ -1062,8 +987,8 @@ export function createFactory(canvas, options = {}) {
     const next = Math.round(journey);
     if (next !== stage) {
       stage = next;
-      sound?.setFocus(mode === "product" ? 6 : stage);
     }
+    sound?.setFocus(mode === "product" ? 6 : journey);
     if (!inspect && mode === "factory") updateCamera();
   }
   function setMode(next) {
@@ -1174,6 +1099,8 @@ export function createFactory(canvas, options = {}) {
   const protectedNodes = new Set([
     ...spinAnims.map((a) => a.o),
     ...detail.dynamic,
+    ...process.dynamic,
+    ...shipping.dynamic,
     ...bubbles.map((a) => a.o),
     ...drums.map((a) => a.g),
     ...sealers.flatMap((a) => [a.a, a.b]),
@@ -1473,13 +1400,13 @@ export function createFactory(canvas, options = {}) {
               m.angle,
             );
             temp.scale.set(
-              m.scale * (0.9 + m.variant * 0.25),
-              m.scale * (0.9 + Math.sin(m.angle) * 0.1),
-              m.scale,
+              m.scale * (0.58 + m.variant * 0.1),
+              m.scale * (0.58 + Math.sin(m.angle) * 0.05),
+              m.scale * 0.62,
             );
           } else {
             temp.rotation.set(m.angle, beat * 0.25, m.angle * 0.5);
-            temp.scale.set(0.18 * m.scale, 0.14 * m.scale, 0.15 * m.scale);
+            temp.scale.set(0.12 * m.scale, 0.092 * m.scale, 0.095 * m.scale);
           }
           temp.updateMatrix();
           f.inst.setMatrixAt(i, temp.matrix);
@@ -1522,8 +1449,8 @@ export function createFactory(canvas, options = {}) {
       for (let i = 0; i < bubbles.length; i++) {
         const b = bubbles[i],
           a = (p * 32 + b.phase) % 1,
-          s = b.s * Math.sin(a * Math.PI) * 0.039;
-        temp.position.set(b.x, 1.516 + a * 0.035, b.z);
+          s = b.s * Math.sin(a * Math.PI) * 0.025;
+        temp.position.set(b.x, 1.543 + a * 0.025, b.z);
         temp.rotation.set(0, 0, 0);
         temp.scale.set(s, s * 0.43, s);
         temp.updateMatrix();
@@ -1531,19 +1458,20 @@ export function createFactory(canvas, options = {}) {
       }
       bubbleBatch.instanceMatrix.needsUpdate = true;
       for (let s of sealers) {
-        let phase = (t * 2 + s.f / 3) % 1,
-          gap = 0.1 + 0.15 * (0.5 + 0.5 * Math.cos(TAU * phase));
+        let phase = bagPhase(t, s.f),
+          gap = 0.29 - 0.18 * jawClosure(phase);
         s.a.position.z = s.z - gap;
         s.b.position.z = s.z + gap;
       }
       for (let a of packAnims) {
         if (a.o) {
-          let phase = (t * 2 + a.f / 3) % 1;
-          a.o.scale.y = 0.65 + 0.2 * phase;
+          let phase = bagPhase(t, a.f);
+          a.o.scale.y = 0.38 + 0.34 * Math.min(1, phase / 0.31);
+          a.o.position.y = 1.8 - 0.18 * Math.min(1, phase / 0.31);
         } else
           a.bags.forEach((g, i) => {
-            let u = (i / 4 + p * 8) % 1;
-            g.position.set(10.7 + u * 3.3, 1.19, a.z);
+            let u = (i / 4 + t / 8 + a.f / 12) % 1;
+            g.position.set(10.65 + u * 3.2, 1.18, a.z);
             g.rotation.set(0, 0.025 * Math.sin(beat + i), 0);
           });
       }
@@ -1559,19 +1487,21 @@ export function createFactory(canvas, options = {}) {
       for (let i = 0; i < dustN; i++) {
         let f = i % 3,
           u = (p * 32 + i * 0.754) % 1;
-        dustP[i * 3] = 6.1 + 0.15 * Math.sin(i * 9) * u;
-        dustP[i * 3 + 1] = 2.91 - u * 1.1;
+        dustP[i * 3] = 6.65 - u * 0.25 + 0.07 * Math.sin(i * 9);
+        dustP[i * 3 + 1] = 2.19 - u * 0.55;
         dustP[i * 3 + 2] = (f - 1) * 2.25 + 0.15 * Math.cos(i * 9) * u;
       }
       dustG.attributes.position.needsUpdate = true;
       for (let i = 0; i < steamN; i++) {
         let u = (p * 4 + i * 0.618) % 1;
         steamP[i * 3] = -0.4 + Math.sin(i * 12) * 1.65 + u * 0.22;
-        steamP[i * 3 + 1] = 1.65 + u * 1.18;
+        steamP[i * 3 + 1] = 1.7 + u * 1.02;
         steamP[i * 3 + 2] = Math.cos(i * 8) * 0.65;
       }
       steamG.attributes.position.needsUpdate = true;
       detail.update(t);
+      process.update(t);
+      shipping.update(t);
       fluidClock.value = t;
     }
     composer.render();
