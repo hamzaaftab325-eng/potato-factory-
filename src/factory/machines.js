@@ -28,6 +28,8 @@ export function addProcessMachines(C) {
     branches = [];
   const TAU = Math.PI * 2;
   const dummy = new THREE.Object3D();
+  const incline = new THREE.Quaternion(),
+    beltAxis = new THREE.Vector3(0, 0, 1);
   const steelInside = M.steel.clone();
   steelInside.side = THREE.DoubleSide;
   const perforated = steelInside.clone();
@@ -387,8 +389,13 @@ export function addProcessMachines(C) {
 
   // Continuous fryer: insulated vessel, lift-up extraction hood, viewing slots,
   // metering wheels, a submerged mesh belt and a sloping oil-drain discharge.
-  box(-0.5, 1.1, 0, 4.58, 0.87, 2.27, M.graphite, scene, 0.1);
-  liquid(-0.5, 1.52, 0, 4.27, 1.97, M.oil);
+  // Open tank, rather than a solid cuboid covering the liquid surface.
+  box(-0.5, 0.82, 0, 4.58, 0.31, 2.27, M.graphite, scene, 0.08);
+  box(-0.5, 1.02, 0, 4.29, 0.1, 1.99, M.steel);
+  for (const z of [-1.08, 1.08])
+    box(-0.5, 1.25, z, 4.58, 0.57, 0.13, M.graphite);
+  for (const x of [-2.72, 1.72]) box(x, 1.25, 0, 0.13, 0.57, 2.11, M.graphite);
+  liquid(-0.5, 1.53, 0, 4.27, 1.97, M.oil);
   feet(-0.5, 0, 3.95, 1.95, 1.2);
   for (const z of [-1.1, 1.1]) box(-0.5, 1.59, z, 4.75, 0.16, 0.15, M.chrome);
   for (const x of [-2.78, 1.78]) box(x, 1.58, 0, 0.17, 0.16, 2.31, M.chrome);
@@ -454,11 +461,32 @@ export function addProcessMachines(C) {
     new THREE.PlaneGeometry(2.45, 1.8),
     perforated,
     0.3,
-    1.565,
+    1.435,
     0,
   );
   submerge.rotation.x = -Math.PI / 2;
-  foodFlow(-2.59, 1.59, 0, 1.55, 360, "chip", M.chip, 1.63);
+  foodFlow(-2.59, 1.59, 0, 1.551, 240, "chip", M.chip, 1.63);
+  // Side chain, bearing blocks and a level sight glass distinguish the oil
+  // circulation vessel from the drain conveyor beside it.
+  for (const z of [-0.98, 0.98]) {
+    box(-0.5, 1.47, z, 4.08, 0.045, 0.05, M.dark);
+    for (const x of [-2.43, 1.43]) {
+      cylinder(x, 1.48, z, 0.12, 0.07, M.dark, scene, "z");
+      cylinder(
+        x,
+        1.48,
+        z + Math.sign(z) * 0.04,
+        0.05,
+        0.025,
+        M.chrome,
+        scene,
+        "z",
+      );
+    }
+  }
+  box(-1.5, 1.18, 1.207, 0.12, 0.36, 0.035, M.dark);
+  box(-1.5, 1.18, 1.23, 0.055, 0.3, 0.012, M.glass);
+  box(-1.5, 1.105, 1.22, 0.048, 0.15, 0.014, M.oil);
   pipe(
     [
       [-2.2, 0.87, -1.24],
@@ -523,11 +551,15 @@ export function addProcessMachines(C) {
           dummy.position.y += e.kind === "potato" ? 0.09 : 0.055;
           dummy.rotation.set(
             e.kind === "potato" ? i : -Math.PI / 2,
-            i * 0.29,
-            e.angle,
+            e.kind === "potato" ? i * 0.29 : 0.06 * Math.sin(i),
+            e.kind === "potato" ? e.angle : i * 2.399,
           );
+          if (e.kind === "chip")
+            dummy.quaternion.premultiply(
+              incline.setFromAxisAngle(beltAxis, e.angle),
+            );
           if (e.kind === "potato") dummy.scale.set(0.055, 0.043, 0.046);
-          else dummy.scale.setScalar(0.27);
+          else dummy.scale.setScalar(0.33 + 0.025 * Math.sin(i * 3));
           dummy.updateMatrix();
           e.food.setMatrixAt(i, dummy.matrix);
         }
@@ -541,8 +573,12 @@ export function addProcessMachines(C) {
           1.78 - u * u * 0.17,
           Math.sin(i * 7) * 0.18,
         );
-        d.o.rotation.set(-Math.PI / 2 + u * 0.5, i, u * 3);
-        d.o.scale.setScalar(0.27);
+        d.o.rotation.set(
+          -Math.PI / 2 + u * 0.18,
+          0.12 * Math.sin(i),
+          i * 2.399 + u * 0.4,
+        );
+        d.o.scale.setScalar(0.33);
       });
       for (const b of branches) {
         for (let i = 0; i < 18; i++) {
@@ -551,7 +587,7 @@ export function addProcessMachines(C) {
           dummy.position.z += Math.sin(i * 13) * 0.13;
           dummy.position.y += 0.035 + Math.sin(t * Math.PI * 8 + i) * 0.002;
           dummy.rotation.set(-Math.PI / 2, 0, i * 2);
-          dummy.scale.setScalar(0.27);
+          dummy.scale.setScalar(0.33);
           dummy.updateMatrix();
           b.food.setMatrixAt(i, dummy.matrix);
         }

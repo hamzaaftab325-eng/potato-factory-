@@ -105,10 +105,14 @@ export function createFactory(canvas, options = {}) {
       clearcoat: 1,
     }),
     oil: new THREE.MeshPhysicalMaterial({
-      color: "#875416",
-      metalness: 0.15,
-      roughness: 0.17,
-      clearcoat: 1,
+      color: "#ad701b",
+      metalness: 0,
+      roughness: 0.27,
+      clearcoat: 0.35,
+      clearcoatRoughness: 0.21,
+      specularIntensity: 0.42,
+      bumpMap: textures.oil,
+      bumpScale: 0.0012,
     }),
     glass: new THREE.MeshPhysicalMaterial({
       color: "#badbd8",
@@ -136,10 +140,10 @@ export function createFactory(canvas, options = {}) {
   M.graphite = mat("#394447", 0.45, 0.5);
   M.motor = mat("#16384b", 0.75, 0.27);
   M.potato.bumpMap = potatoTex;
-  M.potato.bumpScale = 0.008;
+  M.potato.bumpScale = 0.0014;
   for (const m of [M.chip, M.redChip, M.herbChip]) {
     m.bumpMap = chipTex;
-    m.bumpScale = 0.004;
+    m.bumpScale = 0.0008;
   }
   M.steel.bumpMap = metalTex;
   M.steel.bumpScale = 0.0015;
@@ -398,8 +402,11 @@ export function createFactory(canvas, options = {}) {
     m.vertexColors = true;
     m.roughness = 0.48;
   });
-  const fluidClock = { value: 0 };
+  const fluidClock = { value: 0 },
+    fluidSurfaces = [];
   function liquid(x, y, z, w, d, m) {
+    const isOil = m === M.oil;
+    m = m.clone();
     m.onBeforeCompile = (s) => {
       s.uniforms.factoryTime = fluidClock;
       s.vertexShader = "uniform float factoryTime;\n" + s.vertexShader;
@@ -415,8 +422,15 @@ export function createFactory(canvas, options = {}) {
     objectNormal=normalize(vec3(-.078*cos(position.x*13.0+factoryTime*3.14159265359),.068*sin(position.y*17.0-factoryTime*6.28318530718),1.0));`,
       );
     };
+    m.customProgramCacheKey = () => "crisp-fluid-surface-v2";
     const o = mesh(new THREE.PlaneGeometry(w, d, 64, 24), m, x, y, z);
     o.rotation.x = -Math.PI / 2;
+    o.castShadow = false;
+    o.receiveShadow = true;
+    o.name = isOil ? "visible amber frying oil" : "washer water surface";
+    // Keep local plane coordinates: static batching would bake its rotation,
+    // causing the ripple shader to displace the wrong world axis.
+    fluidSurfaces.push(o);
     return o;
   }
   function foodFlow(
@@ -503,10 +517,11 @@ export function createFactory(canvas, options = {}) {
   const bubbleBatch = new THREE.InstancedMesh(
     new THREE.SphereGeometry(1, 12, 8),
     new THREE.MeshPhysicalMaterial({
-      color: "#e1b656",
-      metalness: 0.12,
-      roughness: 0.16,
-      clearcoat: 1,
+      color: "#e8c980",
+      metalness: 0,
+      roughness: 0.25,
+      clearcoat: 0.35,
+      specularIntensity: 0.35,
     }),
     240,
   );
@@ -1028,6 +1043,7 @@ export function createFactory(canvas, options = {}) {
     ...process.dynamic,
     ...shipping.dynamic,
     ...campus.dynamic,
+    ...fluidSurfaces,
     ...bubbles.map((a) => a.o),
     ...drums.map((a) => a.g),
     ...sealers.flatMap((a) => [a.a, a.b]),
@@ -1249,8 +1265,8 @@ export function createFactory(canvas, options = {}) {
   resize();
   const temp = new THREE.Object3D();
   const foodColor = new THREE.Color(),
-    paleChip = new THREE.Color("#f4e5c4"),
-    goldenChip = new THREE.Color("#dfa443");
+    paleChip = new THREE.Color("#fff3d8"),
+    goldenChip = new THREE.Color("#f3d397");
   let logisticsLabel = "";
   function frame() {
     if (disposed) return;
@@ -1372,9 +1388,9 @@ export function createFactory(canvas, options = {}) {
               m.angle,
             );
             temp.scale.set(
-              m.scale * (0.25 + m.variant * 0.045),
-              m.scale * (0.25 + Math.sin(m.angle) * 0.02),
-              m.scale * 0.27,
+              m.scale * (0.32 + m.variant * 0.04),
+              m.scale * (0.32 + Math.sin(m.angle) * 0.018),
+              m.scale * 0.33,
             );
           } else {
             temp.rotation.set(m.angle, beat * 0.25, m.angle * 0.5);
@@ -1424,10 +1440,10 @@ export function createFactory(canvas, options = {}) {
       for (let i = 0; i < bubbles.length; i++) {
         const b = bubbles[i],
           a = (p * 32 + b.phase) % 1,
-          s = b.s * Math.sin(a * Math.PI) * 0.025;
-        temp.position.set(b.x, 1.543 + a * 0.025, b.z);
+          s = b.s * Math.sin(a * Math.PI) * 0.009;
+        temp.position.set(b.x, 1.533 + a * 0.008, b.z);
         temp.rotation.set(0, 0, 0);
-        temp.scale.set(s, s * 0.43, s);
+        temp.scale.set(s, s * 0.55, s);
         temp.updateMatrix();
         bubbleBatch.setMatrixAt(i, temp.matrix);
       }

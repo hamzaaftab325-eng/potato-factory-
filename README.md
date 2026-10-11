@@ -12,7 +12,9 @@ The process moves through metered receiving, filtered washing, eight abrasive pe
 
 The collection uses 180 g concept family bags. Printed front and back film, sealed edges, folds and rounded volume share the same artwork across the production line and product view. Eight bags fill each carton over a sixteen-second case cycle. Flaps close, tape advances and a second vacuum carriage transfers finished cartons to staging pallets.
 
-Dispatch includes a detailed cab-over rigid box truck with steering pivots, rolling wheels, rear dual tyres, mirrors, glazing, lights, separate chassis and cargo body, hinged rear doors and pallet loads. A raw-potato tipper uses the receiving yard. The outbound truck arrives, manoeuvres, reverses, secures at the dock, opens its doors, connects the bridge, receives two forklift-carried pallets, closes up and departs. The arrival and exit follow separate road lanes and reset outside the factory perimeter.
+Dispatch includes a cab-over rigid box truck with a sculpted cab, open window apertures, wheel-arch cutouts, steering pivots, treaded tyres, rear dual wheels, wipers, mirrors, glazing, lights, chassis rails, hinged rear doors and pallet loads. The receiving tipper carries a textured mound of potatoes with varied shapes and skin colours, a top-hinged tailgate and moving hydraulic rams. Potatoes fall onto the powered receiving elevator while its bed tips. The outbound truck arrives, manoeuvres, reverses, secures at the dock, opens its doors, connects the bridge, receives two forklift-carried pallets, closes up and departs. The arrival and exit use opposite road lanes and arc-length path sampling. Wheel rotation follows signed travel distance. The receiving vehicle turns, reverses into position, unloads and leaves without changing heading abruptly. The checkpost stands across the road, away from the truck apron. Both trucks reset outside the factory perimeter.
+
+Chip slices have broad, thin oval faces, irregular edges, saddle curl, small blisters and toasted rims. Conveyor rotations keep their broad faces visible. The fryer is an open insulated tank: amber rippling oil is exposed above its submerged mesh, with small bubbles and a visible oil-level sight glass. Liquid surfaces retain local coordinates during geometry batching so their shader ripples move vertically.
 
 ## Animation and sound
 
@@ -63,7 +65,7 @@ The Git repository is `hamzaaftab325-eng/potato-factory-`; the production branch
 
 ## Revision status
 
-The factory-campus upgrade is implemented in source. No preview, production build, automated tests, visual QA or audio listening review was run for this revision, at the owner's request. Existing test expectations were updated for the sixth chapter, eight-bag case timing and separate logistics loop; those tests remain unexecuted in this session. Deployment and runtime behaviour are unverified.
+The factory-campus upgrade and focused slice, fryer and vehicle refinements are implemented in source. The six scroll chapters, page layout, packing choreography and sound timing are preserved. No preview, production build, automated tests, visual QA or audio listening review was run for this revision, at the owner's request. Deployment and runtime behaviour are unverified.
 
 This is an original portfolio interpretation with fictional packaging and delivery routes, rather than a manufacturing digital twin. Production rates, vehicle travel and handling choreography are compressed for the animation. The site does not process orders.
 

@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import { potatoGeometry } from "./geometry.js";
 import { CAMPUS_SECONDS, logisticsAt, smooth } from "./timing.js";
 import { batchRigidParts } from "./batching.js";
 
@@ -41,10 +43,12 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
       depthWrite: false,
     }),
     vehicleGlass: new THREE.MeshPhysicalMaterial({
-      color: "#364e5a",
-      roughness: 0.2,
+      color: "#294c56",
+      roughness: 0.16,
+      metalness: 0,
+      clearcoat: 0.55,
       transparent: true,
-      opacity: 0.58,
+      opacity: 0.88,
       depthWrite: false,
     }),
     lamp: new THREE.MeshStandardMaterial({
@@ -330,19 +334,31 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
   for (const z of [-1.65, 1.65]) B(41.2, 0.034, z, 11.7, 0.016, 0.07, P.line);
   sign("01", "LOADING BAY", 35.52, 4.2, 0, 1.1, 0.8, Math.PI / 2);
 
-  // Guardhouse and opening gate, set back from the truck's turning envelope.
-  B(49.0, 1.25, 5.35, 2.8, 2.5, 2.25, P.wall);
-  B(49.0, 2.59, 5.35, 3.1, 0.16, 2.55, P.teal);
-  B(49.0, 1.6, 6.5, 1.9, 0.95, 0.015, M.glass);
-  B(50.42, 1.6, 5.35, 0.015, 0.95, 1.35, M.glass);
-  sign("CRISP", "FACTORY GATE / DISPATCH", 49.0, 2.16, 6.52, 2.15, 0.3);
+  // Checkpost is across the road, clear of the cab and manoeuvring apron.
+  B(49.0, 0.12, 18.1, 3.4, 0.24, 2.9, P.concrete);
+  B(49.0, 1.37, 18.1, 2.8, 2.5, 2.25, P.wall);
+  B(49.0, 2.71, 18.1, 3.1, 0.16, 2.55, P.teal);
+  B(49.0, 1.72, 16.97, 1.9, 0.95, 0.015, P.vehicleGlass);
+  B(50.42, 1.72, 18.1, 0.015, 0.95, 1.35, P.vehicleGlass);
+  sign(
+    "CRISP",
+    "SECURITY / FACTORY GATE",
+    49.0,
+    2.3,
+    16.95,
+    2.15,
+    0.3,
+    Math.PI,
+  );
+  B(47.58, 1.05, 18.1, 0.015, 1.8, 0.76, P.teal);
+  for (const x of [46.9, 51.1]) C(x, 0.47, 16.75, 0.085, 0.94, M.yellow);
   const gate = new THREE.Group();
-  gate.position.set(52.8, 0.9, 8.6);
+  gate.position.set(52.8, 0.9, 15.4);
   group.add(gate);
-  B(0, 0.22, 2.4, 0.08, 0.09, 4.8, P.white, gate);
-  for (let z = 0.25; z < 4.8; z += 0.6)
-    B(0, 0.22, z, 0.09, 0.095, 0.25, M.red, gate);
-  B(52.8, 0.8, 8.6, 0.4, 1.6, 0.4, M.yellow);
+  B(0, 0.22, -3.4, 0.08, 0.09, 6.8, P.white, gate);
+  for (let z = 0.25; z < 6.8; z += 0.6)
+    B(0, 0.22, -z, 0.09, 0.095, 0.25, M.red, gate);
+  B(52.8, 0.8, 15.4, 0.4, 1.6, 0.4, M.yellow);
   for (const [x, z] of [
     [-26, -10],
     [-18, -12],
@@ -396,14 +412,54 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
     }
     return p;
   }
-  // Cab-over 4x2 rigid box truck: rear dual tyres, separate chassis and body.
+  const truckPotatoG = potatoGeometry(16, 12);
+  const brakeLamp = new THREE.MeshStandardMaterial({
+    color: "#d0392f",
+    emissive: "#b52317",
+    emissiveIntensity: 1.2,
+    roughness: 0.3,
+  });
+  const tyreGroove = material("#111a1c", 0.94);
+  const potatoFill = new THREE.MeshStandardMaterial({
+    color: "#b79a72",
+    map: textures.potato,
+    roughness: 0.94,
+  });
+  function R(x, y, z, w, h, d, m, parent, radius = 0.055) {
+    return mesh(
+      new RoundedBoxGeometry(w, h, d, 2, Math.min(radius, w / 3, h / 3, d / 3)),
+      m,
+      x,
+      y,
+      z,
+      parent,
+    );
+  }
+  function pane(points, parent) {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(points.flat(), 3),
+    );
+    geometry.setAttribute(
+      "uv",
+      new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 1], 2),
+    );
+    geometry.setIndex([0, 2, 1, 0, 3, 2]);
+    geometry.computeVertexNormals();
+    return mesh(geometry, P.vehicleGlass, 0, 0, 0, parent);
+  }
+  // Sculpted cab-over rigid: real window openings, shaped wheel arches and a
+  // separate body on chassis rails. +X is the cab's forward direction.
   function vehicle(tipper = false) {
     const g = new THREE.Group();
+    g.name = tipper ? "loaded raw-potato tipper" : "CRISP distribution truck";
     group.add(g);
     const wheels = [],
-      steer = [];
+      steer = [],
+      hydraulics = [];
     B(0.2, 0.75, 0, 8.15, 0.19, 0.9, M.dark, g);
-    for (const z of [-0.51, 0.51]) B(0.0, 0.79, z, 8.1, 0.15, 0.1, M.dark, g);
+    for (const z of [-0.51, 0.51]) B(0, 0.79, z, 8.1, 0.15, 0.1, M.dark, g);
     for (const x of [-2.3, 2.9]) {
       C(x, 0.54, 0, 0.105, 2.15, M.dark, g, "z");
       for (const side of [-1, 1]) {
@@ -415,75 +471,223 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
         hub.add(wheel);
         wheels.push(wheel);
         C(0, 0, 0, 0.54, 0.29, M.rubber, wheel, "z");
-        C(0, 0, side * 0.155, 0.31, 0.032, M.steel, wheel, "z");
-        C(0, 0, side * 0.18, 0.12, 0.05, M.dark, wheel, "z");
-        for (let k = 0; k < 8; k++)
+        for (const z of [-0.14, 0.14])
+          mesh(
+            new THREE.TorusGeometry(0.426, 0.103, 8, 32),
+            M.rubber,
+            0,
+            0,
+            z,
+            wheel,
+          );
+        for (const z of [-0.07, 0.07])
+          mesh(
+            new THREE.TorusGeometry(0.539, 0.008, 5, 32),
+            tyreGroove,
+            0,
+            0,
+            z,
+            wheel,
+          );
+        for (let k = 0; k < 32; k++) {
+          const angle = (k * Math.PI) / 16;
+          const tread = B(
+            Math.cos(angle) * 0.534,
+            Math.sin(angle) * 0.534,
+            0,
+            0.061,
+            0.024,
+            0.23,
+            tyreGroove,
+            wheel,
+          );
+          tread.rotation.z = angle + Math.PI / 2;
+        }
+        C(0, 0, side * 0.167, 0.326, 0.033, M.steel, wheel, "z");
+        C(0, 0, side * 0.19, 0.115, 0.055, M.chrome, wheel, "z");
+        for (let k = 0; k < 10; k++) {
+          const angle = (k * Math.PI) / 5;
           C(
-            Math.cos((k * Math.PI) / 4) * 0.23,
-            Math.sin((k * Math.PI) / 4) * 0.23,
-            side * 0.18,
-            0.026,
-            0.025,
+            Math.cos(angle) * 0.25,
+            Math.sin(angle) * 0.25,
+            side * 0.189,
+            0.038,
+            0.009,
+            M.dark,
+            wheel,
+            "z",
+          );
+          C(
+            Math.cos(angle) * 0.165,
+            Math.sin(angle) * 0.165,
+            side * 0.216,
+            0.021,
+            0.019,
             M.chrome,
             wheel,
             "z",
           );
-        if (x < 0) C(0, 0, -side * 0.3, 0.54, 0.26, M.rubber, wheel, "z");
-        B(0, 0.56, 0, 1.18, 0.09, 0.56, P.teal, hub);
+        }
+        if (x < 0) {
+          C(0, 0, -side * 0.3, 0.54, 0.26, M.rubber, wheel, "z");
+          mesh(
+            new THREE.TorusGeometry(0.426, 0.103, 8, 32),
+            M.rubber,
+            0,
+            0,
+            -side * 0.43,
+            wheel,
+          );
+          R(x, 1.18, side * 1.12, 1.37, 0.15, 0.67, P.teal, g);
+        }
       }
       for (const z of [-0.7, 0.7])
         for (let i = 0; i < 4; i++)
           B(x, 0.72 + i * 0.033, z, 1.3 - i * 0.15, 0.026, 0.11, M.dark, g);
     }
-    B(3.0, 1.78, 0, 1.95, 2.2, 2.58, P.white, g);
-    B(3.17, 3.0, 0, 1.86, 0.2, 2.62, P.teal, g);
-    B(4.0, 2.32, 0, 0.022, 0.97, 2.26, P.vehicleGlass, g).rotation.z = -0.08;
-    B(4.0, 1.52, 0, 0.045, 0.49, 1.88, M.dark, g);
-    B(3.55, 1.93, 0, 0.42, 0.12, 2.22, M.dark, g);
-    for (const z of [-0.6, 0.6]) {
-      B(2.98, 1.65, z, 0.53, 0.17, 0.54, M.rubber, g);
-      B(2.7, 1.96, z, 0.13, 0.57, 0.5, M.rubber, g);
-    }
-    // Right-hand cab position, matching the Pakistani delivery setting.
-    B(3.02, 1.98, -0.6, 0.31, 0.5, 0.36, P.teal, g);
-    const driver = mesh(globe, material("#ac8669"), 3.05, 2.31, -0.6, g);
-    driver.scale.setScalar(0.14);
-    for (let y = 1.36; y < 1.77; y += 0.075)
-      B(4.032, y, 0, 0.045, 0.022, 1.76, M.steel, g);
-    B(4.08, 0.92, 0, 0.16, 0.23, 2.7, M.dark, g);
+    // The lower side panel has a genuine semicircular wheel cutout.
+    const arch = new THREE.Shape();
+    arch.moveTo(2.08, 1.98);
+    arch.lineTo(3.91, 1.98);
+    arch.quadraticCurveTo(4.07, 1.83, 4.07, 1.64);
+    arch.lineTo(4.07, 0.7);
+    arch.lineTo(3.57, 0.7);
+    arch.lineTo(3.57, 0.56);
+    arch.absarc(2.93, 0.56, 0.64, 0, Math.PI, false);
+    arch.lineTo(2.29, 0.7);
+    arch.lineTo(2.08, 0.7);
+    arch.closePath();
+    const archGeometry = new THREE.ExtrudeGeometry(arch, {
+      depth: 0.047,
+      bevelEnabled: true,
+      bevelSegments: 2,
+      steps: 1,
+      bevelSize: 0.018,
+      bevelThickness: 0.014,
+      curveSegments: 20,
+    });
     for (const side of [-1, 1]) {
-      B(3.08, 2.32, side * 1.3, 1.18, 0.84, 0.016, P.vehicleGlass, g);
-      B(3.4, 1.71, side * 1.31, 0.31, 0.06, 0.035, M.dark, g);
-      B(2.65, 0.8, side * 1.31, 0.75, 0.12, 0.26, M.steel, g);
+      mesh(archGeometry, P.white, 0, 0, side > 0 ? 1.237 : -1.284, g);
+      B(3.05, 1.89, side * 1.294, 1.74, 0.06, 0.026, P.teal, g);
+      B(2.17, 2.36, side * 1.25, 0.1, 0.91, 0.1, P.white, g);
+      const pillar = B(3.92, 2.38, side * 1.23, 0.087, 0.95, 0.11, P.white, g);
+      pillar.rotation.z = 0.12;
+      B(3.01, 2.82, side * 1.25, 1.83, 0.07, 0.09, P.white, g);
+      B(3.02, 2.37, side * 1.258, 1.61, 0.82, 0.017, P.vehicleGlass, g);
+      B(3.42, 2.36, side * 1.275, 0.044, 0.8, 0.023, M.dark, g);
+      R(2.92, 1.7, side * 1.3, 1.39, 0.19, 0.025, P.teal, g, 0.012);
+      R(2.63, 1.64, side * 1.327, 0.25, 0.052, 0.035, M.dark, g, 0.018);
+      for (const y of [0.8, 1.05]) {
+        B(2.15, y, side * 1.33, 0.32, 0.065, 0.26, M.steel, g);
+        for (let x = 2.02; x < 2.31; x += 0.07)
+          B(x, y + 0.035, side * 1.33, 0.023, 0.012, 0.22, M.dark, g);
+      }
       pipe(
         [
-          [3.69, 2.38, side * 1.3],
-          [3.85, 2.45, side * 1.59],
-          [3.65, 2.45, side * 1.75],
+          [3.83, 2.56, side * 1.25],
+          [4.0, 2.57, side * 1.62],
+          [3.88, 2.54, side * 1.76],
         ],
-        0.035,
+        0.025,
         M.dark,
         g,
       );
-      B(3.62, 2.43, side * 1.76, 0.17, 0.38, 0.09, M.dark, g);
-      B(3.72, 2.43, side * 1.76, 0.014, 0.29, 0.075, M.chrome, g);
-      B(4.03, 1.1, side * 0.98, 0.04, 0.18, 0.35, P.lamp, g);
-      B(4.035, 1.35, side * 1.1, 0.04, 0.09, 0.17, M.yellow, g);
+      R(3.86, 2.46, side * 1.78, 0.19, 0.4, 0.085, M.dark, g, 0.03);
+      B(3.96, 2.46, side * 1.78, 0.013, 0.32, 0.059, M.chrome, g);
+      R(4.07, 1.08, side * 0.99, 0.085, 0.27, 0.48, M.dark, g, 0.025);
+      R(4.117, 1.105, side * 0.98, 0.025, 0.15, 0.31, P.lamp, g, 0.012);
+      R(4.121, 1.255, side * 1.07, 0.025, 0.073, 0.13, M.yellow, g, 0.012);
       B(-0.3, 0.66, side * 1.18, 2.8, 0.09, 0.08, M.steel, g);
     }
+    R(3.0, 1.63, 0, 1.94, 0.54, 2.48, P.white, g, 0.09);
+    R(3.88, 1.39, 0, 0.34, 0.7, 2.49, P.white, g, 0.07);
+    B(2.13, 2.35, 0, 0.09, 0.99, 2.44, P.white, g);
+    R(3.0, 2.91, 0, 2.01, 0.16, 2.59, P.white, g, 0.065);
+    R(3.88, 2.875, 0, 0.34, 0.085, 2.62, P.teal, g, 0.03);
+    pane(
+      [
+        [4.02, 1.995, -1.15],
+        [4.02, 1.995, 1.15],
+        [3.89, 2.817, 1.16],
+        [3.89, 2.817, -1.16],
+      ],
+      g,
+    );
+    B(3.72, 1.985, 0, 0.49, 0.14, 2.2, M.dark, g);
+    for (const side of [-1, 1]) {
+      pipe(
+        [
+          [4.037, 2.05, side * 0.65],
+          [3.975, 2.47, side * 0.32],
+        ],
+        0.013,
+        M.dark,
+        g,
+      );
+      B(4.045, 2.035, side * 0.65, 0.04, 0.04, 0.04, M.dark, g);
+      B(2.9, 1.64, side * 0.58, 0.53, 0.16, 0.5, M.rubber, g);
+      R(2.61, 1.95, side * 0.58, 0.15, 0.58, 0.5, M.rubber, g);
+    }
+    // Right-hand steering and a seated operator visible through the glazing.
+    R(3.04, 2.08, 0.59, 0.29, 0.49, 0.35, P.teal, g);
+    const driver = mesh(globe, material("#ac8669"), 3.09, 2.46, 0.59, g);
+    driver.scale.set(0.12, 0.15, 0.13);
+    const steering = mesh(
+      new THREE.TorusGeometry(0.16, 0.014, 6, 20),
+      M.dark,
+      3.55,
+      2.14,
+      0.59,
+      g,
+    );
+    steering.rotation.y = Math.PI / 2;
+    pipe(
+      [
+        [3.09, 2.22, 0.75],
+        [3.3, 2.08, 0.74],
+        [3.52, 2.14, 0.7],
+      ],
+      0.047,
+      P.teal,
+      g,
+    );
+    R(4.075, 1.54, 0, 0.09, 0.38, 1.83, M.dark, g, 0.04);
+    for (let y = 1.4; y < 1.7; y += 0.056)
+      B(4.129, y, 0, 0.025, 0.017, 1.69, M.steel, g);
+    sign("CRISP", "DISTRIBUTION", 4.149, 1.82, 0, 0.48, 0.14, Math.PI / 2, g);
+    R(4.1, 0.855, 0, 0.21, 0.22, 2.7, M.dark, g, 0.055);
+    B(4.216, 0.868, 0, 0.014, 0.075, 1.0, M.steel, g);
+    const registration = mesh(
+      new THREE.PlaneGeometry(0.43, 0.11),
+      decal("CR-180", "CONCEPT VEHICLE", "#24463c", "#ece5bf"),
+      4.23,
+      0.93,
+      0,
+      g,
+    );
+    registration.rotation.y = Math.PI / 2;
+    for (const z of [-0.65, 0.65])
+      B(4.22, 0.82, z, 0.025, 0.035, 0.1, M.chrome, g);
     C(0.9, 0.72, -0.75, 0.34, 1.2, M.steel, g, "x");
     C(1.75, 0.69, -0.7, 0.08, 1.45, M.dark, g, "x");
-    B(4.17, 0.98, 0, 0.012, 0.12, 0.43, P.white, g);
+    B(0.05, 0.89, 0.83, 1.35, 0.54, 0.42, M.dark, g);
     const body = new THREE.Group();
     g.add(body);
     B(-0.55, 1.3, 0, 6.2, 0.14, 2.66, M.steel, body);
     const doors = [];
+    let tailgate = null,
+      potatoLoad = null,
+      cargoBaseY = 0;
     if (!tipper) {
       for (const side of [-1, 1]) {
         B(-0.55, 2.88, side * 1.34, 6.2, 3.0, 0.055, P.white, body);
         B(-0.55, 1.55, side * 1.38, 6.2, 0.25, 0.035, P.teal, body);
         for (let x = -3.55; x < 2.6; x += 0.75)
           B(x, 2.88, side * 1.378, 0.027, 2.88, 0.017, M.steel, body);
+        for (const y of [1.42, 4.36])
+          B(-0.55, y, side * 1.38, 6.25, 0.065, 0.045, M.chrome, body);
+        for (const x of [-3.61, 2.51])
+          B(x, 2.89, side * 1.37, 0.07, 3.04, 0.055, M.chrome, body);
         sign(
           "crisp",
           "CRAFTED FOR THE CRUNCH / ACROSS PAKISTAN",
@@ -495,14 +699,18 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
           side < 0 ? Math.PI : 0,
           body,
         );
+        for (const x of [-3.3, -0.5, 2.3])
+          R(x, 1.51, side * 1.4, 0.15, 0.07, 0.022, M.yellow, body, 0.01);
       }
-      B(-0.55, 4.43, 0, 6.25, 0.1, 2.75, P.white, body);
+      R(-0.55, 4.43, 0, 6.25, 0.1, 2.75, P.white, body, 0.035);
       B(2.54, 2.88, 0, 0.055, 3, 2.65, P.white, body);
       for (const side of [-1, 1]) {
         const door = new THREE.Group();
         door.position.set(-3.66, 1.37, side * 1.32);
         body.add(door);
         B(0, 1.5, -side * 0.655, 0.065, 2.98, 1.31, P.white, door);
+        for (const y of [0.07, 2.91])
+          B(-0.04, y, -side * 0.655, 0.025, 0.06, 1.31, M.steel, door);
         C(-0.052, 1.5, -side * 0.81, 0.021, 2.48, M.chrome, door);
         for (const y of [0.3, 1.5, 2.7])
           B(-0.055, y, 0, 0.07, 0.09, 0.19, M.steel, door);
@@ -510,35 +718,100 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
         doors.push({ o: door, side });
       }
     } else {
-      for (const side of [-1, 1])
+      for (const side of [-1, 1]) {
         B(-0.55, 2.08, side * 1.34, 6.2, 1.45, 0.09, P.teal, body);
-      B(-3.66, 2.08, 0, 0.1, 1.45, 2.65, P.teal, body);
-      for (let i = 0; i < 70; i++) {
-        const p = mesh(
-          potatoG,
-          M.potato,
-          -3.2 + (i % 10) * 0.57,
-          1.58 + Math.sin(i * 8) * 0.08,
-          Math.floor(i / 10) * 0.32 - 1.0,
-          body,
-        );
-        p.scale.set(0.065, 0.05, 0.055);
+        B(-0.55, 2.82, side * 1.34, 6.31, 0.09, 0.13, M.steel, body);
+        B(-0.55, 1.42, side * 1.34, 6.26, 0.1, 0.13, M.steel, body);
+        for (let x = -3.45; x < 2.55; x += 0.75)
+          B(x, 2.1, side * 1.4, 0.085, 1.4, 0.09, M.steel, body);
       }
-    }
-    if (tipper) {
+      B(2.53, 2.14, 0, 0.1, 1.6, 2.65, P.teal, body);
+      C(2.55, 2.94, 0, 0.12, 2.72, M.dark, body, "z");
+      tailgate = new THREE.Group();
+      tailgate.position.set(-3.66, 2.81, 0);
+      body.add(tailgate);
+      B(0, -0.71, 0, 0.1, 1.42, 2.65, P.teal, tailgate);
+      for (const z of [-0.9, 0, 0.9])
+        B(-0.075, -0.71, z, 0.065, 1.33, 0.095, M.steel, tailgate);
+      for (const z of [-0.9, 0.9])
+        C(0, 0, z, 0.065, 0.23, M.chrome, tailgate, "z");
+      potatoLoad = new THREE.Group();
+      potatoLoad.name = "full textured potato mound";
+      body.add(potatoLoad);
+      B(-0.55, 1.95, 0, 5.94, 1.16, 2.49, potatoFill, potatoLoad);
+      const count = 40 * 18 * 3;
+      const crop = new THREE.InstancedMesh(truckPotatoG, M.potato, count);
+      crop.castShadow = crop.receiveShadow = true;
+      potatoLoad.add(crop);
+      const dummy = new THREE.Object3D(),
+        tint = new THREE.Color();
+      for (let i = 0; i < count; i++) {
+        const col = i % 40,
+          row = Math.floor(i / 40) % 18,
+          layer = Math.floor(i / 720);
+        const seed = Math.sin(i * 12.9898 + 4.7) * 43758.5453;
+        const noise = seed - Math.floor(seed);
+        const x = -3.43 + col * 0.147 + Math.sin(i * 5.7) * 0.018;
+        const z = -1.2 + row * 0.141 + Math.sin(i * 2.9) * 0.015;
+        const crown = Math.max(0, 1 - ((x + 0.55) / 3.1) ** 2 - (z / 1.5) ** 2);
+        dummy.position.set(
+          x,
+          2.53 + crown * 0.29 - layer * 0.092 + noise * 0.022,
+          z,
+        );
+        dummy.rotation.set(i * 1.32, i * 2.39, i * 0.73);
+        dummy.scale.set(
+          0.078 + noise * 0.017,
+          0.062 + noise * 0.009,
+          0.068 + noise * 0.014,
+        );
+        dummy.updateMatrix();
+        crop.setMatrixAt(i, dummy.matrix);
+        tint.setHSL(
+          0.095 + noise * 0.012,
+          0.19 + noise * 0.1,
+          0.7 + noise * 0.12,
+        );
+        crop.setColorAt(i, tint);
+      }
+      crop.instanceMatrix.needsUpdate = true;
+      crop.instanceColor.needsUpdate = true;
+      crop.computeBoundingSphere();
       const hinge = new THREE.Vector3(-3.66, 1.3, 0);
       body.children.forEach((o) => o.position.sub(hinge));
       body.position.copy(hinge);
+      cargoBaseY = potatoLoad.position.y;
+      for (const z of [-0.42, 0.42]) {
+        const outer = C(-1.5, 1.08, z, 0.105, 1.3, M.dark, g);
+        const piston = C(-0.5, 1.3, z, 0.065, 1.3, M.chrome, g);
+        hydraulics.push(outer, piston);
+      }
     }
     const rearLights = [];
     for (const side of [-1, 1]) {
-      const l = B(-3.77, 0.86, side * 1.01, 0.08, 0.13, 0.27, M.red, g);
+      R(-3.77, 0.86, side * 1.01, 0.08, 0.16, 0.29, M.dark, g, 0.02);
+      const l = B(-3.82, 0.87, side * 1.01, 0.022, 0.11, 0.21, M.red, g);
       rearLights.push(l);
-      B(-3.77, 0.86, side * 1.2, 0.08, 0.13, 0.11, M.yellow, g);
+      B(-3.82, 0.87, side * 1.2, 0.022, 0.11, 0.1, M.yellow, g);
+      B(-3.82, 0.7, side * 1.02, 0.024, 0.06, 0.12, P.white, g);
       B(-2.98, 0.28, side * 1.1, 0.035, 0.51, 0.34, M.rubber, g);
     }
     B(-3.75, 0.46, 0, 0.15, 0.13, 2.45, M.steel, g);
-    return { g, body, wheels, steer, doors, rearLights };
+    return {
+      g,
+      body,
+      wheels,
+      steer,
+      doors,
+      rearLights,
+      tailgate,
+      potatoLoad,
+      cargoBaseY,
+      hydraulics,
+      wheelAngle: 0,
+      previousTime: null,
+      previousPosition: new THREE.Vector3(),
+    };
   }
   const truck = vehicle();
   const loads = [pallet(truck.g), pallet(truck.g)];
@@ -548,10 +821,10 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
   raw.g.rotation.y = Math.PI;
   raw.g.position.set(-21, 0, 0);
   // Solid receiving ramp bridges the raw truck to the metered intake hopper.
-  const receivingRamp = B(-16.0, 1.67, 0, 3.2, 0.1, 1.15, M.steel);
-  receivingRamp.rotation.z = 0.13;
+  const receivingRamp = B(-16.0, 1.77, 0, 3.35, 0.1, 1.15, M.dark);
+  receivingRamp.rotation.z = 0.21;
   for (const z of [-0.57, 0.57])
-    B(-16, 1.79, z, 3.25, 0.2, 0.05, M.blue).rotation.z = 0.13;
+    B(-16, 1.88, z, 3.4, 0.2, 0.05, M.blue).rotation.z = 0.21;
   sign("RECEIVING", "RAW POTATOES / METERED INTAKE", -19, 3.2, -4.4, 4.0, 0.8);
 
   const forklift = new THREE.Group();
@@ -586,58 +859,113 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
   head.scale.setScalar(0.16);
   C(0.1, 2.03, 0, 0.18, 0.08, M.yellow, forklift);
   B(0.25, 1.39, 0, 0.4, 0.075, 0.37, P.teal, forklift);
+  // Opposite road lanes: approaching trucks use the far lane, departing
+  // trucks the near lane. Arc-length travel avoids speed changes at control points.
   const arrival = new THREE.CatmullRomCurve3(
     [
-      [69, 10.6],
-      [57, 10.6],
-      [49, 10.8],
-      [43.4, 7],
-      [43.8, 4],
-      [46.3, 0.4],
+      [69, 13.4],
+      [57, 13.4],
+      [49, 12.7],
+      [43.6, 9.0],
+      [43.0, 5.2],
+      [43.8, 1.9],
+      [46.3, 0],
       [48.1, 0],
     ].map(([x, z]) => new THREE.Vector3(x, 0, z)),
+    false,
+    "centripetal",
   );
   const exit = new THREE.CatmullRomCurve3(
     [
       [48.1, 0],
-      [49.3, 4.4],
-      [51, 9.3],
-      [55, 13.4],
-      [69, 13.4],
+      [49.2, 0],
+      [49.7, 4.1],
+      [50.5, 7.5],
+      [56.3, 10.6],
+      [69, 10.6],
     ].map(([x, z]) => new THREE.Vector3(x, 0, z)),
+    false,
+    "centripetal",
   );
+  // The receiving tipper completes its turn before stopping, then reverses
+  // straight to the hopper. It never changes heading abruptly while stationary.
   const rawArrival = new THREE.CatmullRomCurve3(
     [
-      [-39, 13.4],
-      [-30, 13.4],
-      [-24.5, 8],
-      [-22, 3],
-      [-21, 0],
+      [-43, 10.6],
+      [-33, 10.6],
+      [-25, 9.7],
+      [-22.0, 6.5],
+      [-23.2, 2.0],
+      [-26.5, 0],
+      [-29, 0],
     ].map(([x, z]) => new THREE.Vector3(x, 0, z)),
+    false,
+    "centripetal",
   );
   const rawExit = new THREE.CatmullRomCurve3(
     [
-      [-21, 0],
-      [-26, 0],
-      [-28, 6],
-      [-32, 10.6],
-      [-39, 10.6],
+      [-29, 0],
+      [-30, 0],
+      [-30.8, 4.1],
+      [-32.2, 8.6],
+      [-37, 13.4],
+      [-43, 13.4],
     ].map(([x, z]) => new THREE.Vector3(x, 0, z)),
+    false,
+    "centripetal",
   );
   const point = new THREE.Vector3(),
     tangent = new THREE.Vector3();
-  function along(v, curve, u, time) {
-    curve.getPoint(Math.min(1, Math.max(0, u)), point);
+  function along(v, curve, u) {
+    const q = Math.min(1, Math.max(0, u));
+    curve.getPointAt(q, point);
     v.g.position.copy(point);
-    curve.getTangent(Math.min(0.999, Math.max(0.001, u)), tangent);
+    curve.getTangentAt(q, tangent);
     v.g.rotation.y = -Math.atan2(tangent.z, tangent.x);
-    curve.getTangent(Math.min(0.999, u + 0.03), point);
-    const bend =
-      Math.atan2(point.z, point.x) - Math.atan2(tangent.z, tangent.x);
-    v.steer.forEach(
-      (o) => (o.rotation.y = -Math.max(-0.38, Math.min(0.38, bend * 3))),
+    curve.getTangentAt(Math.min(1, q + 0.025), point);
+    const bend = Math.atan2(
+      tangent.x * point.z - tangent.z * point.x,
+      tangent.x * point.x + tangent.z * point.z,
     );
-    v.wheels.forEach((o) => (o.rotation.z = -time * 3.2));
+    v.steer.forEach((o) => {
+      o.rotation.y = -Math.max(-0.38, Math.min(0.38, bend * 2.6));
+    });
+  }
+  const travel = new THREE.Vector3();
+  function roll(v, phase) {
+    if (
+      v.previousTime !== null &&
+      phase >= v.previousTime &&
+      phase - v.previousTime < 1
+    ) {
+      travel.copy(v.g.position).sub(v.previousPosition);
+      const signedDistance =
+        travel.x * Math.cos(v.g.rotation.y) -
+        travel.z * Math.sin(v.g.rotation.y);
+      v.wheelAngle -= signedDistance / 0.54;
+    }
+    v.wheels.forEach((o) => {
+      o.rotation.z = v.wheelAngle;
+    });
+    v.previousPosition.copy(v.g.position);
+    v.previousTime = phase;
+  }
+  const unloading = new THREE.InstancedMesh(truckPotatoG, M.potato, 96);
+  unloading.name = "potatoes unloading onto the receiving elevator";
+  unloading.castShadow = unloading.receiveShadow = true;
+  unloading.frustumCulled = false;
+  group.add(unloading);
+  const cropDummy = new THREE.Object3D(),
+    cropStart = new THREE.Vector3();
+  const ramStart = new THREE.Vector3(),
+    ramEnd = new THREE.Vector3(),
+    ramDirection = new THREE.Vector3();
+  const vertical = new THREE.Vector3(0, 1, 0);
+  function hydraulic(o, a, b, radius) {
+    ramDirection.copy(b).sub(a);
+    o.position.copy(a).add(b).multiplyScalar(0.5);
+    o.scale.set(radius, ramDirection.length(), radius);
+    o.quaternion.setFromUnitVectors(vertical, ramDirection.normalize());
   }
   // Rigid vehicle assemblies are material batches; only their true moving
   // joints stay separate. The larger scene retains the prior frame budget.
@@ -654,8 +982,11 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
     ...raw.wheels,
     ...raw.steer,
     ...raw.rearLights,
+    ...raw.hydraulics,
   ]);
-  batchRigidParts(raw.body);
+  batchRigidParts(raw.body, [raw.tailgate, raw.potatoLoad]);
+  batchRigidParts(raw.tailgate);
+  batchRigidParts(raw.potatoLoad);
   for (const v of [truck, raw]) {
     v.wheels.forEach((w) => batchRigidParts(w));
     v.steer.forEach((h) => batchRigidParts(h, v.wheels));
@@ -675,10 +1006,8 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
     waiting,
     redSignal,
     greenSignal,
+    unloading,
   ];
-  let truckWheelAngle = 0,
-    previousTime = null,
-    previousTruckPosition = new THREE.Vector3();
   return {
     group,
     dynamic,
@@ -699,25 +1028,21 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
         truck.g.position.set(38.92 + (48.1 - 38.92) * s.departure, 0, 0);
         truck.g.rotation.y = 0;
       } else along(truck, exit, s.exit, t);
-      if (previousTime !== null && t >= previousTime && t - previousTime < 1) {
-        const distance = truck.g.position.distanceTo(previousTruckPosition);
-        truckWheelAngle += ((t >= 12 && t < 18 ? 1 : -1) * distance) / 0.54;
-      }
-      truck.wheels.forEach((o) => (o.rotation.z = truckWheelAngle));
-      previousTruckPosition.copy(truck.g.position);
-      previousTime = t;
+      roll(truck, t);
       truck.g.visible = s.visible;
       truck.doors.forEach(
         ({ o, side }) => (o.rotation.y = -side * s.doors * Math.PI * 0.54),
       );
-      truck.rearLights.forEach((o) => (o.material = s.brake ? P.lamp : M.red));
+      truck.rearLights.forEach(
+        (o) => (o.material = s.brake ? brakeLamp : M.red),
+      );
       loads.forEach((p, i) => (p.visible = s.cargo[i]));
       bridge.rotation.z = -(1 - s.bridge) * 0.65;
       restraint.rotation.x = s.secured ? 0 : Math.PI / 2;
       redSignal.visible = s.secured;
       greenSignal.visible = !s.secured;
       gate.rotation.x =
-        (-Math.PI / 2) *
+        (Math.PI / 2) *
         (1 - smooth((Math.min(Math.abs(t - 5), Math.abs(t - 59)) - 3) / 3));
       // Two cargo transfers: forks support the pallet until it is lowered.
       const transfer = t >= 36 ? 1 : 0,
@@ -738,17 +1063,71 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
       carried.visible = s.loading && p >= 0.1 && p < 0.645;
       waiting.visible = t < 23.2 || (t >= 34 && t < 37.2) || t >= 50;
       const rawTime = (t + 32) % CAMPUS_SECONDS;
-      if (rawTime < 12) along(raw, rawArrival, smooth(rawTime / 12), rawTime);
-      else if (rawTime < 46) {
+      if (rawTime < 12) along(raw, rawArrival, smooth(rawTime / 12));
+      else if (rawTime < 18) {
+        raw.g.position.set(-29 + 8 * smooth((rawTime - 12) / 6), 0, 0);
+        raw.g.rotation.y = Math.PI;
+        raw.steer.forEach((o) => {
+          o.rotation.y = 0;
+        });
+      } else if (rawTime < 46) {
         raw.g.position.set(-21, 0, 0);
         raw.g.rotation.y = Math.PI;
-        raw.steer.forEach((o) => (o.rotation.y = 0));
-      } else along(raw, rawExit, smooth((rawTime - 46) / 18), rawTime);
+        raw.steer.forEach((o) => {
+          o.rotation.y = 0;
+        });
+      } else if (rawTime < 50) {
+        raw.g.position.set(-21 - 8 * smooth((rawTime - 46) / 4), 0, 0);
+        raw.g.rotation.y = Math.PI;
+      } else along(raw, rawExit, smooth((rawTime - 50) / 14));
+      roll(raw, rawTime);
       raw.g.visible = rawTime > 0.4 && rawTime < 63.6;
-      raw.body.rotation.z =
-        rawTime >= 14 && rawTime < 42
-          ? 0.16 * smooth((rawTime - 14) / 4) * (1 - smooth((rawTime - 38) / 4))
-          : 0;
+      raw.rearLights.forEach((o) => {
+        o.material = rawTime >= 16.5 && rawTime < 18.5 ? brakeLamp : M.red;
+      });
+      const tip =
+        0.36 * smooth((rawTime - 18) / 4) * (1 - smooth((rawTime - 40) / 4));
+      const emptied = smooth((rawTime - 22) / 18);
+      raw.body.rotation.z = tip;
+      raw.tailgate.rotation.z =
+        -0.7 * smooth((rawTime - 20) / 2) * (1 - smooth((rawTime - 42) / 2));
+      raw.potatoLoad.position.y = raw.cargoBaseY - emptied * 0.55;
+      for (let side = 0; side < 2; side++) {
+        const z = side ? 0.42 : -0.42;
+        ramStart.set(-1.45, 0.91, z);
+        ramEnd
+          .set(4.6, 0.07, z)
+          .applyQuaternion(raw.body.quaternion)
+          .add(raw.body.position);
+        point.copy(ramStart).lerp(ramEnd, 0.55);
+        hydraulic(raw.hydraulics[side * 2], ramStart, point, 0.105);
+        hydraulic(raw.hydraulics[side * 2 + 1], point, ramEnd, 0.065);
+      }
+      unloading.visible = raw.g.visible && rawTime >= 22 && rawTime < 40;
+      if (unloading.visible) {
+        raw.g.updateWorldMatrix(true, true);
+        cropStart.set(-0.04, 0.57, 0).applyMatrix4(raw.body.matrixWorld);
+        for (let i = 0; i < 96; i++) {
+          const u = ((rawTime - 22) / 3 + i / 96) % 1;
+          const lane = Math.sin(i * 2.39) * 0.44;
+          if (u < 0.16) {
+            const q = u / 0.16;
+            cropDummy.position.set(
+              cropStart.x + (-17.53 - cropStart.x) * q,
+              cropStart.y + (1.52 - cropStart.y) * q * q,
+              lane,
+            );
+          } else {
+            const q = (u - 0.16) / 0.84;
+            cropDummy.position.set(-17.53 + q * 3.28, 1.52 + q * 0.68, lane);
+          }
+          cropDummy.rotation.set(i * 0.73, i * 2.39 + u * 1.7, i * 0.31);
+          cropDummy.scale.set(0.073, 0.058, 0.065);
+          cropDummy.updateMatrix();
+          unloading.setMatrixAt(i, cropDummy.matrix);
+        }
+        unloading.instanceMatrix.needsUpdate = true;
+      }
       s.position = [truck.g.position.x, 2.3, truck.g.position.z];
       return s;
     },

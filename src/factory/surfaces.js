@@ -51,29 +51,57 @@ export function createSurfaceTextures(random, anisotropy = 4) {
     }
   }, true);
   const chip = make((a, s) => {
-    a.fillStyle = "#edc571";
+    const base = a.createRadialGradient(
+      s * 0.44,
+      s * 0.38,
+      s * 0.04,
+      s * 0.5,
+      s * 0.5,
+      s * 0.65,
+    );
+    base.addColorStop(0, "#f7df9e");
+    base.addColorStop(0.6, "#edc776");
+    base.addColorStop(1, "#c28a3e");
+    a.fillStyle = base;
     a.fillRect(0, 0, s, s);
-    for (let i = 0; i < 210; i++) {
+    // Small translucent blisters, with toasted contact points and bright rims.
+    for (let i = 0; i < 320; i++) {
       const x = random() * s,
         y = random() * s,
-        r = 2 + random() * 16;
-      const g = a.createRadialGradient(x, y, 0, x, y, r);
-      g.addColorStop(0, i % 4 ? "#fff0b160" : "#b7782545");
-      g.addColorStop(0.7, "#e0a14018");
-      g.addColorStop(1, "#e0a14000");
+        r = 1.5 + random() * 12;
+      const g = a.createRadialGradient(x - r * 0.25, y - r * 0.25, 0, x, y, r);
+      g.addColorStop(0, i % 6 ? "#fff7cc99" : "#98622988");
+      g.addColorStop(0.5, "#eac77830");
+      g.addColorStop(0.8, "#b6803538");
+      g.addColorStop(1, "#eac77800");
       a.fillStyle = g;
       a.fillRect(x - r, y - r, r * 2, r * 2);
-      a.strokeStyle = "#fff0be35";
-      a.lineWidth = 0.5;
+      a.strokeStyle = "#fff1b957";
+      a.lineWidth = 0.7;
       a.beginPath();
-      a.ellipse(x, y, r, r * 0.65, 0.3, 0, Math.PI);
+      a.ellipse(x, y, r * 0.73, r * 0.6, 0.3, Math.PI, Math.PI * 1.8);
       a.stroke();
     }
-    for (let i = 0; i < 4200; i++) {
-      a.fillStyle = i % 4 ? "#9b702a26" : "#fff5c36b";
-      a.fillRect(random() * s, random() * s, 0.6, 1);
+    for (let i = 0; i < 5200; i++) {
+      a.fillStyle = i % 5 ? "#99672822" : "#fff8dd7b";
+      a.fillRect(random() * s, random() * s, 0.45 + random() * 0.6, 0.6);
     }
   }, true);
+  const oil = make((a, s) => {
+    a.fillStyle = "#818181";
+    a.fillRect(0, 0, s, s);
+    for (let i = 0; i < 120; i++) {
+      const x = random() * s,
+        y = random() * s,
+        r = 5 + random() * 42;
+      const g = a.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, "#e0e0e035");
+      g.addColorStop(0.5, "#54545427");
+      g.addColorStop(1, "#81818100");
+      a.fillStyle = g;
+      a.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+  });
   const belt = make((a, s) => {
     a.fillStyle = "#999999";
     a.fillRect(0, 0, s, s);
@@ -141,5 +169,5 @@ export function createSurfaceTextures(random, anisotropy = 4) {
     }
   });
   concrete.repeat.set(6, 6);
-  return { metal, potato, chip, belt, perforation, paper, wood, concrete };
+  return { metal, potato, chip, oil, belt, perforation, paper, wood, concrete };
 }

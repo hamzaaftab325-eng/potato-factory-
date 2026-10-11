@@ -1,8 +1,8 @@
 import * as THREE from "three";
 const TAU = Math.PI * 2;
 
-export function potatoGeometry() {
-  const g = new THREE.SphereGeometry(1, 28, 20);
+export function potatoGeometry(widthSegments = 28, heightSegments = 20) {
+  const g = new THREE.SphereGeometry(1, widthSegments, heightSegments);
   const p = g.attributes.position;
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i),
@@ -28,21 +28,24 @@ export function chipGeometry() {
   const vertex = (ring, j, back) => {
     let r = ring / R,
       a = (j / N) * TAU,
-      edge = 1 + 0.026 * Math.sin(a * 5) + 0.019 * Math.cos(a * 9);
-    let x = Math.cos(a) * r * 0.169 * edge,
-      y = Math.sin(a) * r * 0.133 * edge;
+      edge = 1 + 0.038 * Math.sin(a * 5 + 0.4) + 0.022 * Math.cos(a * 9);
+    // Broad, thin oval slices with an irregular toasted edge and a gentle
+    // saddle curl. The broad face stays readable on the conveyor and in oil.
+    let x = Math.cos(a) * r * 0.178 * edge,
+      y = Math.sin(a) * r * 0.156 * edge;
     let z =
-      0.013 * Math.sin(x * 12) +
-      0.009 * Math.sin(y * 17) +
-      0.025 * (x / 0.169) ** 2 +
-      0.012 * (y / 0.133) ** 2;
-    z += (back ? -1 : 1) * (0.0026 + 0.0008 * Math.sin(a * 7) * r);
+      0.006 * Math.sin(x * 19 + y * 7) +
+      0.017 * (x / 0.178) ** 2 -
+      0.01 * (y / 0.156) ** 2 +
+      0.008 * Math.sin(a * 3 + 0.6) * r ** 5 +
+      0.0015 * Math.sin(x * 113) * Math.cos(y * 107) * Math.sin(r * Math.PI);
+    z += (back ? -1 : 1) * (0.0022 + 0.0004 * Math.sin(a * 7) * r);
     pos.push(x, y, z);
-    uv.push(x / 0.36 + 0.5, y / 0.29 + 0.5);
+    uv.push(x / 0.38 + 0.5, y / 0.34 + 0.5);
     const mottled =
-        0.92 + 0.08 * Math.sin(x * 134 + y * 86) * Math.cos(y * 137),
-      rim = 1 - 0.2 * r ** 8;
-    colors.push(mottled, mottled * rim, mottled * rim * 0.88);
+        0.97 + 0.03 * Math.sin(x * 134 + y * 86) * Math.cos(y * 137),
+      rim = 1 - 0.12 * r ** 10;
+    colors.push(mottled, mottled * rim, mottled * (1 - 0.22 * r ** 10));
   };
   for (let b = 0; b < 2; b++)
     for (let ring = 0; ring <= R; ring++)
