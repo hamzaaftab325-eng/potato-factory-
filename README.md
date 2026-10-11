@@ -12,17 +12,23 @@ The process moves through metered receiving, filtered washing, eight abrasive pe
 
 The collection uses 180 g concept family bags. Printed front and back film, sealed edges, folds and rounded volume share the same artwork across the production line and product view. Eight bags fill each carton over a sixteen-second case cycle. Flaps close, tape advances and a second vacuum carriage transfers finished cartons to staging pallets.
 
-Dispatch includes a cab-over rigid box truck with a sculpted cab, open window apertures, wheel-arch cutouts, steering pivots, treaded tyres, rear dual wheels, wipers, mirrors, glazing, lights, chassis rails, hinged rear doors and pallet loads. The receiving tipper carries a textured mound of potatoes with varied shapes and skin colours, a top-hinged tailgate and moving hydraulic rams. Potatoes fall onto the powered receiving elevator while its bed tips. The outbound truck arrives, manoeuvres, reverses, secures at the dock, opens its doors, connects the bridge, receives two forklift-carried pallets, closes up and departs. The arrival and exit use opposite road lanes and arc-length path sampling. Wheel rotation follows signed travel distance. The receiving vehicle turns, reverses into position, unloads and leaves without changing heading abruptly. The checkpost stands across the road, away from the truck apron. Both trucks reset outside the factory perimeter.
+Dispatch includes a cab-over rigid box truck with a sculpted cab, open window apertures, wheel-arch cutouts, steering pivots, treaded tyres, rear dual wheels, wipers, mirrors, glazing, lights, chassis rails, hinged rear doors and pallet loads. The receiving tipper carries a textured mound of potatoes with varied shapes and skin colours, a top-hinged tailgate and moving hydraulic rams. Potatoes fall onto the powered receiving elevator while its bed tips. The outbound truck arrives, stops in staging, unlocks and opens two rear doors outward to 180 degrees, reverses, secures at the dock, connects the bridge and receives two forklift-carried pallets. The bridge retracts, each leaf closes and the handles latch before a departure interlock permits the truck to move. The arrival and exit use separate road lanes and explicit tangent-continuous road arcs. Turning aprons are widened, posts sit outside the vehicle paths and the receiving driveway is clear of raised walkways. Wheel rotation follows signed travel distance; front wheels use separate inner and outer steering angles with eased steering movement. The receiving vehicle turns, reverses into position, unloads and leaves without changing heading abruptly. The checkpost stands across the road, away from the truck apron. Both trucks reset outside the factory perimeter.
 
-Chip slices have broad, thin oval faces, irregular edges, saddle curl, small blisters and toasted rims. Conveyor rotations keep their broad faces visible. The fryer is an open insulated tank: amber rippling oil is exposed above its submerged mesh, with small bubbles and a visible oil-level sight glass. Liquid surfaces retain local coordinates during geometry batching so their shader ripples move vertically.
+Chip slices spend sixteen seconds in the fryer, with four-times-slower metering paddles. Soft moisture vapour rises towards the extraction hood, the chimney emits a light plume, small oil rings expand and restrained warm light sits under the hood. Chip slices have broad, thin oval faces, irregular edges, saddle curl, small blisters and toasted rims. Conveyor rotations keep their broad faces visible. The fryer is an open insulated tank: amber rippling oil is exposed above its submerged mesh, with small bubbles and a visible oil-level sight glass. Liquid surfaces retain local coordinates during geometry batching so their shader ripples move vertically.
 
 ## Animation and sound
 
-Machine animation repeats every sixteen seconds. Logistics and the overview drone tour repeat every sixty-four seconds. Scroll position chooses the process camera, while the delivery chapter follows the truck as it moves. Reduced-motion preferences, pause controls, camera inspection and offscreen suspension remain available.
+Machine animation repeats every sixteen seconds. Logistics and the overview drone tour repeat every ninety-six seconds. Scroll position chooses the process camera, while the delivery chapter follows the truck as it moves. Reduced-motion preferences, pause controls, camera inspection and offscreen suspension remain available.
 
-Original procedural stereo sound includes water, slicing, frying, tumbling, packing, optional music and a separate sixty-four-second truck/dock/forklift stem. Audio uses the same elapsed-time clock as the scene. Each stem starts at its corresponding loop offset; source events align with sealing, loading, dock and door actions. Audio generation yields between stems so preparation does not happen in one uninterrupted block. Sound starts only after a visitor enables it.
+Original procedural stereo sound includes water, slicing, frying, tumbling, packing, optional music and a separate ninety-six-second truck/dock/forklift stem. Audio uses the same elapsed-time clock as the scene. Each stem starts at its corresponding loop offset; source events align with sealing, loading, dock and door actions. Audio generation yields between stems so preparation does not happen in one uninterrupted block. Sound starts only after a visitor enables it.
 
 The first-paint and WebGL fallback image is a code-built SVG campus illustration. The interactive view uses real 3D geometry. No remote models, video backgrounds, stock recordings or paid assets are required.
+
+## Render detail
+
+Desktop starts in 4K detail mode. The drawing buffer targets up to 3840 × 2160, preserving the canvas aspect ratio and respecting GPU texture limits. The 4K/HD control switches to a lighter mode when desired. This is a real-time render ceiling, not an exported 4K video or a guarantee for every screen. Mobile defaults to lighter rendering.
+
+Multisampled HDR scene buffers, 4096-pixel desktop shadow maps, 1024-pixel procedural surface maps, texture anisotropy and half-resolution contact-shadow processing preserve crisp edges without repeating the full ambient-occlusion pass at 4K.
 
 ## Development and Vercel
 
@@ -46,26 +52,28 @@ The Git repository is `hamzaaftab325-eng/potato-factory-`; the production branch
 
 ## Source guide
 
-| File                       | Purpose                                               |
-| -------------------------- | ----------------------------------------------------- |
-| `index.html`               | Page content and six scroll chapters                  |
-| `src/lib/page.js`          | Scroll, navigation, collection and controls           |
-| `src/lib/journey.js`       | Camera presets and flavour definitions                |
-| `src/factory/campus.js`    | Architecture, trucks, dock, forklift and drone tour   |
-| `src/factory/batching.js`  | Rigid animated-assembly batching                      |
-| `src/factory/machines.js`  | Preparation, cutting, frying and transfers            |
-| `src/factory/details.js`   | Weighing, guarding and machine details                |
-| `src/factory/shipping.js`  | Eight-bag cartons and pallet transfer                 |
-| `src/factory/packaging.js` | Printed front and back bag materials                  |
-| `src/factory/geometry.js`  | Food and bag geometry                                 |
-| `src/factory/surfaces.js`  | Procedural surface textures                           |
-| `src/factory/timing.js`    | Machine, case and logistics phases                    |
-| `src/factory/audio.js`     | Synchronized original sound stems                     |
-| `src/factory/scene.js`     | Rendering, camera, controls and animation integration |
+| File                           | Purpose                                               |
+| ------------------------------ | ----------------------------------------------------- |
+| `index.html`                   | Page content and six scroll chapters                  |
+| `src/lib/page.js`              | Scroll, navigation, collection and controls           |
+| `src/lib/journey.js`           | Camera presets and flavour definitions                |
+| `src/factory/campus.js`        | Architecture, trucks, dock, forklift and drone tour   |
+| `src/factory/vehicle-paths.js` | Explicit-radius truck route geometry                  |
+| `src/factory/effects.js`       | Procedural steam, oil rings and warm fryer light      |
+| `src/factory/batching.js`      | Rigid animated-assembly batching                      |
+| `src/factory/machines.js`      | Preparation, cutting, frying and transfers            |
+| `src/factory/details.js`       | Weighing, guarding and machine details                |
+| `src/factory/shipping.js`      | Eight-bag cartons and pallet transfer                 |
+| `src/factory/packaging.js`     | Printed front and back bag materials                  |
+| `src/factory/geometry.js`      | Food and bag geometry                                 |
+| `src/factory/surfaces.js`      | Procedural surface textures                           |
+| `src/factory/timing.js`        | Machine, case and logistics phases                    |
+| `src/factory/audio.js`         | Synchronized original sound stems                     |
+| `src/factory/scene.js`         | Rendering, camera, controls and animation integration |
 
 ## Revision status
 
-The factory-campus upgrade and focused slice, fryer and vehicle refinements are implemented in source. The six scroll chapters, page layout, packing choreography and sound timing are preserved. No preview, production build, automated tests, visual QA or audio listening review was run for this revision, at the owner's request. Deployment and runtime behaviour are unverified.
+The factory-campus upgrade, slower frying, vapour effects, truck-clearance routes, outward doors, latching interlock and 4K detail mode are implemented in source. The six scroll chapters, page layout, packing choreography and machine sound timing are preserved. Truck/dock audio follows the longer logistics clock. Source test expectations reflect the new duration; tests were not run. No preview, production build, automated tests, visual QA or audio listening review was run for this revision, at the owner's request. Deployment and runtime behaviour are unverified.
 
 This is an original portfolio interpretation with fictional packaging and delivery routes, rather than a manufacturing digital twin. Production rates, vehicle travel and handling choreography are compressed for the animation. The site does not process orders.
 

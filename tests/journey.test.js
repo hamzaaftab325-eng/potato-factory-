@@ -36,7 +36,7 @@ test("camera path reaches each stage and stays finite through every transition",
     assert.ok([...c.target, c.radius, c.yaw, c.elev].every(Number.isFinite));
     // The expanded end-of-line shipping area needs a wider establishing hero view.
     // Keep a ceiling so accidental camera blow-outs are still caught.
-    assert.ok(c.radius >= 7 && c.radius <= 90);
+    assert.ok(c.radius >= 7 && c.radius <= 110);
     const next = cameraAt(p + 0.005, 2);
     assert.ok(c.target.every((v, i) => Math.abs(v - next.target[i]) < 0.18));
   }

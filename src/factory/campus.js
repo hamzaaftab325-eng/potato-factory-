@@ -1,8 +1,14 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { potatoGeometry } from "./geometry.js";
-import { CAMPUS_SECONDS, logisticsAt, smooth } from "./timing.js";
+import {
+  campusPhase,
+  LOGISTICS_PHASE_SECONDS,
+  logisticsAt,
+  smooth,
+} from "./timing.js";
 import { batchRigidParts } from "./batching.js";
+import { path, line as roadLine, arc, laneShift } from "./vehicle-paths.js";
 
 // Metre-scale architectural cutaway. Vehicles and cargo have their own protected
 // hierarchies; the static architecture is merged by the main scene's batching pass.
@@ -111,18 +117,18 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
   }
 
   // A complete fenced plot, with an uninterrupted dispatch apron and two roads.
-  B(10, -0.19, 2, 86, 0.32, 38, P.soil);
-  B(10, -0.015, 12, 126, 0.06, 7, P.road);
-  B(43, -0.005, 3, 23, 0.07, 17, P.road);
-  B(-23, -0.005, 3, 14, 0.07, 17, P.road);
-  for (const z of [8.6, 15.4]) line(-43, 73, z, 0.07);
-  for (let x = -43; x < 74; x += 3.8) line(x, x + 1.8, 12, 0.08);
-  for (const z of [-16.4, 20.4]) B(10, 0.36, z, 85, 0.8, 0.2, P.wall);
-  for (const x of [-32.5, 52.7]) {
+  B(12.5, -0.19, 2, 122, 0.32, 38, P.soil);
+  B(10, -0.015, 12, 190, 0.06, 7, P.road);
+  B(52.5, -0.005, 3, 39, 0.07, 19, P.road);
+  B(-31.5, -0.005, 3, 32, 0.07, 19, P.road);
+  for (const z of [8.6, 15.4]) line(-85, 105, z, 0.07);
+  for (let x = -85; x < 106; x += 3.8) line(x, x + 1.8, 12, 0.08);
+  for (const z of [-16.4, 20.4]) B(12.5, 0.36, z, 122, 0.8, 0.2, P.wall);
+  for (const x of [-48.5, 73.5]) {
     B(x, 0.36, -5.7, 0.2, 0.8, 20.4, P.wall);
     B(x, 0.36, 18.5, 0.2, 0.8, 3.8, P.wall);
   }
-  for (let x = -31; x < 53; x += 2.8) {
+  for (let x = -47; x < 74; x += 2.8) {
     for (const z of [-16.4, 20.4]) {
       B(x, 1.25, z, 0.065, 1.3, 0.065, P.teal);
       B(x + 1.35, 1.75, z, 2.7, 0.035, 0.035, P.teal);
@@ -130,8 +136,8 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
     }
   }
   // Pedestrian walkway is physically separate from the wet production floor.
-  B(4, 0.12, 6.15, 62, 0.25, 2.5, P.concrete);
-  for (const z of [4.8, 7.4]) B(4, 0.18, z, 62, 0.34, 0.12, P.curb);
+  B(9.25, 0.12, 6.15, 51.5, 0.25, 2.5, P.concrete);
+  for (const z of [4.8, 7.4]) B(9.25, 0.18, z, 51.5, 0.34, 0.12, P.curb);
   for (let z = 8.9; z < 15.4; z += 0.85)
     B(48.1, 0.038, z, 1.9, 0.015, 0.45, P.line);
   sign(
@@ -371,10 +377,14 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
     crown.scale.set(1.45, 1.8, 1.4);
     B(x, 0.08, z, 2.9, 0.18, 2.9, P.curb);
   }
-  for (const x of [-25, 16, 44]) {
-    C(x, 2.7, 7.1, 0.055, 5.4, P.teal);
-    B(x, 5.42, 7.5, 0.35, 0.1, 0.85, P.roof);
-    B(x, 5.36, 7.55, 0.29, 0.035, 0.65, P.lamp);
+  for (const [x, z] of [
+    [-17.5, -7],
+    [16, 7.1],
+    [36.9, -6.7],
+  ]) {
+    C(x, 2.7, z, 0.055, 5.4, P.teal);
+    B(x, 5.42, z + 0.4, 0.35, 0.1, 0.85, P.roof);
+    B(x, 5.36, z + 0.45, 0.29, 0.035, 0.65, P.lamp);
   }
 
   const cargoLabel = decal(
@@ -714,8 +724,12 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
         C(-0.052, 1.5, -side * 0.81, 0.021, 2.48, M.chrome, door);
         for (const y of [0.3, 1.5, 2.7])
           B(-0.055, y, 0, 0.07, 0.09, 0.19, M.steel, door);
-        B(-0.067, 1.2, -side * 0.95, 0.06, 0.055, 0.27, M.dark, door);
-        doors.push({ o: door, side });
+        const latch = new THREE.Group();
+        latch.position.set(-0.077, 1.2, -side * 0.95);
+        door.add(latch);
+        B(0, 0, side * 0.1, 0.06, 0.055, 0.27, M.dark, latch);
+        C(0, 0, 0, 0.038, 0.08, M.chrome, latch, "x");
+        doors.push({ o: door, side, latch });
       }
     } else {
       for (const side of [-1, 1]) {
@@ -808,6 +822,7 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
       potatoLoad,
       cargoBaseY,
       hydraulics,
+      curvature: 0,
       wheelAngle: 0,
       previousTime: null,
       previousPosition: new THREE.Vector3(),
@@ -859,77 +874,30 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
   head.scale.setScalar(0.16);
   C(0.1, 2.03, 0, 0.18, 0.08, M.yellow, forklift);
   B(0.25, 1.39, 0, 0.4, 0.075, 0.37, P.teal, forklift);
-  // Opposite road lanes: approaching trucks use the far lane, departing
-  // trucks the near lane. Arc-length travel avoids speed changes at control points.
-  const arrival = new THREE.CatmullRomCurve3(
-    [
-      [69, 13.4],
-      [57, 13.4],
-      [49, 12.7],
-      [43.6, 9.0],
-      [43.0, 5.2],
-      [43.8, 1.9],
-      [46.3, 0],
-      [48.1, 0],
-    ].map(([x, z]) => new THREE.Vector3(x, 0, z)),
-    false,
-    "centripetal",
+  // Turning envelopes stay inside the cleared aprons, separate from the
+  // building, walkway and posts. Straight segments share their arc tangents.
+  const STAGING_X = 54;
+  const arrival = path(
+    roadLine([82, 13.4], [51.5, 13.4]),
+    arc([51.5, 6.7], 6.7, Math.PI / 2, Math.PI * 1.5),
+    roadLine([51.5, 0], [STAGING_X, 0]),
   );
-  const exit = new THREE.CatmullRomCurve3(
-    [
-      [48.1, 0],
-      [49.2, 0],
-      [49.7, 4.1],
-      [50.5, 7.5],
-      [56.3, 10.6],
-      [69, 10.6],
-    ].map(([x, z]) => new THREE.Vector3(x, 0, z)),
-    false,
-    "centripetal",
+  const shift = laneShift(STAGING_X, 10.6, 1, 8);
+  const exit = path(shift, roadLine([shift.endX, 10.6], [82, 10.6]));
+  const rawArrival = path(
+    roadLine([-62, 10.6], [-26.5, 10.6]),
+    arc([-26.5, 5.3], 5.3, Math.PI / 2, -Math.PI / 2),
+    roadLine([-26.5, 0], [-29, 0]),
   );
-  // The receiving tipper completes its turn before stopping, then reverses
-  // straight to the hopper. It never changes heading abruptly while stationary.
-  const rawArrival = new THREE.CatmullRomCurve3(
-    [
-      [-43, 10.6],
-      [-33, 10.6],
-      [-25, 9.7],
-      [-22.0, 6.5],
-      [-23.2, 2.0],
-      [-26.5, 0],
-      [-29, 0],
-    ].map(([x, z]) => new THREE.Vector3(x, 0, z)),
-    false,
-    "centripetal",
-  );
-  const rawExit = new THREE.CatmullRomCurve3(
-    [
-      [-29, 0],
-      [-30, 0],
-      [-30.8, 4.1],
-      [-32.2, 8.6],
-      [-37, 13.4],
-      [-43, 13.4],
-    ].map(([x, z]) => new THREE.Vector3(x, 0, z)),
-    false,
-    "centripetal",
-  );
+  const rawShift = laneShift(-29, 13.4, -1, 8);
+  const rawExit = path(rawShift, roadLine([rawShift.endX, 13.4], [-62, 13.4]));
   const point = new THREE.Vector3(),
     tangent = new THREE.Vector3();
-  function along(v, curve, u) {
-    const q = Math.min(1, Math.max(0, u));
-    curve.getPointAt(q, point);
+  function along(v, route, u) {
+    const curvature = route.pose(u, point, tangent);
     v.g.position.copy(point);
-    curve.getTangentAt(q, tangent);
     v.g.rotation.y = -Math.atan2(tangent.z, tangent.x);
-    curve.getTangentAt(Math.min(1, q + 0.025), point);
-    const bend = Math.atan2(
-      tangent.x * point.z - tangent.z * point.x,
-      tangent.x * point.x + tangent.z * point.z,
-    );
-    v.steer.forEach((o) => {
-      o.rotation.y = -Math.max(-0.38, Math.min(0.38, bend * 2.6));
-    });
+    v.curvature = curvature;
   }
   const travel = new THREE.Vector3();
   function roll(v, phase) {
@@ -944,6 +912,17 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
         travel.z * Math.sin(v.g.rotation.y);
       v.wheelAngle -= signedDistance / 0.54;
     }
+    const delta =
+      v.previousTime === null || phase < v.previousTime
+        ? 0.1
+        : Math.min(0.1, (phase - v.previousTime) * 1.5);
+    const blend = 1 - Math.exp(-delta * 10);
+    v.steer.forEach((hub) => {
+      const radius = v.curvature === 0 ? Infinity : Math.abs(1 / v.curvature);
+      const innerRadius = radius - Math.sign(v.curvature) * hub.position.z;
+      const angle = -Math.sign(v.curvature) * Math.atan(5.2 / innerRadius);
+      hub.rotation.y += (angle - hub.rotation.y) * blend;
+    });
     v.wheels.forEach((o) => {
       o.rotation.z = v.wheelAngle;
     });
@@ -990,7 +969,10 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
   for (const v of [truck, raw]) {
     v.wheels.forEach((w) => batchRigidParts(w));
     v.steer.forEach((h) => batchRigidParts(h, v.wheels));
-    v.doors.forEach((d) => batchRigidParts(d.o));
+    v.doors.forEach((d) => {
+      batchRigidParts(d.o, [d.latch]);
+      batchRigidParts(d.latch);
+    });
   }
   batchRigidParts(forklift, [forks]);
   batchRigidParts(forks, [carried]);
@@ -1016,23 +998,33 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
         t = s.time;
       // Architectural cutaway keeps equipment unobstructed during close views.
       roof.visible = journey < 0.35 || journey > 5.4;
-      if (t < 12) along(truck, arrival, s.arrival, t);
-      else if (t < 18) {
-        truck.g.position.set(48.1 + (38.92 - 48.1) * s.reverse, 0, 0);
+      truck.curvature = 0;
+      if (t < 10) along(truck, arrival, s.arrival);
+      else if (t < 12) {
+        truck.g.position.set(STAGING_X, 0, 0);
+        truck.g.rotation.y = 0;
+        truck.steer.forEach((o) => {
+          o.rotation.y = 0;
+        });
+      } else if (t < 18) {
+        truck.g.position.set(STAGING_X + (38.92 - STAGING_X) * s.reverse, 0, 0);
         truck.g.rotation.y = 0;
         truck.steer.forEach((o) => (o.rotation.y = 0));
-      } else if (t < 52) {
+      } else if (!s.readyToDepart) {
         truck.g.position.set(38.92, 0, 0);
         truck.g.rotation.y = 0;
       } else if (t < 56) {
-        truck.g.position.set(38.92 + (48.1 - 38.92) * s.departure, 0, 0);
+        truck.g.position.set(38.92 + (STAGING_X - 38.92) * s.departure, 0, 0);
         truck.g.rotation.y = 0;
-      } else along(truck, exit, s.exit, t);
+      } else along(truck, exit, s.exit);
       roll(truck, t);
       truck.g.visible = s.visible;
-      truck.doors.forEach(
-        ({ o, side }) => (o.rotation.y = -side * s.doors * Math.PI * 0.54),
-      );
+      truck.doors.forEach(({ o, side, latch }, i) => {
+        // Positive rotation of the near hinge swings the leaf behind the
+        // truck. Two staggered leaves open outside to a full 180 degrees.
+        o.rotation.y = side * s.doorOpen[i] * Math.PI;
+        latch.rotation.x = -side * s.unlocked * Math.PI * 0.38;
+      });
       truck.rearLights.forEach(
         (o) => (o.material = s.brake ? brakeLamp : M.red),
       );
@@ -1062,7 +1054,8 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
         0.13 * smooth(p / 0.15) * (1 - smooth((p - 0.58) / 0.08));
       carried.visible = s.loading && p >= 0.1 && p < 0.645;
       waiting.visible = t < 23.2 || (t >= 34 && t < 37.2) || t >= 50;
-      const rawTime = (t + 32) % CAMPUS_SECONDS;
+      const rawTime = (t + 32) % LOGISTICS_PHASE_SECONDS;
+      raw.curvature = 0;
       if (rawTime < 12) along(raw, rawArrival, smooth(rawTime / 12));
       else if (rawTime < 18) {
         raw.g.position.set(-29 + 8 * smooth((rawTime - 12) / 6), 0, 0);
@@ -1137,16 +1130,16 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
 // The overview tours the whole campus; the scroll chapters retain direct camera
 // control. Position and velocity settle at the same aerial view at the loop seam.
 export function droneCamera(time) {
-  const t = ((time % CAMPUS_SECONDS) + CAMPUS_SECONDS) % CAMPUS_SECONDS;
+  const t = campusPhase(time);
   const keys = [
-    [0, [10, 1.8, 1], 83, 0.57, 0.73],
+    [0, [12.5, 1.8, 1], 100, 0.57, 0.73],
     [9, [-13, 1.8, 0], 37, 0.64, 0.62],
     [18, [-2.5, 1.9, 0], 28, 0.57, 0.56],
     [27, [6, 2.1, 0], 31, 0.61, 0.54],
     [36, [15, 2.1, 0], 34, 0.48, 0.55],
     [46, [31, 2.1, 0], 32, 0.65, 0.55],
     [55, [41, 1.7, 3], 39, 0.6, 0.57],
-    [64, [10, 1.8, 1], 83, 0.57, 0.73],
+    [64, [12.5, 1.8, 1], 100, 0.57, 0.73],
   ];
   let i = 0;
   while (i < keys.length - 2 && t > keys[i + 1][0]) i++;

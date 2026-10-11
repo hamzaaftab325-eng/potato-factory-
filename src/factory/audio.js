@@ -4,6 +4,7 @@ import {
   CASE_SECONDS,
   CUTS_PER_SECOND,
   CAMPUS_SECONDS,
+  LOGISTICS_TIME_SCALE,
   smooth,
 } from "./timing.js";
 
@@ -66,7 +67,9 @@ export class FactorySound {
     const noise = () => rnd() * 2 - 1;
     const wrap = (i) => ((i % n) + n) % n;
     const event = (at, duration, render, pan = 0) => {
-      const start = Math.round(at * sr),
+      const start = Math.round(
+          at * (kind === "truck" ? LOGISTICS_TIME_SCALE : 1) * sr,
+        ),
         length = Math.round(duration * sr);
       for (let i = 0; i < length; i++) {
         const value = render(i / sr, i);
@@ -283,7 +286,13 @@ export class FactorySound {
         road = bandNoise(180, 960);
       for (let i = 0; i < n; i++) {
         const t = i / sr,
-          moving = 1 - smooth((t - 17.5) / 0.5) + smooth((t - 51.7) / 0.3);
+          actionTime = t / LOGISTICS_TIME_SCALE,
+          moving =
+            1 -
+            smooth((actionTime - 9.7) / 0.3) +
+            smooth((actionTime - 11.8) / 0.2) -
+            smooth((actionTime - 17.5) / 0.5) +
+            smooth((actionTime - 51.7) / 0.3);
         const phase =
           TAU *
           (55 * t +
@@ -295,6 +304,9 @@ export class FactorySound {
           Math.sin(phase) * (0.008 + moving * 0.008) +
           Math.sin(phase * 2) * 0.003;
       }
+      softBurst(10.05, 0.34, 0.04, 1700, 6);
+      contact(9.9, 0.02, 115);
+      contact(11.8, 0.018, 98);
       softBurst(18.05, 0.44, 0.075, 1700, 5);
       contact(18.4, 0.025, 93);
       contact(20.9, 0.032, 108);
@@ -302,8 +314,9 @@ export class FactorySound {
         softBurst(at, 0.3, 0.023, 850, 8);
         contact(at + 0.1, 0.018, 121);
       }
-      contact(49.5, 0.03, 98);
-      contact(50.8, 0.04, 86);
+      contact(50.75, 0.03, 98);
+      contact(51, 0.04, 86);
+      contact(51.6, 0.017, 138);
       softBurst(51.75, 0.2, 0.035, 2100, 8);
       for (let at = 12.4; at < 18; at += 1.2)
         event(

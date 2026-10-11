@@ -3,7 +3,7 @@ import * as THREE from "three";
 // Deliberately restrained, tileable surface detail. Metal roughness stays in
 // linear space; food colour maps are sRGB. No asset downloads are required.
 export function createSurfaceTextures(random, anisotropy = 4) {
-  const make = (paint, color = false, size = 512) => {
+  const make = (paint, color = false, size = 1024) => {
     const c = document.createElement("canvas");
     c.width = c.height = size;
     paint(c.getContext("2d"), size);

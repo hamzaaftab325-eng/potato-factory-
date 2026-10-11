@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { CAMPUS_SECONDS, LOOP_SECONDS } from "../src/factory/timing.js";
 import { FactorySound } from "../src/factory/audio.js";
 
 function param() {
@@ -61,7 +62,7 @@ test("machine and logistics sound layers start at their exact animation phases",
     sound = new FactorySound(ctx);
   assert.equal(sound.stems.length, 7);
   sound.stems.forEach((buffer, i) => {
-    const duration = i === 6 ? 64 : 16;
+    const duration = i === 6 ? CAMPUS_SECONDS : LOOP_SECONDS;
     assert.equal(buffer.duration, duration);
     assert.equal(buffer.length, duration * ctx.sampleRate);
     let peak = 0;

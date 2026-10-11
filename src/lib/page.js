@@ -112,7 +112,15 @@ export function initPage({
 
   function syncControls() {
     if (!engine) return;
-    const { playing, audioOn, musicOn, inspect } = engine.state;
+    const { playing, audioOn, musicOn, inspect, ultraQuality } = engine.state;
+    $("#quality-toggle").setAttribute("aria-pressed", String(ultraQuality));
+    $("#quality-toggle").setAttribute(
+      "aria-label",
+      ultraQuality
+        ? "Switch to smooth rendering"
+        : "Enable detail rendering up to 4K",
+    );
+    $("#quality-label").textContent = ultraQuality ? "4K" : "HD";
     $("#play-toggle").setAttribute("aria-pressed", String(!playing));
     $("#play-toggle").setAttribute(
       "aria-label",
@@ -310,6 +318,11 @@ export function initPage({
     syncControls();
     if (engine.state.inspect)
       $("#factory-canvas").focus({ preventScroll: true });
+  });
+  on($("#quality-toggle"), "click", () => {
+    if (!engine) return;
+    engine.setQuality(!engine.state.ultraQuality);
+    syncControls();
   });
 
   function markReady() {

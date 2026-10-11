@@ -454,7 +454,7 @@ export function addProcessMachines(C) {
       );
       paddle.rotation.z = a;
     }
-    spinAnims.push({ o: wheel, axis: "z", turns: -8 });
+    spinAnims.push({ o: wheel, axis: "z", turns: -2 });
     for (const z of [-1.08, 1.08]) box(x, 1.7, z, 0.2, 0.23, 0.15, M.steel);
   }
   const submerge = mesh(
@@ -465,7 +465,7 @@ export function addProcessMachines(C) {
     0,
   );
   submerge.rotation.x = -Math.PI / 2;
-  foodFlow(-2.59, 1.59, 0, 1.551, 240, "chip", M.chip, 1.63);
+  foodFlow(-2.59, 1.59, 0, 1.551, 240, "chip", M.chip, 1.63, 1);
   // Side chain, bearing blocks and a level sight glass distinguish the oil
   // circulation vessel from the drain conveyor beside it.
   for (const z of [-0.98, 0.98]) {

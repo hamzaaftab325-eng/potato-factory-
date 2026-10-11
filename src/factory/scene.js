@@ -18,6 +18,7 @@ import { LOOP_SECONDS, bagPhase, jawClosure } from "./timing.js";
 import { cameraAt, FLAVOURS, CAMERAS } from "../lib/journey.js";
 import { addFactoryCampus, droneCamera } from "./campus.js";
 import { createBagMaterials } from "./packaging.js";
+import { addFryingEffects } from "./effects.js";
 
 export function createFactory(canvas, options = {}) {
   const TAU = Math.PI * 2,
@@ -32,18 +33,14 @@ export function createFactory(canvas, options = {}) {
     frameCount = 0,
     lastRendered = 0;
   let contextLost = false;
+  let ultraQuality = window.innerWidth >= 900;
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
     alpha: false,
     powerPreference: "high-performance",
   });
-  renderer.setPixelRatio(
-    Math.min(
-      window.devicePixelRatio || 1,
-      window.innerWidth < 700 ? 1.25 : 1.5,
-    ),
-  );
+  renderer.setPixelRatio(1);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -60,7 +57,7 @@ export function createFactory(canvas, options = {}) {
   }
   const textures = createSurfaceTextures(
     random,
-    Math.min(8, renderer.capabilities.getMaxAnisotropy()),
+    Math.min(16, renderer.capabilities.getMaxAnisotropy()),
   );
   const metalTex = textures.metal,
     potatoTex = textures.potato,
@@ -210,14 +207,14 @@ export function createFactory(canvas, options = {}) {
   scene.add(key.target);
   key.castShadow = true;
   key.shadow.mapSize.set(
-    window.innerWidth < 700 ? 1536 : 2048,
-    window.innerWidth < 700 ? 1536 : 2048,
+    window.innerWidth < 700 ? 2048 : 4096,
+    window.innerWidth < 700 ? 2048 : 4096,
   );
   Object.assign(key.shadow.camera, {
-    left: -42,
-    right: 64,
-    top: 31,
-    bottom: -31,
+    left: -60,
+    right: 85,
+    top: 38,
+    bottom: -38,
     near: 1,
     far: 140,
   });
@@ -442,6 +439,7 @@ export function createFactory(canvas, options = {}) {
     type = "chip",
     material = M.chip,
     width = 0.7,
+    cycles = type === "chip" ? 8 : 4,
   ) {
     let inst = new THREE.InstancedMesh(
       type === "chip" ? chipG : potatoG,
@@ -460,7 +458,7 @@ export function createFactory(canvas, options = {}) {
         angle: random() * TAU,
         variant: random(),
       });
-    flows.push({ a, b, z, y, n, type, inst, meta });
+    flows.push({ a, b, z, y, n, type, inst, meta, cycles });
   }
   // The process is installed inside a real building footprint, not a plinth.
   const ground = mat("#233c3b", 0.02, 0.97);
@@ -513,6 +511,11 @@ export function createFactory(canvas, options = {}) {
     random,
   });
   const { peeler } = process;
+  const fryingEffects = addFryingEffects(
+    scene,
+    random,
+    window.innerWidth < 700,
+  );
   const bubbles = [];
   const bubbleBatch = new THREE.InstancedMesh(
     new THREE.SphereGeometry(1, 12, 8),
@@ -1043,6 +1046,7 @@ export function createFactory(canvas, options = {}) {
     ...process.dynamic,
     ...shipping.dynamic,
     ...campus.dynamic,
+    fryingEffects.group,
     ...fluidSurfaces,
     ...bubbles.map((a) => a.o),
     ...drums.map((a) => a.g),
@@ -1144,12 +1148,24 @@ export function createFactory(canvas, options = {}) {
   studioFloor.position.y = -0.244;
   studioFloor.visible = false;
   scene.add(studioFloor);
-  const composer = new EffectComposer(renderer);
+  const renderTarget = new THREE.WebGLRenderTarget(1, 1, {
+    type: THREE.HalfFloatType,
+    samples:
+      window.innerWidth < 700
+        ? 0
+        : Math.min(2, renderer.capabilities.maxSamples),
+  });
+  const composer = new EffectComposer(renderer, renderTarget);
   composer.addPass(new RenderPass(scene, camera));
   const ao = new SSAOPass(scene, camera, 1, 1, 16);
   ao.kernelRadius = 0.3;
   ao.minDistance = 0.0005;
   ao.maxDistance = 0.016;
+  // Contact shadows use half-size buffers; the scene and final output keep
+  // full resolution, preserving the 4K budget for metal edges and artwork.
+  const resizeAO = ao.setSize.bind(ao);
+  ao.setSize = (w, h) =>
+    resizeAO(Math.max(1, Math.ceil(w / 2)), Math.max(1, Math.ceil(h / 2)));
   composer.addPass(ao);
   const aoExcluded = [studioFloor];
   scene.traverse((o) => {
@@ -1236,7 +1252,7 @@ export function createFactory(canvas, options = {}) {
     c.rotation.set(-1.05 + i * 0.15, i * 0.5, 0.15 + i * 0.5);
     productChips.push(c);
   }
-  function resize() {
+  function resize(force = false) {
     const nextWidth = Math.max(
       1,
       canvas.clientWidth || canvas.parentElement.clientWidth,
@@ -1245,10 +1261,28 @@ export function createFactory(canvas, options = {}) {
       1,
       canvas.clientHeight || canvas.parentElement.clientHeight,
     );
-    if (nextWidth === width && nextHeight === height) return;
+    if (force !== true && nextWidth === width && nextHeight === height) return;
     width = nextWidth;
     height = nextHeight;
+    const gpuLimit = renderer.capabilities.maxTextureSize;
+    const ratio = ultraQuality
+      ? Math.min(
+          4,
+          3840 / width,
+          2160 / height,
+          gpuLimit / width,
+          gpuLimit / height,
+        )
+      : Math.min(
+          window.devicePixelRatio || 1,
+          window.innerWidth < 700 ? 1.5 : 2,
+          Math.sqrt((2560 * 1440) / (width * height)),
+          gpuLimit / width,
+          gpuLimit / height,
+        );
+    renderer.setPixelRatio(Math.max(0.5, ratio));
     renderer.setSize(width, height, false);
+    composer.setPixelRatio(renderer.getPixelRatio());
     composer.setSize(width, height);
     fxaa.uniforms.resolution.value.set(
       1 / (width * renderer.getPixelRatio()),
@@ -1292,17 +1326,19 @@ export function createFactory(canvas, options = {}) {
     if (mode === "factory") {
       const logistics = campus.update(reducedMotion ? 26 : worldTime, journey);
       const label =
-        logistics.time < 12
+        logistics.time < 10
           ? "Truck arriving at the factory"
-          : logistics.time < 18
-            ? "Reversing into loading bay 01"
-            : logistics.time < 22
-              ? "Vehicle secured · Dock bridge connecting"
-              : logistics.time < 48
-                ? "Forklift loading wrapped pallets"
-                : logistics.time < 52
-                  ? "Bridge retracting · Cargo doors closing"
-                  : "Cargo ready · Departing across Pakistan";
+          : logistics.time < 12
+            ? "Staging stop · Rear doors opening outward"
+            : logistics.time < 18
+              ? "Reversing into loading bay 01"
+              : logistics.time < 22
+                ? "Vehicle secured · Dock bridge connecting"
+                : logistics.time < 48
+                  ? "Forklift loading wrapped pallets"
+                  : logistics.time < 52
+                    ? "Bridge retracting · Cargo doors closing"
+                    : "Cargo ready · Departing across Pakistan";
       if (label !== logisticsLabel) {
         logisticsLabel = label;
         options.onLogistics?.(label);
@@ -1357,6 +1393,7 @@ export function createFactory(canvas, options = {}) {
       });
     }
     if (mode === "factory") {
+      fryingEffects.update(t, camera);
       for (let b of beltAnims) {
         let len = b.b - b.a;
         for (let i = 0; i < b.n; i++) {
@@ -1375,10 +1412,13 @@ export function createFactory(canvas, options = {}) {
       for (let f of flows) {
         for (let i = 0; i < f.n; i++) {
           let m = f.meta[i],
-            u = (m.offset + p * (f.type === "potato" ? 4 : 8)) % 1;
+            u = (m.offset + p * f.cycles) % 1;
           temp.position.set(
             f.a + u * (f.b - f.a),
-            f.y + (f.type === "chip" ? 0.008 * Math.sin(beat + m.angle) : 0.0),
+            f.y +
+              (f.type === "chip"
+                ? (f.cycles === 1 ? 0.0035 : 0.008) * Math.sin(beat + m.angle)
+                : 0.0),
             f.z + m.lane,
           );
           if (f.type === "chip") {
@@ -1534,6 +1574,7 @@ export function createFactory(canvas, options = {}) {
     });
     geoCache.forEach((g) => geometries.add(g));
     textures.add(scene.environment);
+    fryingEffects.dispose();
     geometries.forEach((g) => g.dispose());
     materials.forEach((m) => m.dispose());
     textures.forEach((t) => t?.dispose());
@@ -1552,6 +1593,10 @@ export function createFactory(canvas, options = {}) {
     setPageVisible,
     setAudio,
     setInspect,
+    setQuality(ultra) {
+      ultraQuality = Boolean(ultra);
+      resize(true);
+    },
     resize,
     dispose,
     setPlaying(next) {
@@ -1575,6 +1620,9 @@ export function createFactory(canvas, options = {}) {
         audioOn,
         musicOn,
         inspect,
+        ultraQuality,
+        renderWidth: canvas.width,
+        renderHeight: canvas.height,
         stage,
         flavour,
         mode,

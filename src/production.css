@@ -278,6 +278,12 @@ body::before {
 .scene-control {
   min-width: 36px;
 }
+.quality-control {
+  padding-inline: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
 
 .scene-control:hover:not(:disabled) {
   background: #ffffff12;

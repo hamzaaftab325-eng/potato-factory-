@@ -8,7 +8,7 @@ export const PROCESS_NAMES = [
 ];
 
 export const CAMERAS = [
-  { target: [10, 1.8, 1], radius: 83, yaw: 0.57, elev: 0.73 },
+  { target: [12.5, 1.8, 1], radius: 100, yaw: 0.57, elev: 0.73 },
   { target: [-10.1, 1.65, 0], radius: 9.8, yaw: 0.48, elev: 0.35 },
   { target: [-5.35, 1.92, 0], radius: 7.9, yaw: 0.42, elev: 0.34 },
   { target: [-0.2, 1.86, 0], radius: 10.5, yaw: 0.62, elev: 0.32 },
