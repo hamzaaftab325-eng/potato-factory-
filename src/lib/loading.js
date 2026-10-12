@@ -1,4 +1,6 @@
-export function initLoadingScreen() {
+export function initLoadingScreen({
+  loadArt = () => import("./loading-packet.js"),
+} = {}) {
   const screen = document.querySelector("#factory-loader");
   const button = document.querySelector("#loader-skip");
   const status = document.querySelector("#loader-status");
@@ -12,7 +14,22 @@ export function initLoadingScreen() {
   const priorInert = content.map((el) => el.inert);
   const events = new window.AbortController();
   let finished = false;
-  let hideTimer;
+  let hideTimer,
+    product = null,
+    assembling = false;
+  const fontsReady = document.fonts?.ready ?? Promise.resolve();
+  Promise.all([loadArt(), fontsReady])
+    .then(([{ createPacketLoader }]) => {
+      if (finished) return;
+      product = createPacketLoader(
+        document.querySelector("#loader-product-canvas"),
+        { reducedMotion: reduced.matches },
+      );
+      if (assembling) product.pause();
+    })
+    .catch(() => {
+      screen.classList.add("without-product");
+    });
   document.body.classList.add("factory-loading");
   content.forEach((el) => {
     el.inert = true;
@@ -21,6 +38,7 @@ export function initLoadingScreen() {
   function finish(message) {
     if (finished) return;
     finished = true;
+    product?.pause();
     clearTimeout(timeout);
     status.textContent = message;
     screen.dataset.stage = "3";
@@ -41,6 +59,7 @@ export function initLoadingScreen() {
     hideTimer = window.setTimeout(
       () => {
         screen.hidden = true;
+        product?.dispose();
       },
       reduced.matches ? 0 : 500,
     );
@@ -68,8 +87,10 @@ export function initLoadingScreen() {
     stage(value) {
       if (finished) return;
       if (value === "assemble") {
+        assembling = true;
+        product?.pause();
         screen.dataset.stage = "2";
-        status.textContent = "Sealing the crunch. Preparing your factory.";
+        status.textContent = "Bringing every little detail to life";
       } else if (value === "ready")
         finish("Your factory is ready. Step inside.");
       else if (value === "fallback")
@@ -79,6 +100,7 @@ export function initLoadingScreen() {
       finish("Welcome to CRISP.");
       clearTimeout(hideTimer);
       screen.hidden = true;
+      product?.dispose();
     },
   };
 }

@@ -21,7 +21,11 @@ function setup(reduced = false) {
   // The loader uses the browser's timer cancellation, as it does in production.
   const oldClear = globalThis.clearTimeout;
   globalThis.clearTimeout = window.clearTimeout;
-  const loading = initLoadingScreen();
+  const loading = initLoadingScreen({
+    loadArt: async () => ({
+      createPacketLoader: () => ({ pause() {}, dispose() {} }),
+    }),
+  });
   return {
     loading,
     timers,

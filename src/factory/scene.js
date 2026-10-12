@@ -22,6 +22,7 @@ import { LOOP_SECONDS, bagPhase, jawClosure } from "./timing.js";
 import { cameraAt, FLAVOURS, CAMERAS } from "../lib/journey.js";
 import { addFactoryCampus, droneCamera } from "./campus.js";
 import { createBagMaterials } from "./packaging.js";
+import { createProductPacket } from "./product-packet.js";
 import { addFryingEffects, addProcessEffects } from "./effects.js";
 import {
   AdaptiveRenderBudget,
@@ -1404,9 +1405,13 @@ export function createFactory(canvas, options = {}) {
   productFloor.receiveShadow = true;
   productGroup.add(productFloor);
   for (let i = 0; i < 3; i++) {
-    const bag = mesh(bagG, bagMaterial(i), 0, 2.76, 0, productGroup);
-    bag.scale.setScalar(4.25);
-    bag.rotation.set(-0.03, -0.14, -0.07);
+    const bag = createProductPacket({
+      geometry: bagG,
+      materials: bagMaterial(i),
+      scale: 4.25,
+    });
+    bag.position.set(0, 2.76, 0);
+    productGroup.add(bag);
     bag.visible = i === 0;
     productBags.push(bag);
     const ingredient = new THREE.Group();
