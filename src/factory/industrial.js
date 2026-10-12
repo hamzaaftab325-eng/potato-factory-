@@ -15,12 +15,6 @@ export function addIndustrialServices({
 }) {
   const dynamic = [],
     inspections = [];
-  const doubleSteel = M.steel.clone();
-  doubleSteel.side = THREE.DoubleSide;
-  const meshSteel = M.steel.clone();
-  meshSteel.alphaMap = textures.perforation;
-  meshSteel.alphaTest = 0.45;
-  meshSteel.side = THREE.DoubleSide;
   const bluePipe = new THREE.MeshStandardMaterial({
     color: "#37799b",
     metalness: 0.25,

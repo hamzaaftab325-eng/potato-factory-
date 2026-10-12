@@ -4,7 +4,12 @@ import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import { initLoadingScreen } from "../src/lib/loading.js";
 
-function setup(reduced = false) {
+function setup(
+  reduced = false,
+  loadArt = async () => ({
+    createPacketLoader: () => ({ pause() {}, dispose() {} }),
+  }),
+) {
   const dom = new JSDOM(
     readFileSync(new URL("../index.html", import.meta.url), "utf8"),
   );
@@ -21,11 +26,7 @@ function setup(reduced = false) {
   // The loader uses the browser's timer cancellation, as it does in production.
   const oldClear = globalThis.clearTimeout;
   globalThis.clearTimeout = window.clearTimeout;
-  const loading = initLoadingScreen({
-    loadArt: async () => ({
-      createPacketLoader: () => ({ pause() {}, dispose() {} }),
-    }),
-  });
+  const loading = initLoadingScreen({ loadArt });
   return {
     loading,
     timers,
@@ -82,5 +83,40 @@ test("loading can be skipped or released on failure and slow initialization", ()
     } finally {
       t.close();
     }
+  }
+});
+
+test("the product keeps animating during assembly and releases graphics after reveal", async () => {
+  let created = 0,
+    pauses = 0,
+    disposed = 0;
+  const t = setup(false, async () => ({
+    createPacketLoader() {
+      created++;
+      let done = false;
+      return {
+        pause() {
+          pauses++;
+        },
+        dispose() {
+          if (!done) disposed++;
+          done = true;
+        },
+      };
+    },
+  }));
+  try {
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.equal(created, 1);
+    t.loading.stage("assemble");
+    assert.equal(pauses, 0);
+    t.loading.stage("ready");
+    assert.equal(pauses, 1);
+    [...t.timers.values()].find((t) => t.delay === 500).fn();
+    assert.equal(disposed, 1);
+  } finally {
+    t.close();
   }
 });

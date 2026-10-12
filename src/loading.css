@@ -268,3 +268,23 @@
     transition: none;
   }
 }
+
+.loader-halo {
+  animation: loader-halo-breathe 5s ease-in-out infinite;
+}
+@keyframes loader-halo-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loader-halo {
+    animation: none;
+  }
+}

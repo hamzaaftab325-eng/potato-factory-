@@ -66,9 +66,11 @@ export class AdaptiveRenderBudget {
     const cadence = this.elapsed / this.samples;
     const costMean = this.cost / this.samples;
     this.elapsed = this.cost = this.samples = 0;
-    const previous = this.scale;
+    const previous = this.scale,
+      previousFps = this.fps;
     if (cadence > target * 1.32 || costMean > target * 0.95) {
-      this.scale = Math.max(0.8, this.scale * 0.9);
+      if (this.scale <= 0.8 && this.fps > 30) this.fps = 30;
+      else this.scale = Math.max(0.8, this.scale * 0.9);
       this.fastWindows = 0;
     } else if (cadence < target * 1.12 && costMean < target * 0.65) {
       if (++this.fastWindows >= 4) {
@@ -76,7 +78,7 @@ export class AdaptiveRenderBudget {
         this.fastWindows = 0;
       }
     } else this.fastWindows = 0;
-    return previous !== this.scale;
+    return previous !== this.scale || previousFps !== this.fps;
   }
 }
 

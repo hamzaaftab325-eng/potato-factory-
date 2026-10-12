@@ -52,6 +52,7 @@ test("sustained missed frames reduce workload; recovery is gradual and bounded",
   assert.equal(frames(budget, 1000 / 30, 22, 2400), 0);
   assert.ok(frames(budget, 1000 / 30, 22, 12000) > 0);
   assert.equal(budget.scale, 0.8);
+  assert.equal(budget.fps, 30);
   const low = budget.scale;
   frames(budget, 1000 / 60, 4, 1600);
   assert.equal(budget.scale, low);

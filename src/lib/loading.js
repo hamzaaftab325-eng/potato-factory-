@@ -15,8 +15,7 @@ export function initLoadingScreen({
   const events = new window.AbortController();
   let finished = false;
   let hideTimer,
-    product = null,
-    assembling = false;
+    product = null;
   const fontsReady = document.fonts?.ready ?? Promise.resolve();
   Promise.all([loadArt(), fontsReady])
     .then(([{ createPacketLoader }]) => {
@@ -25,7 +24,6 @@ export function initLoadingScreen({
         document.querySelector("#loader-product-canvas"),
         { reducedMotion: reduced.matches },
       );
-      if (assembling) product.pause();
     })
     .catch(() => {
       screen.classList.add("without-product");
@@ -87,8 +85,6 @@ export function initLoadingScreen({
     stage(value) {
       if (finished) return;
       if (value === "assemble") {
-        assembling = true;
-        product?.pause();
         screen.dataset.stage = "2";
         status.textContent = "Bringing every little detail to life";
       } else if (value === "ready")

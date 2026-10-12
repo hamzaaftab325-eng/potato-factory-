@@ -3,6 +3,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { bagGeometry, chipGeometry } from "../factory/geometry.js";
 import { createBagMaterials } from "../factory/packaging.js";
 import { createProductPacket } from "../factory/product-packet.js";
+import { FrameClock } from "../factory/frame-clock.js";
 import chipNormal from "../factory/generated/chip-normal.png";
 import chipRoughness from "../factory/generated/chip-roughness.png";
 
@@ -14,11 +15,14 @@ export function createPacketLoader(canvas, { reducedMotion = false } = {}) {
     powerPreference: "low-power",
   });
   renderer.setClearColor(0x000000, 0);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(
+    Math.min(2.5, Math.max(2, window.devicePixelRatio || 1)),
+  );
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
   renderer.shadowMap.enabled = true;
+  renderer.shadowMap.autoUpdate = false;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 10);
@@ -28,14 +32,14 @@ export function createPacketLoader(canvas, { reducedMotion = false } = {}) {
   const room = new RoomEnvironment();
   const environment = pmrem.fromScene(room, 0.05);
   scene.environment = environment.texture;
-  scene.environmentIntensity = 0.65;
+  scene.environmentIntensity = 0.8;
   room.dispose();
   pmrem.dispose();
   scene.add(new THREE.HemisphereLight("#fff3db", "#173936", 0.85));
   const key = new THREE.DirectionalLight("#fff0d5", 2.8);
   key.position.set(-2, 3, 4);
   key.castShadow = true;
-  key.shadow.mapSize.set(512, 512);
+  key.shadow.mapSize.set(1024, 1024);
   Object.assign(key.shadow.camera, {
     left: -1,
     right: 1,
@@ -82,23 +86,43 @@ export function createPacketLoader(canvas, { reducedMotion = false } = {}) {
   const textures = new THREE.TextureLoader();
   let paused = reducedMotion,
     disposed = false,
-    raf = 0,
-    last = -Infinity;
+    raf = 0;
+  const frameClock = new FrameClock();
+  let lastShadow = -Infinity;
   const draw = () => {
-    if (!disposed) renderer.render(scene, camera);
+    if (disposed) return;
+    const now = performance.now();
+    if (now - lastShadow >= 1000 / 30) {
+      renderer.shadowMap.needsUpdate = true;
+      lastShadow = now;
+    }
+    renderer.render(scene, camera);
   };
   chipMaterial.normalMap = textures.load(chipNormal, draw);
   chipMaterial.normalScale = new THREE.Vector2(0.32, 0.32);
   chipMaterial.roughnessMap = textures.load(chipRoughness, draw);
   const chips = [];
+  const motionClock = new THREE.Clock();
   for (let i = 0; i < 3; i++) {
     const chip = new THREE.Mesh(chipGeometry(i + 1), chipMaterial);
     chip.scale.setScalar(0.55);
-    chip.position.set(0.27 + i * 0.087, -0.475 + i * 0.045, 0.23 + i * 0.037);
+    chip.position.set(
+      ...[
+        [-0.43, -0.18, 0.18],
+        [0.43, -0.32, 0.25],
+        [0.36, 0.41, 0.12],
+      ][i],
+    );
     chip.rotation.set(-1.1 + i * 0.15, 0.12, -0.42 + i * 0.38);
     chip.castShadow = true;
     scene.add(chip);
-    chips.push(chip);
+    chips.push({
+      chip,
+      x: chip.position.x,
+      y: chip.position.y,
+      z: chip.position.z,
+      angle: chip.rotation.z,
+    });
   }
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(3, 3),
@@ -124,12 +148,22 @@ export function createPacketLoader(canvas, { reducedMotion = false } = {}) {
   function frame(time) {
     if (disposed || paused) return;
     raf = requestAnimationFrame(frame);
-    if (time - last < 1000 / 24) return;
-    last = time;
-    const t = time / 1000;
-    packet.position.y = 0.025 + 0.006 * Math.sin(t * 1.1);
-    packet.rotation.y = -0.14 + 0.055 * Math.sin(t * 0.7);
-    packet.rotation.z = -0.07 + 0.008 * Math.sin(t * 0.9);
+    if (!frameClock.due(time / 1000, 60)) return;
+    const t = motionClock.getElapsedTime();
+    packet.position.y = 0.025 + 0.018 * Math.sin(t * 1.3);
+    packet.rotation.y = -0.14 + 0.18 * Math.sin(t * 0.9);
+    packet.rotation.x = -0.03 + 0.035 * Math.sin(t * 0.8);
+    packet.rotation.z = -0.07 + 0.022 * Math.sin(t * 1.1);
+    chips.forEach(({ chip, x, y, z, angle }, i) => {
+      const phase = t * 0.85 + i * 2.1;
+      chip.position.set(
+        x + 0.035 * Math.sin(phase),
+        y + 0.025 * Math.cos(phase),
+        z + 0.02 * Math.sin(phase),
+      );
+      chip.rotation.z = angle + 0.16 * Math.sin(phase);
+      chip.rotation.y = 0.12 + 0.13 * Math.cos(phase);
+    });
     draw();
   }
   if (!paused) raf = requestAnimationFrame(frame);

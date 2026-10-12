@@ -23,6 +23,7 @@ import { cameraAt, FLAVOURS, CAMERAS } from "../lib/journey.js";
 import { addFactoryCampus, droneCamera } from "./campus.js";
 import { createBagMaterials } from "./packaging.js";
 import { createProductPacket } from "./product-packet.js";
+import { FrameClock } from "./frame-clock.js";
 import { addFryingEffects, addProcessEffects } from "./effects.js";
 import {
   AdaptiveRenderBudget,
@@ -42,8 +43,11 @@ export function createFactory(canvas, options = {}) {
     raf = 0,
     frameCount = 0,
     lastRendered = 0;
-  let contextLost = false;
-  const budget = new AdaptiveRenderBudget(30);
+  let contextLost = false,
+    shadersWarming = true;
+  const budget = new AdaptiveRenderBudget(window.innerWidth < 700 ? 30 : 60);
+  const frameClock = new FrameClock();
+  let lastRenderCost = 0;
   let zoom = 1,
     desiredZoom = 1,
     lastShadow = -Infinity;
@@ -164,7 +168,6 @@ export function createFactory(canvas, options = {}) {
     paint.bumpMap = textures.enamel;
     paint.bumpScale = 0.00035;
   }
-  M.motor = mat("#16384b", 0.75, 0.27);
   M.potato.bumpMap = potatoTex;
   M.potato.bumpScale = 0.0014;
   for (const m of [M.chip, M.redChip, M.herbChip]) {
@@ -488,6 +491,7 @@ export function createFactory(canvas, options = {}) {
       inst = new THREE.InstancedMesh(unitBox, M.dark, n);
     inst.castShadow = false;
     inst.receiveShadow = true;
+    inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     scene.add(inst);
     inst.frustumCulled = false;
     beltAnims.push({ a, b, z, y, width, n, inst });
@@ -568,7 +572,8 @@ export function createFactory(canvas, options = {}) {
     );
     if (cooked && foodGeometry !== potatoG) foodGeometry.dispose();
     inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    inst.castShadow = true;
+    // Immersed, deforming slices do not need a separate depth pass.
+    inst.castShadow = !frying;
     inst.receiveShadow = true;
     scene.add(inst);
     inst.frustumCulled = false;
@@ -1469,7 +1474,7 @@ export function createFactory(canvas, options = {}) {
     width = nextWidth;
     height = nextHeight;
     const viewportChanged = camera.aspect !== width / height;
-    budget.fps = 30;
+    if (window.innerWidth < 700) budget.fps = 30;
     if (viewportChanged) budget.reset();
     const { ratio } = drawingBudget({
       width,
@@ -1491,7 +1496,7 @@ export function createFactory(canvas, options = {}) {
     );
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    bloom.enabled = budget.scale >= 0.9;
+    bloom.enabled = budget.fps > 30 && budget.scale >= 0.9;
     dirty = true;
   }
   const observer = new ResizeObserver(resize);
@@ -1507,7 +1512,7 @@ export function createFactory(canvas, options = {}) {
     raf = requestAnimationFrame(frame);
     const frameStart = performance.now();
     const real = frameStart / 1000;
-    if (!visible || !pageVisible || contextLost) return;
+    if (!visible || !pageVisible || contextLost || shadersWarming) return;
     cameraTarget.set(...desired.target);
     const cameraMoving =
       Math.abs(zoom - desiredZoom) > 0.0005 ||
@@ -1516,8 +1521,7 @@ export function createFactory(canvas, options = {}) {
       Math.abs(yaw - desired.yaw) > 0.0005 ||
       Math.abs(elevation - desired.elev) > 0.0005;
     if (!active() && !dirty && !cameraMoving && frameCount >= 2) return;
-    const fps = 30;
-    if (active() && !dirty && real - lastRendered < 1 / fps - 0.002) return;
+    if (!frameClock.due(real, budget.fps, dirty)) return;
     // Camera easing uses elapsed time between rendered frames, including
     // callbacks skipped by the mobile frame limiter.
     const interval = Math.max(0, (real - lastRendered) * 1000);
@@ -1824,7 +1828,10 @@ export function createFactory(canvas, options = {}) {
     }
     // Tight close-up shadow coverage gives better machine detail at 2048 than
     // a 4096 map spread across the whole campus. Shadows update at 30/15 Hz.
-    if (dirty || real - lastShadow >= (rr > 45 ? 1 / 15 : 1 / 30)) {
+    if (
+      dirty ||
+      real - lastShadow >= (rr > 45 || budget.fps <= 30 ? 1 / 15 : 1 / 30)
+    ) {
       const extent =
         mode === "product" ? 9 : Math.max(12, Math.min(80, rr * 1.5));
       const sx = rr > 65 ? 12.5 : target.x,
@@ -1841,17 +1848,17 @@ export function createFactory(canvas, options = {}) {
       renderer.shadowMap.needsUpdate = true;
       lastShadow = real;
     }
-    composer.render();
+    // Apply an adaptive resize before drawing: one composed frame, with no
+    // cleared canvas exposed and no duplicate full-scene render on adjustments.
     if (
       active() &&
       !dirty &&
-      budget.sample(interval, performance.now() - frameStart)
-    ) {
+      budget.sample(interval, performance.now() - frameStart + lastRenderCost)
+    )
       resize(true);
-      // Resizing clears the canvas and replaces the composer's render targets.
-      // Draw into the new targets before yielding to the browser's next paint.
-      composer.render();
-    }
+    const renderStart = performance.now();
+    composer.render();
+    lastRenderCost = performance.now() - renderStart;
     dirty = false;
     if (++frameCount >= 2 && !ready) {
       ready = true;
@@ -1904,6 +1911,15 @@ export function createFactory(canvas, options = {}) {
     composer.dispose();
     renderer.dispose();
   }
+  // Prepare linked shader programs before revealing the first live frames.
+  renderer
+    .compileAsync(scene, camera)
+    .catch(() => {})
+    .finally(() => {
+      if (disposed) return;
+      shadersWarming = false;
+      dirty = true;
+    });
   raf = requestAnimationFrame(frame);
   return {
     setJourney,
