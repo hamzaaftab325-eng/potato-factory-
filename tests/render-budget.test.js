@@ -6,22 +6,17 @@ import {
   zoomDistance,
 } from "../src/factory/render-budget.js";
 
-test("AUTO does not supersample a native 1080p desktop to UHD", () => {
-  const auto = drawingBudget({ width: 1920, height: 1080, dpr: 1 });
-  const detail = drawingBudget({
-    width: 1920,
-    height: 1080,
-    dpr: 1,
-    detail: true,
-  });
-  assert.equal(auto.width, 1920);
-  assert.equal(auto.height, 1080);
-  assert.equal(detail.width, 3840);
-  assert.equal(detail.height, 2160);
-  assert.equal(
-    (auto.width * auto.height) / (detail.width * detail.height),
-    0.25,
-  );
+test("HD caps native, high-DPI and legacy detail requests at 1080p", () => {
+  for (const dpr of [1, 2, 3]) {
+    const result = drawingBudget({
+      width: 1920,
+      height: 1080,
+      dpr,
+      detail: true,
+    });
+    assert.equal(result.width, 1920);
+    assert.equal(result.height, 1080);
+  }
 });
 
 test("portrait, ultrawide and high-DPI buffers stay inside their pixel/GPU ceilings", () => {
@@ -38,10 +33,8 @@ test("portrait, ultrawide and high-DPI buffers stay inside their pixel/GPU ceili
         maxTextureSize,
         detail,
       });
-      assert.ok(result.width <= Math.min(detail ? 3840 : 2560, maxTextureSize));
-      assert.ok(
-        result.height <= Math.min(detail ? 2160 : 1440, maxTextureSize),
-      );
+      assert.ok(result.width <= Math.min(1920, maxTextureSize));
+      assert.ok(result.height <= Math.min(1080, maxTextureSize));
       assert.ok(Math.abs(result.width / result.height - width / height) < 0.01);
     }
   }

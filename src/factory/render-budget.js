@@ -1,20 +1,18 @@
 const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
 
-// AUTO respects native pixels. The optional detail ceiling can reach UHD, but
-// both modes obey the selected size ceiling and GPU texture limits.
+// HD is the single rendering mode. Native pixels, adaptive scaling and GPU
+// limits keep the canvas inside a 1920 × 1080 drawing-buffer ceiling.
 export function drawingBudget({
   width,
   height,
   dpr = 1,
-  mobile = false,
-  detail = false,
   scale = 1,
   maxTextureSize = 8192,
 }) {
   width = Math.max(1, width);
   height = Math.max(1, height);
-  const ceiling = detail ? [3840, 2160] : mobile ? [1920, 1080] : [2560, 1440];
-  const native = detail ? 4 : Math.min(dpr, 1.5);
+  const ceiling = [1920, 1080];
+  const native = Math.min(dpr, 1.5);
   const ratio =
     Math.min(
       native,

@@ -42,7 +42,6 @@ export function createFactory(canvas, options = {}) {
     frameCount = 0,
     lastRendered = 0;
   let contextLost = false;
-  let ultraQuality = false;
   const budget = new AdaptiveRenderBudget(window.innerWidth < 700 ? 30 : 60);
   let zoom = 1,
     desiredZoom = 1,
@@ -1472,7 +1471,6 @@ export function createFactory(canvas, options = {}) {
       height,
       dpr: window.devicePixelRatio || 1,
       mobile: window.innerWidth < 700,
-      detail: ultraQuality,
       scale: budget.scale,
       maxTextureSize: renderer.capabilities.maxTextureSize,
     });
@@ -1487,7 +1485,6 @@ export function createFactory(canvas, options = {}) {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
     bloom.enabled = budget.scale >= 0.7;
-    options.onQualityChange?.();
     dirty = true;
   }
   const observer = new ResizeObserver(resize);
@@ -1842,8 +1839,12 @@ export function createFactory(canvas, options = {}) {
       active() &&
       !dirty &&
       budget.sample(interval, performance.now() - frameStart)
-    )
+    ) {
       resize(true);
+      // Resizing clears the canvas and replaces the composer's render targets.
+      // Draw into the new targets before yielding to the browser's next paint.
+      composer.render();
+    }
     dirty = false;
     if (++frameCount >= 2 && !ready) {
       ready = true;
@@ -1907,12 +1908,6 @@ export function createFactory(canvas, options = {}) {
     setInspect,
     zoomBy,
     resetZoom,
-    setQuality(ultra) {
-      ultraQuality = Boolean(ultra);
-      budget.scale = 1;
-      budget.reset();
-      resize(true);
-    },
     resize,
     dispose,
     setPlaying(next) {
@@ -1936,7 +1931,7 @@ export function createFactory(canvas, options = {}) {
         audioOn,
         musicOn,
         inspect,
-        ultraQuality,
+        quality: "HD",
         qualityScale: budget.scale,
         zoom: Math.round(100 / desiredZoom),
         renderWidth: canvas.width,

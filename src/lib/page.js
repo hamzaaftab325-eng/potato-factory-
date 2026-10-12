@@ -8,6 +8,7 @@ import {
 export function initPage({
   loadFactory = () => import("../factory/scene.js"),
   autoStart = true,
+  onLoadingStage = () => {},
 } = {}) {
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -112,27 +113,7 @@ export function initPage({
 
   function syncControls() {
     if (!engine) return;
-    const {
-      playing,
-      audioOn,
-      musicOn,
-      inspect,
-      ultraQuality,
-      zoom = 100,
-      renderWidth,
-      renderHeight,
-      qualityScale = 1,
-    } = engine.state;
-    $("#quality-toggle").setAttribute("aria-pressed", String(ultraQuality));
-    $("#quality-toggle").setAttribute(
-      "aria-label",
-      ultraQuality
-        ? "Switch to smooth rendering"
-        : "Enable detail rendering up to 4K",
-    );
-    $("#quality-label").textContent = ultraQuality ? "4K MAX" : "AUTO";
-    $("#quality-toggle").title =
-      `${ultraQuality ? "Up to 4K" : "Adaptive native detail"} · ${renderWidth || 0} × ${renderHeight || 0}${qualityScale < 0.99 ? " · adjusted for smooth playback" : ""}`;
+    const { playing, audioOn, musicOn, inspect, zoom = 100 } = engine.state;
     $("#zoom-label").textContent = `${zoom}%`;
     $("#zoom-reset").setAttribute(
       "aria-label",
@@ -338,12 +319,6 @@ export function initPage({
     if (engine.state.inspect)
       $("#factory-canvas").focus({ preventScroll: true });
   });
-  on($("#quality-toggle"), "click", () => {
-    if (!engine) return;
-    engine.setQuality(!engine.state.ultraQuality);
-    syncControls();
-  });
-
   on($("#zoom-in"), "click", () => engine?.zoomBy(1.2));
   on($("#zoom-out"), "click", () => engine?.zoomBy(1 / 1.2));
   on($("#zoom-reset"), "click", () => engine?.resetZoom());
@@ -351,6 +326,7 @@ export function initPage({
   function markReady() {
     if (destroyed) return;
     ready = true;
+    onLoadingStage("ready");
     rig.classList.add("is-ready");
     mounts[surface]?.classList.add("is-ready");
     $$(".scene-control").forEach((button) => {
@@ -370,6 +346,7 @@ export function initPage({
           document.fonts?.ready ?? Promise.resolve(),
         ]);
         if (destroyed) return;
+        onLoadingStage("assemble");
         engine = createFactory($("#factory-canvas"), {
           reducedMotion: motion.matches,
           onReady: markReady,
@@ -380,7 +357,6 @@ export function initPage({
           },
           onInspectExit: syncControls,
           onZoomChange: syncControls,
-          onQualityChange: syncControls,
           onContextLost: () => {
             ready = false;
             rig.classList.remove("is-ready");
@@ -399,6 +375,7 @@ export function initPage({
         $("#experience-status").textContent =
           "The 3D view is unavailable. Still previews, the process story and the flavour collection remain available.";
         rig.hidden = true;
+        onLoadingStage("fallback");
       }
     })();
     return startPromise;

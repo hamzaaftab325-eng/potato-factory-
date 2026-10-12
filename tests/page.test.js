@@ -45,7 +45,6 @@ function setup({ reduced = false, fail = false, width = 1440 } = {}) {
     audioOn: false,
     musicOn: false,
     inspect: false,
-    ultraQuality: false,
     zoom: 100,
     stage: 0,
     flavour: 0,
@@ -70,10 +69,6 @@ function setup({ reduced = false, fail = false, width = 1440 } = {}) {
     },
     setInspect(v) {
       state.inspect = v;
-    },
-    setQuality(v) {
-      state.ultraQuality = v;
-      callbacks.onQualityChange?.();
     },
     zoomBy(factor) {
       state.zoom = Math.max(56, Math.min(250, Math.round(state.zoom * factor)));
@@ -225,11 +220,12 @@ test("play, sound, optional music and inspect controls report their state", asyn
   }
 });
 
-test("zoom controls and quality selection stay usable across scroll chapters", async () => {
+test("zoom controls and fixed HD rendering stay usable across scroll chapters", async () => {
   const t = setup();
   try {
     await t.ui.start();
-    assert.equal(t.$("#quality-label").textContent, "AUTO");
+    assert.equal(t.$(".quality-badge").textContent.trim(), "HD");
+    assert.equal(t.$("#quality-toggle"), null);
     assert.equal(t.$("#zoom-in").disabled, false);
     t.$("#zoom-in").click();
     assert.equal(t.state.zoom, 120);
@@ -242,9 +238,6 @@ test("zoom controls and quality selection stay usable across scroll chapters", a
     );
     t.$("#zoom-out").click();
     assert.equal(t.state.zoom, 100);
-    t.$("#quality-toggle").click();
-    assert.equal(t.state.ultraQuality, true);
-    assert.equal(t.$("#quality-label").textContent, "4K MAX");
     for (let i = 0; i < 12; i++) t.$("#zoom-in").click();
     assert.equal(t.state.zoom, 250);
     assert.equal(t.$("#zoom-in").disabled, true);

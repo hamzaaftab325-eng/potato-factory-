@@ -27,6 +27,60 @@
     <script type="module" src="/src/main.js"></script>
   </head>
   <body>
+    <div
+      class="factory-loader"
+      id="factory-loader"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="loader-title"
+      data-stage="1"
+    >
+      <div class="loader-grain" aria-hidden="true"></div>
+      <div class="loader-brand">crisp<span>✳</span></div>
+      <p class="loader-eyebrow">A LITTLE POTATO. A REMARKABLE JOURNEY.</p>
+      <div class="loader-art" aria-hidden="true">
+        <div class="loader-halo"></div>
+        <div class="loader-factory">
+          <div class="loader-platform"></div>
+          <div class="loader-belt"></div>
+          <div class="loader-machine loader-wash">
+            <i class="loader-face front"></i><i class="loader-face side"></i
+            ><i class="loader-face top"></i><b>01</b>
+          </div>
+          <div class="loader-machine loader-fry">
+            <i class="loader-face front"></i><i class="loader-face side"></i
+            ><i class="loader-face top"></i><b>02</b>
+            <div class="loader-vapour"></div>
+          </div>
+          <div class="loader-machine loader-pack">
+            <i class="loader-face front"></i><i class="loader-face side"></i
+            ><i class="loader-face top"></i><b>03</b>
+          </div>
+          <span class="loader-chip" style="--i: 0"></span
+          ><span class="loader-chip" style="--i: 1"></span
+          ><span class="loader-chip" style="--i: 2"></span
+          ><span class="loader-chip" style="--i: 3"></span
+          ><span class="loader-chip" style="--i: 4"></span
+          ><span class="loader-chip" style="--i: 5"></span>
+        </div>
+      </div>
+      <div class="loader-copy">
+        <h2 id="loader-title">Something golden<br />is <em>in motion.</em></h2>
+        <p id="loader-status" role="status" aria-live="polite">
+          Preparing your factory experience
+        </p>
+      </div>
+      <div class="loader-track" aria-hidden="true"><span></span></div>
+      <div class="loader-milestones" aria-hidden="true">
+        <span>PREPARE</span><span>ASSEMBLE</span><span>EXPLORE</span>
+      </div>
+      <button id="loader-skip" class="loader-skip" type="button">
+        Explore while loading <span aria-hidden="true">↗</span>
+      </button>
+      <span class="loader-footnote"
+        >Crafted for the crunch · Live 3D in HD</span
+      >
+    </div>
     <a class="skip-link" href="#main">Skip to content</a>
     <div class="reading-progress" aria-hidden="true"></div>
     <header class="site-header" id="site-header">
@@ -184,16 +238,11 @@
                   <circle cx="12" cy="12" r="3" /></svg
                 ><span>Inspect</span>
               </button>
-              <button
-                class="scene-control quality-control"
-                id="quality-toggle"
-                type="button"
-                aria-label="Enable detail rendering up to 4K"
-                aria-pressed="false"
-                disabled
+              <span
+                class="quality-control quality-badge"
+                aria-label="HD rendering"
+                >HD</span
               >
-                <span id="quality-label">AUTO</span>
-              </button>
               <div class="zoom-controls" role="group" aria-label="Camera zoom">
                 <button
                   class="scene-control icon-control"
@@ -326,7 +375,8 @@
             <p class="scene-footnote">
               <span>One continuous choreography</span
               ><span
-                >Made entirely with code <span aria-hidden="true">✳</span></span
+                >Made entirely with code
+                <span aria-hidden="true">✳</span></span
               >
             </p>
           </div>
@@ -716,6 +766,9 @@
     </div>
     <noscript
       ><style>
+        .factory-loader {
+          display: none !important;
+        }
         .story-step {
           opacity: 1;
         }
