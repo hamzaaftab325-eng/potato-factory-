@@ -842,16 +842,16 @@ export function createFactory(canvas, options = {}) {
     foodFlow(6.85, 7.7, z, 1.36, 28, "chip", chipColors[f], 0.76);
   }
   // 05: multihead weighing, film roll, forming collar, draw rollers and sealing jaws.
-  const bagG = bagGeometry();
-  function bagMaterial(f) {
+  const bagG = bagGeometry(false);
+  function bagMaterial(f, resolution = 1) {
     return createBagMaterials(
       f,
-      textures,
       Math.min(8, renderer.capabilities.getMaxAnisotropy()),
+      { resolution },
     );
   }
   const packAnims = [],
-    bagMaterials = [0, 1, 2].map(bagMaterial);
+    bagMaterials = [0, 1, 2].map((f) => bagMaterial(f, 0.5));
   const sealFace = new THREE.PlaneGeometry(0.79, 0.125, 48, 1);
   for (let i = 0; i < sealFace.attributes.position.count; i++)
     sealFace.attributes.position.setZ(i, i % 2 ? 0.006 : 0);
@@ -878,6 +878,13 @@ export function createFactory(canvas, options = {}) {
     filmMaterial.side = THREE.DoubleSide;
     filmMaterial.map = bagMat[0].map.clone();
     filmMaterial.map.wrapT = THREE.RepeatWrapping;
+    const rolledFilm = bagMat[0].clone();
+    rolledFilm.map = bagMat[0].map.clone();
+    rolledFilm.map.wrapS = rolledFilm.map.wrapT = THREE.RepeatWrapping;
+    rolledFilm.map.center.set(0.5, 0.5);
+    rolledFilm.map.rotation = Math.PI / 2;
+    rolledFilm.map.repeat.set(1, 1.5);
+    roll.material = [rolledFilm, M.steel, M.steel];
     const webPath = [
       [3.74, -1.13],
       [3.85, -0.66],
@@ -1409,9 +1416,10 @@ export function createFactory(canvas, options = {}) {
   productFloor.rotation.x = -Math.PI / 2;
   productFloor.receiveShadow = true;
   productGroup.add(productFloor);
+  const productBagG = bagGeometry();
   for (let i = 0; i < 3; i++) {
     const bag = createProductPacket({
-      geometry: bagG,
+      geometry: productBagG,
       materials: bagMaterial(i),
       scale: 4.25,
     });

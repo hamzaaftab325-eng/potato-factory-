@@ -55,36 +55,45 @@ export function chipGeometry(variant = 0, cooked = true, detail = true) {
   return g;
 }
 
-export function bagGeometry() {
+export function bagGeometry(detail = true) {
   const p = [],
     uv = [],
     idx = [],
-    W = 28,
-    H = 40;
+    W = detail ? 48 : 20,
+    H = detail ? 64 : 28;
   for (let b = 0; b < 2; b++)
     for (let j = 0; j <= H; j++)
       for (let i = 0; i <= W; i++) {
         const u = i / W,
           v = j / H,
           x = (u - 0.5) * 0.75,
-          y = (v - 0.5) * 1.07 + 0.003 * Math.sin(u * TAU * 6);
+          y = (v - 0.5) * 1.07 + 0.001 * Math.sin(u * TAU * 4);
+        const edgeDistance = Math.min(u, 1 - u),
+          endDistance = Math.min(v, 1 - v),
+          seam = endDistance < 0.048,
+          blend = Math.min(1, Math.max(0, (endDistance - 0.048) / 0.065)),
+          shoulder = blend * blend * (3 - 2 * blend);
         const inflate =
-          Math.pow(Math.max(0, Math.sin(u * Math.PI)), 0.52) *
-          Math.pow(Math.max(0, Math.sin(v * Math.PI)), 0.56);
-        const seam = v < 0.052 || v > 0.948;
-        const crimp = seam ? 0.0022 * Math.cos(u * TAU * 31) : 0;
+          Math.pow(Math.max(0, Math.sin(u * Math.PI)), 0.6) *
+          Math.pow(Math.max(0, Math.sin(v * Math.PI)), 0.64);
         const folds =
-          0.012 *
-            Math.sin(u * 34 + v * 13) *
-            Math.exp(-Math.min(u, 1 - u) * 10) +
-          0.009 *
-            Math.sin(u * 22 + v * 42) *
-            Math.exp(-Math.min(v, 1 - v) * 15);
-        const z =
-          (b ? -1 : 1) * (seam ? 0.007 : 0.154 * inflate + folds + 0.009) +
-          crimp -
-          (b ? 0.009 * Math.exp(-Math.abs(u - 0.5) * 100) * inflate : 0);
-        p.push(x * (1 - 0.085 * Math.sin(v * Math.PI)), y, z);
+          (0.009 * Math.sin(u * 36 + v * 19) * Math.exp(-edgeDistance * 14) +
+            0.005 * Math.sin(u * 22 - v * 26) * Math.exp(-endDistance * 18)) *
+          shoulder;
+        const gusset = 0.012 * Math.exp(-edgeDistance * 28) * inflate;
+        const depth = seam
+          ? 0.006
+          : Math.max(
+              0.006,
+              0.142 * inflate * shoulder + folds + 0.008 - gusset,
+            );
+        const crimp = seam ? 0.00065 * Math.cos(u * TAU * 20) : 0;
+        const rearFin = b
+          ? 0.005 * Math.exp(-Math.abs(u - 0.5) * 85) * shoulder
+          : 0;
+        const notch = 0.013 * Math.exp(-(((v - 0.912) / 0.009) ** 2));
+        const z = (b ? -1 : 1) * depth + crimp - rearFin;
+        p.push(x * (1 - 0.065 * Math.sin(v * Math.PI) - notch), y, z);
         uv.push(b ? 1 - u : u, v);
       }
   const stride = (W + 1) * (H + 1);

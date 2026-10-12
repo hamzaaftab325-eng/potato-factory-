@@ -1,23 +1,88 @@
 import * as THREE from "three";
+import { chipGeometry } from "./geometry.js";
 
 const COLOURS = [
-  ["#e4b849", "#bc861e"],
-  ["#c7583a", "#923c2a"],
-  ["#899350", "#566535"],
+  ["#e6bf63", "#b58432"],
+  ["#cc7157", "#91452f"],
+  ["#8f9d6b", "#556941"],
 ];
 const NAMES = ["GOLDEN SEA SALT", "SMOKY PAPRIKA", "GARDEN HERBS"];
+const LINES = [
+  ["GOLDEN", "SEA SALT"],
+  ["SMOKY", "PAPRIKA"],
+  ["GARDEN", "HERBS"],
+];
+const contours = new Map();
+function chipContour(variant) {
+  if (!contours.has(variant)) {
+    const geometry = chipGeometry(variant);
+    const p = geometry.attributes.position;
+    contours.set(
+      variant,
+      Array.from({ length: 41 }, (_, j) => [
+        p.getX(8 * 41 + j) * 940,
+        -p.getY(8 * 41 + j) * 840,
+      ]),
+    );
+    geometry.dispose();
+  }
+  return contours.get(variant);
+}
+function tracked(g, text, x, y, spacing = 3) {
+  const width =
+    [...text].reduce((sum, c) => sum + g.measureText(c).width, 0) +
+    (text.length - 1) * spacing;
+  let left = x - width / 2;
+  g.save();
+  g.textAlign = "left";
+  for (const c of text) {
+    g.fillText(c, left, y);
+    left += g.measureText(c).width + spacing;
+  }
+  g.restore();
+}
+function foilRelief() {
+  const c = document.createElement("canvas");
+  c.width = 256;
+  c.height = 384;
+  const g = c.getContext("2d");
+  g.fillStyle = "#808080";
+  g.fillRect(0, 0, 256, 384);
+  for (let x = 0; x < 256; x += 4) {
+    g.fillStyle = `rgb(${128 + Math.round(4 * Math.sin(x * 0.7))},${128 + Math.round(4 * Math.sin(x * 0.7))},${128 + Math.round(4 * Math.sin(x * 0.7))})`;
+    g.fillRect(x, 0, 1, 384);
+  }
+  for (const y of [8, 360]) {
+    g.fillStyle = "#989898";
+    g.fillRect(0, y, 256, 14);
+    for (let x = 0; x < 256; x += 3) {
+      g.fillStyle = "#616161";
+      g.fillRect(x, y, 1, 14);
+    }
+  }
+  return new THREE.CanvasTexture(c);
+}
 
 // Separate printed faces and an unprinted foil edge preserve a believable
 // pouch when viewed from either side. Artwork stays aligned with the web packs.
-export function createBagMaterials(flavour, textures, anisotropy = 4) {
+export function createBagMaterials(
+  flavour,
+  anisotropy = 4,
+  { resolution = 1 } = {},
+) {
+  const relief = foilRelief();
+  relief.anisotropy = anisotropy;
   const make = (back = false) => {
     const canvas = document.createElement("canvas");
-    canvas.width = 1024;
-    canvas.height = 1536;
+    canvas.width = Math.round(1024 * resolution);
+    canvas.height = Math.round(1536 * resolution);
     const g = canvas.getContext("2d");
+    g.scale(resolution, resolution);
     const [light, dark] = COLOURS[flavour];
-    const base = g.createLinearGradient(0, 0, 1024, 1536);
+    const ink = flavour === 0 ? "#253b30" : "#fff4db";
+    const base = g.createLinearGradient(110, 0, 920, 1536);
     base.addColorStop(0, light);
+    base.addColorStop(0.42, light);
     base.addColorStop(1, dark);
     g.fillStyle = base;
     g.fillRect(0, 0, 1024, 1536);
@@ -26,27 +91,30 @@ export function createBagMaterials(flavour, textures, anisotropy = 4) {
       g.save();
       g.translate(x, 0);
       g.rotate(-0.32);
-      g.fillRect(0, 0, 28, 2100);
+      g.fillRect(0, 0, 12, 2100);
       g.restore();
     }
-    g.fillStyle = "#fff4db";
+    g.fillStyle = ink;
     g.textAlign = "center";
     if (!back) {
+      g.font = '18px "DM Sans", Arial';
+      tracked(g, "THE ORIGINAL COLLECTION", 512, 235, 4);
       g.font = 'italic 285px "Instrument Serif", Georgia';
-      g.fillText("crisp", 502, 548);
-      g.font = '22px "DM Sans", Arial';
-      g.fillText("A LITTLE POTATO. A LOT OF POSSIBILITY.", 512, 622);
-      g.strokeStyle = "#fff4db80";
+      g.fillText("crisp", 501, 538);
+      g.font = '18px "DM Sans", Arial';
+      tracked(g, "CRAFTED FOR THE CRUNCH", 512, 615, 3);
+      g.strokeStyle = `${ink}80`;
       g.lineWidth = 2;
       g.beginPath();
-      g.moveTo(225, 676);
-      g.lineTo(799, 676);
+      g.moveTo(296, 661);
+      g.lineTo(728, 661);
       g.stroke();
-      g.font = '42px "DM Sans", Arial';
-      g.fillText(NAMES[flavour], 512, 760);
+      g.font = '38px "DM Sans", Arial';
+      tracked(g, LINES[flavour][0], 512, 731, 5);
+      tracked(g, LINES[flavour][1], 512, 788, 5);
       for (let i = 0; i < 3; i++) {
         g.save();
-        g.translate(425 + i * 93, 1012 - i * 22);
+        g.translate(401 + i * 115, 1049 - i * 26);
         g.rotate(-0.28 + i * 0.21);
         g.shadowColor = "#5a35043b";
         g.shadowBlur = 16;
@@ -57,10 +125,16 @@ export function createBagMaterials(flavour, textures, anisotropy = 4) {
         chip.addColorStop(1, "#b67828");
         g.fillStyle = chip;
         g.beginPath();
-        g.ellipse(0, 0, 160, 104, 0, 0, Math.PI * 2);
+        chipContour(i).forEach(([x, y], n) =>
+          n ? g.lineTo(x, y) : g.moveTo(x, y),
+        );
+        g.closePath();
         g.fill();
         g.shadowBlur = 0;
         g.shadowOffsetY = 0;
+        g.strokeStyle = "#a76b2e60";
+        g.lineWidth = 1.5;
+        g.stroke();
         for (let n = 0; n < 90; n++) {
           const a = n * 2.399,
             r = Math.sqrt(n / 90);
@@ -84,13 +158,19 @@ export function createBagMaterials(flavour, textures, anisotropy = 4) {
           }
         g.restore();
       }
-      g.fillStyle = "#fff4db";
-      g.font = '24px "DM Sans", Arial';
-      g.fillText("THE ORIGINAL COLLECTION", 512, 1250);
-      g.font = '30px "DM Sans", Arial';
-      g.fillText("180 g", 512, 1312);
+      g.fillStyle = ink;
+      g.font = '19px "DM Sans", Arial';
+      tracked(g, "POTATO CHIPS", 512, 1243, 4);
+      g.strokeStyle = `${ink}80`;
+      g.lineWidth = 1.5;
+      g.beginPath();
+      g.moveTo(449, 1286);
+      g.lineTo(575, 1286);
+      g.stroke();
+      g.font = '28px "DM Sans", Arial';
+      tracked(g, "180 g", 512, 1341, 2);
     } else {
-      g.font = 'italic 125px "Instrument Serif", Georgia';
+      g.font = 'italic 135px "Instrument Serif", Georgia';
       g.fillText("crisp", 512, 280);
       g.font = '32px "DM Sans", Arial';
       g.fillText(NAMES[flavour], 512, 358);
@@ -122,12 +202,12 @@ export function createBagMaterials(flavour, textures, anisotropy = 4) {
         if ((i * 13 + i * i) % 7 > 2)
           g.fillRect(293 + i * 3.5, 1125, 1 + (i % 3), 113);
       g.textAlign = "center";
-      g.fillStyle = "#fff4db";
+      g.fillStyle = ink;
       g.font = '23px "DM Sans", Arial';
       g.fillText("CRISP / PAKISTAN", 512, 1330);
     }
     for (const y of [30, 1454]) {
-      g.fillStyle = "#ebd4a775";
+      g.fillStyle = "#f3e1b780";
       g.fillRect(0, y, 1024, 52);
       g.strokeStyle = "#60462b40";
       g.lineWidth = 1;
@@ -143,19 +223,19 @@ export function createBagMaterials(flavour, textures, anisotropy = 4) {
     map.anisotropy = anisotropy;
     return new THREE.MeshPhysicalMaterial({
       map,
-      metalness: 0.18,
-      roughness: 0.4,
-      clearcoat: 0.45,
-      clearcoatRoughness: 0.34,
-      bumpMap: textures.paper,
-      bumpScale: 0.00035,
+      metalness: 0.14,
+      roughness: 0.36,
+      clearcoat: 0.55,
+      clearcoatRoughness: 0.24,
+      bumpMap: relief,
+      bumpScale: 0.0007,
     });
   };
   const edge = new THREE.MeshPhysicalMaterial({
     color: COLOURS[flavour][1],
-    metalness: 0.28,
-    roughness: 0.39,
-    clearcoat: 0.4,
+    metalness: 0.22,
+    roughness: 0.42,
+    clearcoat: 0.3,
   });
   return [make(false), make(true), edge];
 }

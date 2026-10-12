@@ -10,7 +10,7 @@ The scene now includes a fenced factory campus, receiving yard, security cabin a
 
 The process moves through metered receiving, filtered washing, eight abrasive peeling rollers, an enclosed centrifugal slicer, slice rinsing, continuous frying, draining and cooling, three flavour drums, elevated weighing, film forming, sealing, inspection and carton packing. Blue, teal and graphite frames contrast with stainless food-contact surfaces and three flavour colours. Procedural aggregate, paint, brushed metal, food skin, kraft paper and wood give the surfaces different responses to light.
 
-The collection uses 180 g concept family bags. Printed front and back film, sealed edges, folds and rounded volume share the same artwork across the production line and product view. Eight bags fill each carton over a sixteen-second case cycle. Flaps close, tape advances and a second vacuum carriage transfers finished cartons to staging pallets.
+The collection uses 180 g concept family bags. Rounded shoulders, flat crimped heat seals, side folds, a rear fin and a tear notch give each pouch a filled-film silhouette. Subtle foil relief and coated print share one flavour-specific design across the loader, collection, packing film rolls, forming web and finished cartons. Display pouches use 6,370 vertices and 1024 × 1536 artwork; production pouches preserve the dimensions with 1,218 vertices and half-resolution artwork. Eight bags fill each carton over a sixteen-second case cycle. Flaps close, tape advances and a second vacuum carriage transfers finished cartons to staging pallets.
 
 Dispatch includes a cab-over rigid box truck with a sculpted cab, open window apertures, wheel-arch cutouts, steering pivots, treaded tyres, rear dual wheels, wipers, mirrors, glazing, lights, chassis rails, hinged rear doors and pallet loads. The receiving tipper carries a textured mound of potatoes with varied shapes and skin colours, a top-hinged tailgate and moving hydraulic rams. Potatoes fall onto the powered receiving elevator while its bed tips. The outbound truck arrives, stops in staging, unlocks and opens two rear doors outward to 270 degrees against the body, reverses, secures at the dock, connects the bridge and receives two forklift-carried pallets. After loading, the bridge retracts and the sectional dock door follows its overhead track closed. The restraint releases, the truck pulls clear to a separate stop, then the cargo leaves close and latch before road departure. The arrival and exit use separate road lanes and explicit tangent-continuous road arcs. Turning aprons are widened, posts sit outside the vehicle paths and the receiving driveway is clear of raised walkways. Wheel rotation follows signed travel distance; front wheels use separate inner and outer steering angles with eased steering movement. The receiving vehicle turns, reverses into position, unloads and leaves without changing heading abruptly. The checkpost stands across the road, away from the truck apron. Both trucks reset outside the factory perimeter.
 
@@ -54,7 +54,7 @@ npm run assets:generate
 
 The deterministic Python generator creates raw/cooked food geometry at two detail levels and tileable normal/roughness maps. All assets and sounds are original code-generated content.
 
- Open the local Vite URL through a web server; ES modules cannot run by opening the HTML file directly.
+Open the local Vite URL through a web server; ES modules cannot run by opening the HTML file directly.
 
 | Setting               | Value           |
 | --------------------- | --------------- |
@@ -69,30 +69,30 @@ The Git repository is `hamzaaftab325-eng/potato-factory-`; the production branch
 
 ## Source guide
 
-| File                           | Purpose                                               |
-| ------------------------------ | ----------------------------------------------------- |
-| `index.html`                   | Page content and six scroll chapters                  |
-| `src/lib/page.js`              | Scroll, navigation, collection and controls           |
-| `src/lib/journey.js`           | Camera presets and flavour definitions                |
-| `src/factory/campus.js`        | Architecture, trucks, dock, forklift and drone tour   |
-| `src/factory/vehicle-paths.js` | Explicit-radius truck route geometry                  |
-| `src/factory/effects.js`       | Bounded wash, peel, vapour and packing accents        |
-| `src/factory/render-budget.js` | Adaptive drawing-buffer budget and zoom limits        |
-| `src/factory/batching.js`      | Rigid animated-assembly batching                      |
-| `src/factory/machines.js`      | Preparation, cutting, frying and transfers            |
-| `src/factory/details.js`       | Weighing, guarding and machine details                |
-| `src/factory/shipping.js`      | Eight-bag cartons and pallet transfer                 |
-| `src/factory/packaging.js`     | Printed front and back bag materials                  |
-| `src/factory/geometry.js`      | Food and bag geometry                                 |
-| `src/factory/surfaces.js`      | Procedural surface textures                           |
-| `src/factory/timing.js`        | Machine, case and logistics phases                    |
-| `src/factory/audio.js`         | Synchronized playback and spatial mixing              |
-| `src/factory/audio-synthesis.js` | Pure procedural sound generation                     |
-| `src/factory/audio-worker.js`  | Sound preparation away from the render thread         |
-| `src/factory/industrial.js`    | Oil skid, service connections, drainage and inspection |
-| `src/factory/food-material.js` | Continuous peeling and frying transformations         |
-| `tools/generate_factory_assets.py` | Reproducible Python geometry and surface generator |
-| `src/factory/scene.js`         | Rendering, camera, controls and animation integration |
+| File                               | Purpose                                                |
+| ---------------------------------- | ------------------------------------------------------ |
+| `index.html`                       | Page content and six scroll chapters                   |
+| `src/lib/page.js`                  | Scroll, navigation, collection and controls            |
+| `src/lib/journey.js`               | Camera presets and flavour definitions                 |
+| `src/factory/campus.js`            | Architecture, trucks, dock, forklift and drone tour    |
+| `src/factory/vehicle-paths.js`     | Explicit-radius truck route geometry                   |
+| `src/factory/effects.js`           | Bounded wash, peel, vapour and packing accents         |
+| `src/factory/render-budget.js`     | Adaptive drawing-buffer budget and zoom limits         |
+| `src/factory/batching.js`          | Rigid animated-assembly batching                       |
+| `src/factory/machines.js`          | Preparation, cutting, frying and transfers             |
+| `src/factory/details.js`           | Weighing, guarding and machine details                 |
+| `src/factory/shipping.js`          | Eight-bag cartons and pallet transfer                  |
+| `src/factory/packaging.js`         | Printed front and back bag materials                   |
+| `src/factory/geometry.js`          | Food and bag geometry                                  |
+| `src/factory/surfaces.js`          | Procedural surface textures                            |
+| `src/factory/timing.js`            | Machine, case and logistics phases                     |
+| `src/factory/audio.js`             | Synchronized playback and spatial mixing               |
+| `src/factory/audio-synthesis.js`   | Pure procedural sound generation                       |
+| `src/factory/audio-worker.js`      | Sound preparation away from the render thread          |
+| `src/factory/industrial.js`        | Oil skid, service connections, drainage and inspection |
+| `src/factory/food-material.js`     | Continuous peeling and frying transformations          |
+| `tools/generate_factory_assets.py` | Reproducible Python geometry and surface generator     |
+| `src/factory/scene.js`             | Rendering, camera, controls and animation integration  |
 
 ## Revision status
 
@@ -106,8 +106,6 @@ Mechanism references: [Vanmark's roller peeler](https://www.vanmark.com/en-us/Eq
 
 Three.js is MIT licensed. Instrument Serif and DM Sans use the SIL Open Font License. License texts remain in `docs/licenses/`.
 
-
 The final performance pass uses stable render deadlines, one composed render per frame even when adapting resolution, reduced shadow cadence on slower devices, dynamic conveyor instance buffers and asynchronous shader warmup before reveal. Unused SVG loader chips, their generator, the former poster, the unused relief export and unused material clones have been removed. The loader remains animated during assembly, with sharper supersampled packet artwork, a gentle turn, floating chips and restrained light motion. Focused tests cover monitor refresh cadences, stalls, quality limits, UI flows and loader lifecycle; frame rate on the owner's desktop GPU has not been measured.
 
-
-The loading-only timing fix waits for a displayed packet, then allows a brief 1.8-second motion intro before automatic reveal. Skip/Enter, Escape, timeout and reduced-motion exits stay immediate. A compositor animation keeps the displayed packet moving while the main thread initializes the factory. A baked transparent fallback uses the original pouch geometry, printed canvas artwork and chip meshes when an extra WebGL context cannot be created. Regenerate it with `node tools/bake_loading_packet.mjs` and the optional development package `@napi-rs/canvas`; the baked asset is committed, so deployment needs no new dependencies.
+The loading-only timing fix waits for a displayed packet, then allows a brief 1.8-second motion intro before automatic reveal. Skip/Enter, Escape, timeout and reduced-motion exits stay immediate. A compositor animation keeps the displayed packet moving while the main thread initializes the factory. Transparent 1800 × 1750 fallback images use the shared pouch geometry, printed canvas artwork and chip meshes. The loader and collection reuse the same Sea Salt image; Paprika and Herbs have matching images for their collection states. These replace the previous SVG packs and separate loader image. Regenerate them with `node tools/bake_product_packets.mjs 0` (or `1`/`2`) and the optional development package `@napi-rs/canvas`; the assets are committed, so deployment needs no new dependencies.

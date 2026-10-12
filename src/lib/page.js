@@ -258,7 +258,7 @@ export function initPage({
     $("#product-personality").textContent = choice.personality;
     $("#product-number").textContent =
       `${String(index + 1).padStart(2, "0")} / 03`;
-    $("#product-poster").src = `/packs/${choice.pack}.svg`;
+    $("#product-poster").src = `/packs/${choice.pack}.png`;
     $("#product-poster").alt = `${choice.name} CRISP concept packaging.`;
     $("#experience-status").textContent =
       `Showing ${choice.name} concept packaging.`;

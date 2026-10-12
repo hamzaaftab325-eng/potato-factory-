@@ -47,3 +47,32 @@ test("Python slices retain thin raw faces and six distinct cooked silhouettes", 
   }
   assert.equal(outlines.size, 6);
 });
+
+test("production pouches preserve the display silhouette with fewer vertices", () => {
+  const display = bagGeometry(),
+    production = bagGeometry(false);
+  display.computeBoundingBox();
+  production.computeBoundingBox();
+  assert.ok(
+    production.attributes.position.count <
+      display.attributes.position.count / 4,
+  );
+  for (const axis of ["x", "y", "z"])
+    for (const edge of ["min", "max"])
+      assert.ok(
+        Math.abs(
+          display.boundingBox[edge][axis] - production.boundingBox[edge][axis],
+        ) < 0.002,
+      );
+  for (const g of [display, production]) {
+    assert.deepEqual(
+      g.groups.map((group) => group.materialIndex),
+      [0, 1, 2],
+    );
+    assert.equal(
+      g.groups.reduce((sum, group) => sum + group.count, 0),
+      g.index.count,
+    );
+    g.dispose();
+  }
+});

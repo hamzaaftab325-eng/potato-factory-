@@ -164,7 +164,7 @@ test("flavour choice updates the bag, notes, keyboard selection and matching fac
     await t.ui.start();
     t.$('[data-choice="1"]').click();
     assert.equal(t.state.flavour, 1);
-    assert.ok(t.$("#product-poster").src.endsWith("/packs/paprika.svg"));
+    assert.ok(t.$("#product-poster").src.endsWith("/packs/paprika.png"));
     assert.equal(
       t.$('[data-flavour="1"]').getAttribute("aria-pressed"),
       "true",
@@ -303,7 +303,7 @@ test("a failed 3D engine leaves a usable page, still packaging and flavour contr
     assert.equal(t.$("#scene-rig").hidden, true);
     assert.match(t.$("#experience-status").textContent, /Still previews/);
     t.$('[data-flavour="2"]').click();
-    assert.ok(t.$("#product-poster").src.endsWith("/packs/herbs.svg"));
+    assert.ok(t.$("#product-poster").src.endsWith("/packs/herbs.png"));
     assert.equal(t.$("#play-toggle").disabled, true);
   } finally {
     t.close();

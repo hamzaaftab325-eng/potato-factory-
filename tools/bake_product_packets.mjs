@@ -1,4 +1,4 @@
-// Optional offline bake of the shared collection model; not required by Vercel.
+// Optional offline bake of the shared collection models; not required by Vercel.
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
@@ -22,6 +22,10 @@ try {
 }
 const { createCanvas, GlobalFonts } = canvasLibrary;
 const root = fileURLToPath(new URL("../", import.meta.url)).replace(/\/$/, "");
+const flavour = Number(process.argv[2] ?? 0);
+const names = ["sea-salt", "paprika", "herbs"];
+if (!Number.isInteger(flavour) || !names[flavour])
+  throw new Error("Choose a flavour: 0 (sea salt), 1 (paprika), or 2 (herbs).");
 for (const [file, family] of [
   ["instrument-serif-latin-400-normal", "Instrument Serif"],
   ["instrument-serif-latin-400-italic", "Instrument Serif"],
@@ -34,10 +38,10 @@ for (const [file, family] of [
   GlobalFonts.registerFromPath(src, family);
 }
 globalThis.document = { createElement: () => createCanvas(1, 1) };
-const canvas = createCanvas(900, 875),
+const canvas = createCanvas(1800, 1750),
   ctx = canvas.getContext("2d"),
-  W = 900,
-  H = 875;
+  W = canvas.width,
+  H = canvas.height;
 const image = ctx.createImageData(W, H),
   depth = new Float32Array(W * H).fill(Infinity);
 const camera = new THREE.PerspectiveCamera(32, W / H, 0.1, 10);
@@ -46,7 +50,7 @@ camera.lookAt(0, -0.01, 0);
 camera.updateMatrixWorld();
 const packet = createProductPacket({
   geometry: bagGeometry(),
-  materials: createBagMaterials(0, { paper: null }, 1),
+  materials: createBagMaterials(flavour, 1),
 });
 packet.position.y = 0.025;
 const models = [packet];
@@ -182,11 +186,11 @@ for (const model of models) {
   }
 }
 ctx.putImageData(image, 0, 0);
-fs.mkdirSync(`${root}/public/loader`, { recursive: true });
+fs.mkdirSync(`${root}/public/packs`, { recursive: true });
 fs.writeFileSync(
-  `${root}/public/loader/collection-packet.png`,
+  `${root}/public/packs/${names[flavour]}.png`,
   canvas.toBuffer("image/png"),
 );
 console.log(
-  "Baked the original product pouch and chip geometry, using the original packet canvas artwork.",
+  `Baked ${names[flavour]} from the shared pouch, chip geometry and printed artwork.`,
 );

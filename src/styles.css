@@ -942,8 +942,8 @@ body.scene-inspecting canvas:active {
   inset: 34px 0 48px;
 }
 .product-stage .product-poster {
-  width: 56%;
-  height: 82%;
+  width: 100%;
+  height: 100%;
   mask-image: none;
   opacity: 1;
 }

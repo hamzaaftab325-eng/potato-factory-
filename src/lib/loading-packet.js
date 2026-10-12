@@ -58,19 +58,8 @@ export function createPacketLoader(canvas, { reducedMotion = false } = {}) {
   rim.position.set(1, 2, -2);
   scene.add(rim);
 
-  const paperCanvas = document.createElement("canvas");
-  paperCanvas.width = paperCanvas.height = 128;
-  const ctx = paperCanvas.getContext("2d");
-  ctx.fillStyle = "#bdb6a4";
-  ctx.fillRect(0, 0, 128, 128);
-  ctx.fillStyle = "#d5cfbf";
-  for (let y = 0; y < 128; y += 3)
-    for (let x = (y % 2) * 2; x < 128; x += 5) ctx.fillRect(x, y, 1, 1);
-  const paper = new THREE.CanvasTexture(paperCanvas);
-  paper.wrapS = paper.wrapT = THREE.RepeatWrapping;
   const materials = createBagMaterials(
     0,
-    { paper },
     Math.min(8, renderer.capabilities.getMaxAnisotropy()),
   );
   const packet = createProductPacket({ geometry: bagGeometry(), materials });
@@ -179,7 +168,7 @@ export function createPacketLoader(canvas, { reducedMotion = false } = {}) {
       observer.disconnect();
       const geometries = new Set(),
         ownedMaterials = new Set(),
-        ownedTextures = new Set([paper]);
+        ownedTextures = new Set();
       scene.traverse((o) => {
         if (o.geometry) geometries.add(o.geometry);
         for (const material of [o.material].flat().filter(Boolean)) {
