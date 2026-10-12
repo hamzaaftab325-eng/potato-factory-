@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { bagPhase, smooth } from "./timing.js";
 export function addFactoryDetails(C) {
   const {
     scene,
@@ -18,7 +19,12 @@ export function addFactoryDetails(C) {
     drops = [],
     splash = [],
     rolling = [],
-    fanRotors = [];
+    fanRotors = [],
+    weighGates = [],
+    weighDrops = [];
+  const updateDummy = new THREE.Object3D();
+  const incline = new THREE.Quaternion(),
+    beltAxis = new THREE.Vector3(0, 0, 1);
   const tau = Math.PI * 2;
   const enamel = new THREE.MeshPhysicalMaterial({
     color: "#2b666b",
@@ -313,13 +319,69 @@ export function addFactoryDetails(C) {
     food.castShadow = true;
     scene.add(food);
     dynamic.push(food);
+    food.frustumCulled = cleats.frustumCulled = false;
+    food.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    cleats.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     rolling.push({ A, B, cleats, food, angle });
     for (let xx of [8.3, 9.38]) {
       const yy = A.y + ((xx - A.x) / (B.x - A.x)) * (B.y - A.y);
       box(xx, (yy + 0.6) / 2, z - 0.35, 0.07, yy - 0.6, 0.07, M.chrome);
     }
-    funnel(x, 4.35, z, 1.19, 1.19, 0.48);
-    textPlate("PRECISION WEIGH", x, 4.43, z + 0.61, 0.86, 0.12);
+    // A radial dispersion cone feeds individual weigh hoppers, then a common
+    // collection cone gathers the selected combination into the filling tube.
+    mesh(
+      new THREE.CylinderGeometry(0.04, 0.49, 0.25, 32, 1, true),
+      M.steel,
+      x,
+      4.35,
+      z,
+    );
+    const collectMaterial = M.steel.clone();
+    collectMaterial.side = THREE.DoubleSide;
+    mesh(
+      new THREE.CylinderGeometry(0.7, 0.13, 0.39, 40, 1, true),
+      collectMaterial,
+      x,
+      3.6,
+      z,
+    );
+    for (let j = 0; j < 10; j++) {
+      const angle = (j * tau) / 10;
+      const tray = new THREE.Group();
+      tray.position.set(
+        x + Math.cos(angle) * 0.38,
+        4.2,
+        z + Math.sin(angle) * 0.38,
+      );
+      tray.rotation.y = -angle;
+      scene.add(tray);
+      box(0, 0, 0, 0.35, 0.023, 0.17, M.steel, tray);
+      for (const side of [-1, 1])
+        box(0, 0.033, side * 0.086, 0.35, 0.07, 0.014, M.steel, tray);
+    }
+    for (const dx of [-0.66, 0.66])
+      box(x + dx, 3.94, z + 0.64, 0.034, 1.05, 0.034, M.chrome);
+    box(x, 4.43, z + 0.64, 1.35, 0.16, 0.04, M.teal);
+    textPlate("PRECISION WEIGH", x, 4.43, z + 0.665, 0.86, 0.12);
+    const portions = new THREE.InstancedMesh(
+      chipG,
+      [M.chip, M.redChip, M.herbChip][f],
+      42,
+    );
+    portions.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    portions.frustumCulled = false;
+    scene.add(portions);
+    dynamic.push(portions);
+    weighDrops.push({
+      food: portions,
+      f,
+      x,
+      z,
+      bounds: new THREE.Box3(
+        new THREE.Vector3(x - 0.9, 3.25, z - 0.9),
+        new THREE.Vector3(x + 0.9, 4.2, z + 0.9),
+      ),
+    });
     for (let i = 0; i < 10; i++) {
       const a = (i * tau) / 10;
       const bucket = mesh(
@@ -330,6 +392,17 @@ export function addFactoryDetails(C) {
         z + Math.sin(a) * 0.57,
       );
       bucket.rotation.y = -a;
+      const gate = new THREE.Group();
+      gate.position.set(x + Math.cos(a) * 0.57, 3.83, z + Math.sin(a) * 0.57);
+      gate.rotation.y = -a;
+      scene.add(gate);
+      const flap = new THREE.Group();
+      flap.position.z = -0.07;
+      gate.add(flap);
+      box(0, 0, 0.075, 0.15, 0.018, 0.15, M.steel, flap);
+      cylinder(0, 0, 0, 0.018, 0.21, M.chrome, gate, "x");
+      dynamic.push(gate);
+      weighGates.push({ flap, f, i });
       const rim = mesh(
         new THREE.TorusGeometry(0.16, 0.014, 5, 6),
         M.chrome,
@@ -421,7 +494,43 @@ export function addFactoryDetails(C) {
   }
   return {
     dynamic,
-    update(t) {
+    update(t, frustum) {
+      for (const { flap, f, i } of weighGates) {
+        const phase = bagPhase(t, f);
+        // A selected combination discharges into the common filling tube.
+        const chosen = i % 3 !== 1;
+        flap.rotation.x = chosen
+          ? -1.05 *
+            smooth((phase - 0.04) / 0.06) *
+            (1 - smooth((phase - 0.22) / 0.06))
+          : 0;
+      }
+      for (const d of weighDrops) {
+        const phase = bagPhase(t, d.f);
+        d.food.visible =
+          phase > 0.07 &&
+          phase < 0.35 &&
+          (!frustum || frustum.intersectsBox(d.bounds));
+        if (!d.food.visible) continue;
+        for (let i = 0; i < 42; i++) {
+          const u = Math.min(
+            1,
+            Math.max(0, (phase - 0.07 - (i % 7) * 0.009) / 0.22),
+          );
+          const angle = (Math.floor(i / 7) * 1.667 * tau) / 10;
+          const radius = 0.53 * (1 - u);
+          updateDummy.position.set(
+            d.x + Math.cos(angle) * radius,
+            3.84 - 0.58 * u * u,
+            d.z + Math.sin(angle) * radius,
+          );
+          updateDummy.rotation.set(i + u, Math.sin(i), i * 2.399);
+          updateDummy.scale.setScalar(u >= 1 ? 0 : 0.29);
+          updateDummy.updateMatrix();
+          d.food.setMatrixAt(i, updateDummy.matrix);
+        }
+        d.food.instanceMatrix.needsUpdate = true;
+      }
       for (const d of drops) {
         const u = (t * (d.drum === undefined ? 4 : 2) + d.offset) % 1;
         if (d.drum === undefined) {
@@ -438,11 +547,17 @@ export function addFactoryDetails(C) {
           );
         }
         d.o.rotation.set(d.angle + u * tau, u * 3.14, d.angle);
-        d.o.scale.setScalar(0.62);
+        d.o.scale.setScalar(0.33);
       }
       fanRotors.forEach((o) => (o.rotation.y = t * tau * 3));
-      const dummy = new THREE.Object3D();
+      const dummy = updateDummy;
       for (const e of rolling) {
+        e.bounds ??= new THREE.Box3()
+          .setFromPoints([e.A, e.B])
+          .expandByScalar(0.65);
+        e.food.visible = e.cleats.visible =
+          !frustum || frustum.intersectsBox(e.bounds);
+        if (!e.food.visible) continue;
         for (let i = 0; i < 24; i++) {
           const u = (i / 24 + t * 0.5) % 1;
           dummy.position.lerpVectors(e.A, e.B, u);
@@ -457,8 +572,11 @@ export function addFactoryDetails(C) {
           dummy.position.lerpVectors(e.A, e.B, u);
           dummy.position.y += 0.09;
           dummy.position.z += Math.sin(i * 7) * 0.18;
-          dummy.rotation.set(-Math.PI / 2, Math.sin(i) * 0.2, e.angle);
-          dummy.scale.setScalar(0.58);
+          dummy.rotation.set(-Math.PI / 2, Math.sin(i) * 0.08, i * 2.399);
+          dummy.quaternion.premultiply(
+            incline.setFromAxisAngle(beltAxis, e.angle),
+          );
+          dummy.scale.setScalar(0.33);
           dummy.updateMatrix();
           e.food.setMatrixAt(i, dummy.matrix);
         }

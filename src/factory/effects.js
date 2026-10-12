@@ -125,7 +125,7 @@ export function addFryingEffects(scene, random, mobile = false) {
           dummy.position.set(
             s.x + s.drift * life + Math.sin(life * 6 + s.phase) * 0.025,
             1.67 + life * 0.95,
-            s.z + life * 0.16,
+            s.z * (1 - life * 0.72) - life * 0.2,
           );
         dummy.quaternion
           .copy(camera.quaternion)

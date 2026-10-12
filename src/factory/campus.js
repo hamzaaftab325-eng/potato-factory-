@@ -3,6 +3,7 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import { potatoGeometry } from "./geometry.js";
 import {
   campusPhase,
+  DOCK,
   LOGISTICS_PHASE_SECONDS,
   logisticsAt,
   smooth,
@@ -323,14 +324,20 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
     }
   }
   // Bumpers, dock leveller, wheel restraint and loading-bay signal.
-  for (const z of [-1.52, 1.52]) B(35.5, 1.22, z, 0.16, 0.62, 0.22, M.rubber);
+  for (const z of [-1.52, 1.52]) B(35.5, 1.0, z, 0.16, 0.62, 0.22, M.rubber);
   const bridge = new THREE.Group();
   bridge.position.set(35.25, 1.32, 0);
   group.add(bridge);
   B(0.24, 0, 0, 0.5, 0.05, 2.45, M.dark, bridge);
   B(0.49, 0.025, 0, 0.09, 0.025, 2.45, M.chrome, bridge);
+  const dockPanels = [];
+  for (let i = 0; i < 8; i++) {
+    const panel = B(35.05, 1.52 + i * 0.43, 0, 0.065, 0.42, 2.88, P.white);
+    dockPanels.push(panel);
+  }
+  for (const z of [-1.52, 1.52]) B(35.02, 3.08, z, 0.095, 3.6, 0.085, M.steel);
   const restraint = new THREE.Group();
-  restraint.position.set(37.0, 0.11, 1.78);
+  restraint.position.set(37.24, 0.11, 1.54);
   group.add(restraint);
   B(0, 0, 0, 1.55, 0.12, 0.16, M.yellow, restraint);
   B(0, 0.19, -0.13, 0.13, 0.44, 0.42, M.yellow, restraint);
@@ -794,17 +801,17 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
       B(1.94, 2.88, 0, 0.055, 3, 2.65, paint, body);
       for (const side of [-1, 1]) {
         const door = new THREE.Group();
-        door.position.set(-3.66, 1.37, side * 1.32);
+        door.position.set(-3.72, 1.37, side * 1.41);
         body.add(door);
-        B(0, 1.5, -side * 0.655, 0.065, 2.98, 1.31, paint, door);
+        B(0, 1.5, -side * 0.7, 0.065, 2.98, 1.4, paint, door);
         // Continuous rubber seals, hinge pins and retainers make the rear leaves
         // read as insulated cargo doors at both the closed and folded positions.
-        for (const z of [-side * 0.03, -side * 1.28])
+        for (const z of [-side * 0.03, -side * 1.37])
           B(0.038, 1.5, z, 0.018, 2.9, 0.022, M.rubber, door);
         for (const y of [0.25, 1.5, 2.74])
           C(-0.006, y, 0, 0.025, 0.19, M.chrome, door);
         for (const y of [0.07, 2.91])
-          B(-0.04, y, -side * 0.655, 0.025, 0.06, 1.31, M.steel, door);
+          B(-0.04, y, -side * 0.7, 0.025, 0.06, 1.4, M.steel, door);
         C(-0.052, 1.5, -side * 0.81, 0.021, 2.48, M.chrome, door);
         for (const y of [0.3, 1.5, 2.7])
           B(-0.055, y, 0, 0.07, 0.09, 0.19, M.steel, door);
@@ -877,6 +884,10 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
       crop.instanceMatrix.needsUpdate = true;
       crop.instanceColor.needsUpdate = true;
       crop.computeBoundingSphere();
+      potatoLoad.children.forEach((o) => {
+        o.position.y -= 1.37;
+      });
+      potatoLoad.position.y = 1.37;
       const hinge = new THREE.Vector3(-3.66, 1.3, 0);
       body.children.forEach((o) => o.position.sub(hinge));
       body.position.copy(hinge);
@@ -941,9 +952,27 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
   B(-0.48, 0.9, 0, 0.52, 0.6, 1.05, M.dark, forklift);
   B(0.1, 1.15, 0, 0.43, 0.19, 0.51, M.rubber, forklift);
   B(-0.05, 1.42, 0, 0.11, 0.54, 0.47, M.rubber, forklift);
+  const forkliftWheels = [];
   for (const z of [-0.5, 0.5])
-    for (const x of [-0.52, 0.51])
-      C(x, 0.23, z, 0.23, 0.16, M.rubber, forklift, "z");
+    for (const x of [-0.52, 0.51]) {
+      const wheel = new THREE.Group();
+      wheel.position.set(x, 0.23, z);
+      forklift.add(wheel);
+      C(0, 0, 0, 0.23, 0.16, M.rubber, wheel, "z");
+      C(0, 0, Math.sign(z) * 0.09, 0.105, 0.025, M.steel, wheel, "z");
+      for (let k = 0; k < 6; k++)
+        C(
+          Math.cos((k * Math.PI) / 3) * 0.07,
+          Math.sin((k * Math.PI) / 3) * 0.07,
+          Math.sign(z) * 0.11,
+          0.015,
+          0.015,
+          M.dark,
+          wheel,
+          "z",
+        );
+      forkliftWheels.push(wheel);
+    }
   for (const z of [-0.49, 0.49]) {
     B(0.6, 1.45, z, 0.075, 2.4, 0.075, M.dark, forklift);
     B(-0.47, 1.57, z, 0.045, 1.8, 0.055, M.dark, forklift);
@@ -969,7 +998,7 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
   B(0.25, 1.39, 0, 0.4, 0.075, 0.37, P.teal, forklift);
   // Turning envelopes stay inside the cleared aprons, separate from the
   // building, walkway and posts. Straight segments share their arc tangents.
-  const STAGING_X = 54;
+  const STAGING_X = DOCK.stagingX;
   const arrival = path(
     roadLine([82, 13.4], [51.5, 13.4]),
     arc([51.5, 6.7], 6.7, Math.PI / 2, Math.PI * 1.5),
@@ -1081,11 +1110,13 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
       batchRigidParts(d.latch);
     });
   }
-  batchRigidParts(forklift, [forks]);
+  batchRigidParts(forklift, [forks, ...forkliftWheels]);
+  forkliftWheels.forEach((w) => batchRigidParts(w));
   batchRigidParts(forks, [carried]);
   [carried, waiting, ...loads].forEach((p) => batchRigidParts(p));
   const dynamic = [
     roof,
+    ...dockPanels,
     bridge,
     restraint,
     gate,
@@ -1117,33 +1148,58 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
         truck.g.position.set(STAGING_X + (38.92 - STAGING_X) * s.reverse, 0, 0);
         truck.g.rotation.y = 0;
         truck.steer.forEach((o) => (o.rotation.y = 0));
-      } else if (!s.readyToDepart) {
-        truck.g.position.set(38.92, 0, 0);
+      } else if (t < DOCK.pullStart) {
+        truck.g.position.set(DOCK.parkedX, 0, 0);
         truck.g.rotation.y = 0;
-      } else if (t < 56) {
-        truck.g.position.set(38.92 + (STAGING_X - 38.92) * s.departure, 0, 0);
+      } else if (!s.readyToDepart) {
+        // Folded leaves stay secured while the vehicle clears the dock. Closing
+        // only starts at this separate stop, outside the building's swing area.
+        truck.g.position.set(
+          DOCK.parkedX + (DOCK.clearX - DOCK.parkedX) * s.pullClear,
+          0,
+          0,
+        );
+        truck.g.rotation.y = 0;
+      } else if (t < DOCK.exitStart) {
+        truck.g.position.set(
+          DOCK.clearX + (STAGING_X - DOCK.clearX) * s.departure,
+          0,
+          0,
+        );
         truck.g.rotation.y = 0;
       } else along(truck, exit, s.exit);
       roll(truck, t);
       signals(truck, time, t >= 12 && t < 18);
       truck.g.visible = s.visible;
       truck.doors.forEach(({ o, side, latch }, i) => {
-        // Positive rotation of the near hinge swings the leaf behind the
-        // truck. Two staggered leaves open outside to a full 180 degrees.
-        o.rotation.y = side * s.doorOpen[i] * Math.PI;
+        // Offset external hinges let the leaves fold 270 degrees against the
+        // outside body sides, keeping the dock and forklift opening clear.
+        o.rotation.y = side * s.doorOpen[i] * Math.PI * 1.5;
         latch.rotation.x = -side * s.unlocked * Math.PI * 0.38;
       });
       truck.rearLights.forEach(
         (o) => (o.material = s.brake ? brakeLamp : M.red),
       );
       loads.forEach((p, i) => (p.visible = s.cargo[i]));
+      dockPanels.forEach((panel, i) => {
+        const height = 1.52 + i * 0.43 + s.dockDoor * 3.9;
+        const bend = Math.max(0, height - 4.75);
+        const angle = Math.min(Math.PI / 2, bend / 0.32);
+        panel.position.set(
+          34.73 + 0.32 * Math.cos(angle) - Math.max(0, bend - Math.PI * 0.16),
+          Math.min(height, 4.75) + 0.32 * Math.sin(angle),
+          0,
+        );
+        panel.rotation.z = angle;
+      });
       bridge.rotation.z = -(1 - s.bridge) * 0.65;
       restraint.rotation.x = s.secured ? 0 : Math.PI / 2;
       redSignal.visible = s.secured;
       greenSignal.visible = !s.secured;
+      const gateApproach =
+        1 - smooth((Math.abs(truck.g.position.x - 52.8) - 9) / 6);
       gate.rotation.x =
-        (Math.PI / 2) *
-        (1 - smooth((Math.min(Math.abs(t - 5), Math.abs(t - 59)) - 3) / 3));
+        (Math.PI / 2) * gateApproach * smooth((truck.g.position.z - 3) / 3);
       // Two cargo transfers: forks support the pallet until it is lowered.
       const transfer = t >= 36 ? 1 : 0,
         start = transfer ? 36 : 22;
@@ -1158,6 +1214,9 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
         x = destinationX + (sourceX - destinationX) * smooth((p - 0.68) / 0.32);
       forklift.position.set(x, 1.32, 0);
       forklift.rotation.y = 0;
+      forkliftWheels.forEach((w) => {
+        w.rotation.z = -(x - sourceX) / 0.23;
+      });
       forks.position.y =
         0.13 * smooth(p / 0.15) * (1 - smooth((p - 0.58) / 0.08));
       carried.visible = s.loading && p >= 0.1 && p < 0.645;
@@ -1193,7 +1252,9 @@ export function addFactoryCampus({ scene, M, mesh, pipe, textures, potatoG }) {
       raw.body.rotation.z = tip;
       raw.tailgate.rotation.z =
         -0.7 * smooth((rawTime - 20) / 2) * (1 - smooth((rawTime - 42) / 2));
-      raw.potatoLoad.position.y = raw.cargoBaseY - emptied * 0.55;
+      raw.potatoLoad.position.y = raw.cargoBaseY;
+      raw.potatoLoad.scale.y = 1 - emptied * 0.98;
+      raw.potatoLoad.visible = emptied < 0.995;
       for (let side = 0; side < 2; side++) {
         const z = side ? 0.42 : -0.42;
         ramStart.set(-1.45, 0.91, z);

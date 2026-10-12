@@ -10,6 +10,12 @@ import { addFactoryDetails } from "./details.js";
 import { FactorySound } from "./audio.js";
 import { chipGeometry, bagGeometry, potatoGeometry } from "./geometry.js";
 import { addProcessMachines } from "./machines.js";
+import {
+  cookingMaterial,
+  cookingAttribute,
+  peelingMaterial,
+} from "./food-material.js";
+import { addIndustrialServices } from "./industrial.js";
 import { addShippingLine } from "./shipping.js";
 import { createSurfaceTextures } from "./surfaces.js";
 import { LOOP_SECONDS, bagPhase, jawClosure } from "./timing.js";
@@ -69,7 +75,10 @@ export function createFactory(canvas, options = {}) {
   }
   const textures = createSurfaceTextures(
     random,
-    Math.min(16, renderer.capabilities.getMaxAnisotropy()),
+    Math.min(8, renderer.capabilities.getMaxAnisotropy()),
+    () => {
+      dirty = true;
+    },
   );
   const metalTex = textures.metal,
     potatoTex = textures.potato,
@@ -114,7 +123,10 @@ export function createFactory(canvas, options = {}) {
       clearcoat: 1,
     }),
     oil: new THREE.MeshPhysicalMaterial({
-      color: "#ad701b",
+      color: "#bb8833",
+      transparent: true,
+      opacity: 0.82,
+      depthWrite: false,
       metalness: 0,
       roughness: 0.27,
       clearcoat: 0.35,
@@ -161,7 +173,15 @@ export function createFactory(canvas, options = {}) {
   }
   M.steel.bumpMap = metalTex;
   M.steel.bumpScale = 0.0015;
-  M.steel.roughness = 0.38;
+  M.steel.roughness = 0.43;
+  M.steel.roughnessMap = textures.steelRoughness;
+  M.rubber.roughnessMap = textures.rubberRoughness;
+  for (const material of [M.chip, M.redChip, M.herbChip]) {
+    material.normalMap = textures.chipNormal;
+    material.normalScale = new THREE.Vector2(0.4, 0.4);
+    material.roughnessMap = textures.chipRoughness;
+    material.bumpMap = null;
+  }
   M.steel.color.set("#d0d9d8");
   M.chip.color.set("#fff5dc");
   M.redChip.color.set("#f1c09a");
@@ -264,8 +284,8 @@ export function createFactory(canvas, options = {}) {
       bevelEnabled: true,
       bevelThickness: r,
       bevelSize: r,
-      bevelSegments: 4,
-      curveSegments: 6,
+      bevelSegments: Math.max(w, h, d) < 0.3 ? 1 : 2,
+      curveSegments: Math.max(w, h, d) < 0.3 ? 2 : 4,
     });
     g.translate(0, 0, -d / 2 + r);
     geoCache.set(k, g);
@@ -383,7 +403,21 @@ export function createFactory(canvas, options = {}) {
         bolt(xx, y - 0.08, z + s * (width / 2 + 0.12));
     }
     for (let xx of [a + 0.13, b - 0.13]) {
-      cylinder(xx, y - 0.08, z, 0.17, width, M.steel, scene, "z");
+      const roller = cylinder(
+        xx,
+        y - 0.08,
+        z,
+        0.17,
+        width,
+        M.steel,
+        scene,
+        "z",
+      );
+      spinAnims.push({
+        o: roller,
+        axis: "z",
+        turns: -Math.round((len * 8) / (Math.PI * 0.34)),
+      });
       if (xx === b - 0.13) motor(xx, y - 0.1, z + width / 2 + 0.36);
       else {
         box(xx, y - 0.08, z + width / 2 + 0.14, 0.24, 0.24, 0.15, M.steel);
@@ -412,11 +446,14 @@ export function createFactory(canvas, options = {}) {
     return { a, b, z, y, width };
   }
   const chipG = chipGeometry(),
+    rawChipG = chipGeometry(0, false),
     potatoG = potatoGeometry();
   [M.chip, M.redChip, M.herbChip, M.raw].forEach((m) => {
     m.vertexColors = true;
     m.roughness = 0.48;
   });
+  M.raw.vertexColors = false;
+  M.raw.roughness = 0.28;
   const fluidClock = { value: 0 },
     fluidSurfaces = [];
   function liquid(x, y, z, w, d, m) {
@@ -429,15 +466,15 @@ export function createFactory(canvas, options = {}) {
         "#include <begin_vertex>",
         `#include <begin_vertex>
     float phase=factoryTime*3.14159265359;
-    transformed.z+=.006*sin(position.x*13.0+phase)+.004*cos(position.y*17.0-phase*2.0);`,
+    transformed.z+=.002*sin(position.x*13.0+phase)+.0015*cos(position.y*17.0-phase*2.0);`,
       );
       s.vertexShader = s.vertexShader.replace(
         "#include <beginnormal_vertex>",
         `#include <beginnormal_vertex>
-    objectNormal=normalize(vec3(-.078*cos(position.x*13.0+factoryTime*3.14159265359),.068*sin(position.y*17.0-factoryTime*6.28318530718),1.0));`,
+    objectNormal=normalize(vec3(-.026*cos(position.x*13.0+factoryTime*3.14159265359),.0255*sin(position.y*17.0-factoryTime*6.28318530718),1.0));`,
       );
     };
-    m.customProgramCacheKey = () => "crisp-fluid-surface-v2";
+    m.customProgramCacheKey = () => "crisp-fluid-surface-v3";
     const o = mesh(new THREE.PlaneGeometry(w, d, 64, 24), m, x, y, z);
     o.rotation.x = -Math.PI / 2;
     o.castShadow = false;
@@ -459,11 +496,30 @@ export function createFactory(canvas, options = {}) {
     width = 0.7,
     cycles = type === "chip" ? 8 : 4,
   ) {
+    const frying = type === "chip" && cycles === 1;
+    const peeling = type === "potato" && material === M.peeled;
+    const foodGeometry =
+      type === "chip"
+        ? chipGeometry(flows.length % 6, material !== M.raw)
+        : potatoG;
+    const cooked = frying || peeling ? cookingAttribute(foodGeometry, n) : null;
+    const lowGeometry =
+      type === "chip"
+        ? chipGeometry(flows.length % 6, material !== M.raw, false)
+        : foodGeometry;
+    if (cooked && type === "chip")
+      lowGeometry.setAttribute("cooking", cooked.cooking);
     let inst = new THREE.InstancedMesh(
-      type === "chip" ? chipG : potatoG,
-      material,
+      cooked?.geometry || foodGeometry,
+      frying
+        ? cookingMaterial(material)
+        : peeling
+          ? peelingMaterial(M.potato)
+          : material,
       n,
     );
+    if (cooked && foodGeometry !== potatoG) foodGeometry.dispose();
+    inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     inst.castShadow = true;
     inst.receiveShadow = true;
     scene.add(inst);
@@ -477,7 +533,21 @@ export function createFactory(canvas, options = {}) {
         angle: random() * TAU,
         variant: random(),
       });
-    flows.push({ a, b, z, y, n, type, inst, meta, cycles });
+    flows.push({
+      a,
+      b,
+      z,
+      y,
+      n,
+      type,
+      inst,
+      meta,
+      cycles,
+      highGeometry: inst.geometry,
+      lowGeometry,
+      cooking: frying ? cooked.cooking : null,
+      peeling: peeling ? cooked.cooking : null,
+    });
   }
   // The process is installed inside a real building footprint, not a plinth.
   const ground = mat("#233c3b", 0.02, 0.97);
@@ -525,11 +595,22 @@ export function createFactory(canvas, options = {}) {
     sprays,
     spinAnims,
     chipG,
+    rawChipG,
     potatoG,
     textures,
     random,
   });
   const { peeler } = process;
+  const engineering = addIndustrialServices({
+    scene,
+    M,
+    box,
+    cylinder,
+    mesh,
+    pipe,
+    motor,
+    textures,
+  });
   const fryingEffects = addFryingEffects(
     scene,
     random,
@@ -693,6 +774,7 @@ export function createFactory(canvas, options = {}) {
     }
     drums[f].tumblers = tumblers;
     drums[f].chipBatch = tBatch;
+    drums[f].lowGeometry = chipGeometry(f, true, false);
     conveyor(6.84, 7.75, z, 1.15, 1.29);
     foodFlow(6.85, 7.7, z, 1.36, 28, "chip", chipColors[f], 0.76);
   }
@@ -724,12 +806,42 @@ export function createFactory(canvas, options = {}) {
     box(x, 3.5, z, 1.6, 0.15, 1.76, M.steel);
     box(x, 3.32, z - 0.58, 0.95, 0.95, 0.31, M.dark);
     cylinder(x, 3.62, z, 0.28, 0.44, M.steel);
-    let roll = cylinder(x, 3.53, z - 0.47, 0.24, 0.46, paint, scene, "x");
-    spinAnims.push({ o: roll, axis: "x", turns: 8 });
-    for (let dx of [-0.58, 0.58])
-      cylinder(x + dx, 3.53, z - 0.47, 0.11, 0.08, M.dark, scene, "x");
-    let film = box(x, 3.02, z - 0.16, 0.33, 0.7, 0.015, bagMat[0]);
-    film.rotation.x = -0.25;
+    const roll = cylinder(x, 3.53, z - 1.02, 0.24, 0.65, paint, scene, "x");
+    for (const dx of [-0.4, 0.4]) {
+      cylinder(x + dx, 3.53, z - 1.02, 0.11, 0.08, M.dark, scene, "x");
+      box(x + dx, 3.31, z - 0.88, 0.04, 0.48, 0.38, M.steel);
+    }
+    const filmMaterial = bagMat[0].clone();
+    filmMaterial.side = THREE.DoubleSide;
+    filmMaterial.map = bagMat[0].map.clone();
+    filmMaterial.map.wrapT = THREE.RepeatWrapping;
+    const webPath = [
+      [3.74, -1.13],
+      [3.85, -0.66],
+      [3.23, -0.19],
+      [3.01, -0.11],
+    ];
+    const webPoints = [],
+      webUv = [],
+      webIndex = [];
+    webPath.forEach(([y, dz], i) => {
+      webPoints.push(x - 0.3, y, z + dz, x + 0.3, y, z + dz);
+      webUv.push(0, i / 3, 1, i / 3);
+      if (i < webPath.length - 1) {
+        const a = i * 2;
+        webIndex.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+      }
+    });
+    const filmGeometry = new THREE.BufferGeometry();
+    filmGeometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(webPoints, 3),
+    );
+    filmGeometry.setAttribute("uv", new THREE.Float32BufferAttribute(webUv, 2));
+    filmGeometry.setIndex(webIndex);
+    filmGeometry.computeVertexNormals();
+    const film = mesh(filmGeometry, filmMaterial);
+    cylinder(x, 3.83, z - 0.66, 0.045, 0.69, M.chrome, scene, "x");
     cylinder(x, 2.7, z, 0.11, 0.28, M.chrome);
     mesh(
       new THREE.CylinderGeometry(0.23, 0.11, 0.27, 48, 1, true),
@@ -747,7 +859,23 @@ export function createFactory(canvas, options = {}) {
     sealers.push({ a, b, z, f });
     let formed = mesh(bagG, bagMat, x, 1.67, z);
     formed.scale.set(0.28, 0.28, 0.3);
-    packAnims.push({ o: formed, f });
+    const released = mesh(bagG, bagMat, x, 1.67, z);
+    released.scale.setScalar(0.28);
+    const chute = box(x + 0.31, 1.3, z, 0.76, 0.035, 0.51, M.steel);
+    chute.rotation.z = -0.46;
+    for (const side of [-1, 1]) {
+      const lip = box(
+        x + 0.31,
+        1.36,
+        z + side * 0.26,
+        0.76,
+        0.14,
+        0.025,
+        M.steel,
+      );
+      lip.rotation.z = -0.46;
+    }
+    packAnims.push({ o: formed, released, roll, film, f, x, z });
     panel(x + 0.62, 2.89, z + 0.8, 0.32, 0.67, M.dark);
     box(x + 0.62, 3.02, z + 0.865, 0.2, 0.17, 0.022, M.led);
     box(x + 0.62, 2.73, z + 0.865, 0.09, 0.05, 0.02, M.red);
@@ -1087,6 +1215,7 @@ export function createFactory(canvas, options = {}) {
     ...spinAnims.map((a) => a.o),
     ...detail.dynamic,
     ...process.dynamic,
+    ...engineering.dynamic,
     ...shipping.dynamic,
     ...campus.dynamic,
     fryingEffects.group,
@@ -1095,7 +1224,9 @@ export function createFactory(canvas, options = {}) {
     ...bubbles.map((a) => a.o),
     ...drums.map((a) => a.g),
     ...sealers.flatMap((a) => [a.a, a.b]),
-    ...packAnims.flatMap((a) => (a.o ? [a.o] : a.bags)),
+    ...packAnims.flatMap((a) =>
+      a.o ? [a.o, a.released, a.roll, a.film] : a.bags,
+    ),
   ]);
   peeler.updateMatrixWorld(true);
   const localGroups = new Map();
@@ -1251,7 +1382,7 @@ export function createFactory(canvas, options = {}) {
   }
   for (let i = 0; i < 3; i++) {
     const c = mesh(
-      chipG,
+      chipGeometry(i + 1),
       chipColors[0],
       1.55 + i * 0.3,
       0.28 + i * 0.24,
@@ -1304,10 +1435,10 @@ export function createFactory(canvas, options = {}) {
   observer.observe(canvas);
   resize();
   const temp = new THREE.Object3D();
-  const foodColor = new THREE.Color(),
-    paleChip = new THREE.Color("#fff3d8"),
-    goldenChip = new THREE.Color("#f3d397");
-  let logisticsLabel = "";
+  let logisticsLabel = "",
+    lastAudioPosition = 0;
+  const audioRight = new THREE.Vector3();
+  let truckPosition = [39, 2, 0];
   function frame() {
     if (disposed) return;
     raf = requestAnimationFrame(frame);
@@ -1335,6 +1466,7 @@ export function createFactory(canvas, options = {}) {
       beat = TAU * t * 2;
     if (mode === "factory") {
       const logistics = campus.update(reducedMotion ? 26 : worldTime, journey);
+      truckPosition = logistics.position;
       const label =
         logistics.time < 10
           ? "Truck arriving at the factory"
@@ -1346,9 +1478,13 @@ export function createFactory(canvas, options = {}) {
                 ? "Vehicle secured · Dock bridge connecting"
                 : logistics.time < 48
                   ? "Forklift loading wrapped pallets"
-                  : logistics.time < 52
-                    ? "Bridge retracting · Cargo doors closing"
-                    : "Cargo ready · Departing across Pakistan";
+                  : logistics.time < 49.6
+                    ? "Dock closing · Vehicle release"
+                    : logistics.time < 52
+                      ? "Pulling clear of the loading bay"
+                      : logistics.time < 56
+                        ? "Staging stop · Cargo doors closing and locking"
+                        : "Cargo ready · Departing across Pakistan";
       if (label !== logisticsLabel) {
         logisticsLabel = label;
         options.onLogistics?.(label);
@@ -1403,6 +1539,16 @@ export function createFactory(canvas, options = {}) {
       );
     camera.lookAt(target);
     camera.updateMatrixWorld();
+    if (
+      sound &&
+      audioOn &&
+      mode === "factory" &&
+      real - lastAudioPosition > 0.1
+    ) {
+      audioRight.set(1, 0, 0).applyQuaternion(camera.quaternion);
+      sound.setSpatial(camera.position, audioRight, truckPosition);
+      lastAudioPosition = real;
+    }
     viewFrustum.setFromProjectionMatrix(
       viewMatrix.multiplyMatrices(
         camera.projectionMatrix,
@@ -1447,6 +1593,8 @@ export function createFactory(canvas, options = {}) {
         );
         f.inst.visible = viewFrustum.intersectsBox(f.bounds);
         if (!f.inst.visible) continue;
+        if (f.type === "chip")
+          f.inst.geometry = rr > 32 ? f.lowGeometry : f.highGeometry;
         for (let i = 0; i < f.n; i++) {
           let m = f.meta[i],
             u = (m.offset + p * f.cycles) % 1;
@@ -1458,6 +1606,16 @@ export function createFactory(canvas, options = {}) {
                 : 0.0),
             f.z + m.lane,
           );
+          if (f.peeling) {
+            temp.position.y +=
+              0.16 * (m.lane / 0.8) ** 2 + 0.002 * Math.sin(beat + m.angle);
+            f.peeling.setX(i, Math.min(1, u * 1.2));
+          }
+          if (f.cooking) {
+            const enter = Math.min(1, Math.max(0, (u - 0.25) / 0.13));
+            const leave = Math.min(1, Math.max(0, (u - 0.92) / 0.08));
+            temp.position.y -= 0.025 * enter * (1 - leave);
+          }
           if (f.type === "chip") {
             temp.rotation.set(
               -Math.PI / 2,
@@ -1475,17 +1633,28 @@ export function createFactory(canvas, options = {}) {
           }
           temp.updateMatrix();
           f.inst.setMatrixAt(i, temp.matrix);
-          if (f.a < -2.5 && f.b > 1 && f.type === "chip")
-            f.inst.setColorAt(i, foodColor.copy(paleChip).lerp(goldenChip, u));
+          if (f.cooking) {
+            const cook = Math.min(1, Math.max(0, (u - 0.06) / 0.87));
+            f.cooking.setX(i, cook * cook * (3 - 2 * cook));
+          }
         }
         f.inst.instanceMatrix.needsUpdate = true;
-        if (f.inst.instanceColor) f.inst.instanceColor.needsUpdate = true;
+        if (f.cooking) f.cooking.needsUpdate = true;
+        if (f.peeling) f.peeling.needsUpdate = true;
       }
-      for (let a of spinAnims) {
-        if (a.o === peeler) a.o.rotation.y = p * TAU * a.turns;
-        else
-          a.o.rotation[a.axis] =
-            p * TAU * a.turns + (a.axis === "x" ? Math.PI / 2 : 0);
+      for (const a of spinAnims) {
+        a.initial ??= a.o.quaternion.clone();
+        a.spinAxis ??= new THREE.Vector3(
+          a.axis === "x" ? 1 : 0,
+          a.axis === "y" ? 1 : 0,
+          a.axis === "z" ? 1 : 0,
+        );
+        a.spin ??= new THREE.Quaternion();
+        // Rotate around the axle in parent coordinates without losing the
+        // cylinder's initial orientation (Euler assignment tilted old rollers).
+        a.o.quaternion
+          .copy(a.spin.setFromAxisAngle(a.spinAxis, p * TAU * a.turns))
+          .multiply(a.initial);
       }
       for (let d of drums) {
         d.bounds ??= new THREE.Box3(
@@ -1494,10 +1663,11 @@ export function createFactory(canvas, options = {}) {
         );
         d.g.visible = viewFrustum.intersectsBox(d.bounds);
         if (!d.g.visible) continue;
-        d.shell.rotation.z = p * TAU * 8;
+        d.chipBatch.geometry = rr > 32 ? d.lowGeometry : chipG;
+        d.shell.rotation.z = p * TAU * 4;
         for (let i = 0; i < d.tumblers.length; i++) {
           let c = d.tumblers[i],
-            u = (c.phase / TAU + p * 8) % 1,
+            u = (c.phase / TAU + p * 4) % 1,
             a = u * TAU;
           if (u < 0.58) {
             let aa = -Math.PI / 2 + (u / 0.58) * Math.PI;
@@ -1536,12 +1706,29 @@ export function createFactory(canvas, options = {}) {
           gap = 0.29 - 0.18 * jawClosure(phase);
         s.a.position.z = s.z - gap;
         s.b.position.z = s.z + gap;
+        const travel =
+          jawClosure(phase) * Math.max(0, Math.min(1, (phase - 0.42) / 0.14));
+        s.a.position.y = s.b.position.y = 1.87 - 0.045 * travel;
       }
       for (let a of packAnims) {
         if (a.o) {
           let phase = bagPhase(t, a.f);
-          a.o.scale.y = 0.38 + 0.34 * Math.min(1, phase / 0.31);
-          a.o.position.y = 1.92 - 0.2 * Math.min(1, phase / 0.31);
+          a.o.scale.y = 0.06 + 0.22 * Math.min(1, phase / 0.31);
+          a.o.position.y = 1.78 - 0.1 * Math.min(1, phase / 0.31);
+          a.o.visible = phase < 0.66;
+          const filmAdvance = Math.min(1, phase / 0.31);
+          a.film.material.map.offset.y = -filmAdvance;
+          a.roll.rotation.x =
+            (-(Math.floor(t / 2 + a.f / 3) + filmAdvance) * 0.34) / 0.24;
+          const falling = Math.min(1, Math.max(0, (phase - 0.66) / 0.34));
+          a.released.visible = phase >= 0.66;
+          a.released.position.set(
+            a.x + falling * 0.65,
+            1.68 - 0.54 * falling * falling,
+            a.z,
+          );
+          a.released.rotation.x =
+            (-Math.PI / 2) * (falling * falling * (3 - 2 * falling));
         } else
           a.bags.forEach((g, i) => {
             let u = (i / 4 + t / 8 + a.f / 12) % 1;
@@ -1566,7 +1753,8 @@ export function createFactory(canvas, options = {}) {
         dustP[i * 3 + 2] = (f - 1) * 2.25 + 0.15 * Math.cos(i * 9) * u;
       }
       dustG.attributes.position.needsUpdate = true;
-      detail.update(t);
+      detail.update(t, viewFrustum);
+      engineering.update(t, viewFrustum);
       process.update(t, viewFrustum);
       shipping.update(t);
       fluidClock.value = t;
@@ -1634,6 +1822,11 @@ export function createFactory(canvas, options = {}) {
       }
     });
     geoCache.forEach((g) => geometries.add(g));
+    flows.forEach((f) => {
+      geometries.add(f.highGeometry);
+      geometries.add(f.lowGeometry);
+    });
+    drums.forEach((d) => geometries.add(d.lowGeometry));
     textures.add(scene.environment);
     fryingEffects.dispose();
     processEffects.dispose();

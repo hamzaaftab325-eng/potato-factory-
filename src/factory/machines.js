@@ -19,6 +19,7 @@ export function addProcessMachines(C) {
     sprays,
     spinAnims,
     chipG,
+    rawChipG,
     potatoG,
     random,
   } = C;
@@ -200,15 +201,22 @@ export function addProcessMachines(C) {
     box(0, -0.085, 0, length, 0.13, width, M.dark, g);
     for (const s of [-1, 1])
       box(0, 0.055, (s * width) / 2, length, 0.17, 0.055, M.steel, g);
-    for (const x of [-length / 2 + 0.07, length / 2 - 0.07])
-      cylinder(x, -0.025, 0, 0.085, width, M.chrome, g, "z");
+    for (const x of [-length / 2 + 0.07, length / 2 - 0.07]) {
+      const roller = cylinder(x, -0.025, 0, 0.085, width, M.chrome, g, "z");
+      // Whole turns preserve the production loop while matching belt motion.
+      spinAnims.push({
+        o: roller,
+        axis: "z",
+        turns: -Math.round((length * 4) / (Math.PI * 0.17)),
+      });
+    }
     const cleats = new THREE.InstancedMesh(
       new THREE.BoxGeometry(0.028, 0.045, width - 0.09),
       M.rubber,
       18,
     );
     const food = new THREE.InstancedMesh(
-      kind === "potato" ? potatoG : chipG,
+      kind === "potato" ? potatoG : material === M.raw ? rawChipG : chipG,
       material,
       count,
     );
@@ -219,7 +227,7 @@ export function addProcessMachines(C) {
     const bounds = new THREE.Box3()
       .setFromPoints([A, B])
       .expandByScalar(width + 0.3);
-    transfers.push({ A, B, angle, cleats, food, kind, count, bounds });
+    transfers.push({ A, B, width, angle, cleats, food, kind, count, bounds });
     for (const u of [0.16, 0.82]) {
       const p = A.clone().lerp(B, u);
       for (const s of [-1, 1])
@@ -348,7 +356,7 @@ export function addProcessMachines(C) {
     0.06,
   );
   box(-8.48, 0.77, -1.3, 0.82, 0.2, 0.45, M.steel);
-  foodFlow(-9.15, -7.1, 0, 1.7, 20, "potato", M.peeled, 0.6);
+  foodFlow(-9.15, -7.1, 0, 1.61, 20, "potato", M.peeled, 0.6);
   transfer([-7.17, 1.43, 0], [-5.58, 3.23, 0], 0.65, "potato", M.peeled, 13);
 
   // Enclosed centrifugal slicer. Eight FIXED knife cartridges surround a
@@ -437,7 +445,7 @@ export function addProcessMachines(C) {
   transfer([-4.86, 1.87, 0], [-4.18, 1.29, 0], 0.7, "chip", M.raw, 18);
   box(-4.84, 1.91, 0, 0.31, 0.37, 0.78, M.steel);
   for (let i = 0; i < 16; i++) {
-    const o = mesh(chipG, M.raw);
+    const o = mesh(rawChipG, M.raw);
     dynamic.push(o);
     cutters.push({ o, offset: i / 16 });
   }
@@ -527,15 +535,17 @@ export function addProcessMachines(C) {
     spinAnims.push({ o: wheel, axis: "z", turns: -2 });
     for (const z of [-1.08, 1.08]) box(x, 1.7, z, 0.2, 0.23, 0.15, M.steel);
   }
+  const submergeMaterial = perforated.clone();
+  submergeMaterial.alphaMap = C.textures.perforation.clone();
   const submerge = mesh(
     new THREE.PlaneGeometry(2.45, 1.8),
-    perforated,
+    submergeMaterial,
     0.3,
-    1.435,
+    1.527,
     0,
   );
   submerge.rotation.x = -Math.PI / 2;
-  foodFlow(-2.59, 1.59, 0, 1.551, 240, "chip", M.chip, 1.63, 1);
+  foodFlow(-2.59, 1.59, 0, 1.533, 240, "chip", M.chip, 1.63, 1);
   // Side chain, bearing blocks and a level sight glass distinguish the oil
   // circulation vessel from the drain conveyor beside it.
   for (const z of [-0.98, 0.98]) {
@@ -598,7 +608,11 @@ export function addProcessMachines(C) {
     food.frustumCulled = false;
     scene.add(food);
     dynamic.push(food);
+    dynamic.push(g);
     branches.push({
+      tray: g,
+      rest: g.position.clone(),
+      axis: B.clone().sub(A).normalize(),
       A,
       B,
       food,
@@ -610,6 +624,8 @@ export function addProcessMachines(C) {
     peeler,
     dynamic,
     update(t, frustum) {
+      // The repeating mesh moves at the chip bed's forward travel speed.
+      submergeMaterial.alphaMap.offset.x = (-t * 27) / 256;
       for (const e of transfers) {
         e.food.visible = e.cleats.visible =
           !frustum || frustum.intersectsBox(e.bounds);
@@ -627,7 +643,11 @@ export function addProcessMachines(C) {
           const u = (i / e.count + t * 0.25) % 1;
           dummy.position.lerpVectors(e.A, e.B, u);
           dummy.position.z +=
-            Math.sin(i * 7.1) * (e.kind === "potato" ? 0.17 : 0.45);
+            Math.sin(i * 7.1) *
+            Math.max(
+              0.02,
+              e.width * 0.5 - (e.kind === "potato" ? 0.09 : 0.075),
+            );
           dummy.position.y += e.kind === "potato" ? 0.09 : 0.055;
           dummy.rotation.set(
             e.kind === "potato" ? i : -Math.PI / 2,
@@ -661,6 +681,13 @@ export function addProcessMachines(C) {
         d.o.scale.setScalar(0.33);
       });
       for (const b of branches) {
+        // Horizontal differential motion: a gentle carrying stroke and a quick
+        // return. The tray physically reciprocates along its own centreline.
+        const phase = (t * 2) % 1;
+        const stroke = phase < 0.76 ? phase / 0.76 : 1 - (phase - 0.76) / 0.24;
+        b.tray.position
+          .copy(b.rest)
+          .addScaledVector(b.axis, (stroke - 0.5) * 0.018);
         b.food.visible = !frustum || frustum.intersectsBox(b.bounds);
         if (!b.food.visible) continue;
         for (let i = 0; i < 18; i++) {

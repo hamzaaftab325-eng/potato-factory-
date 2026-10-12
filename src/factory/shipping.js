@@ -123,7 +123,7 @@ export function addShippingLine(C) {
         bagG,
         bagMaterials[f],
         i % 2 ? 0.15 : -0.15,
-        0.06 + Math.floor(i / 2) * 0.09,
+        0.095 + Math.floor(i / 2) * 0.087,
         0,
         g,
       );
@@ -287,13 +287,13 @@ export function addShippingLine(C) {
           x = destinationX;
           y =
             2.0 -
-            (0.615 - Math.floor(which / 2) * 0.09) * smooth((p - 0.43) / 0.2);
+            (0.58 - Math.floor(which / 2) * 0.087) * smooth((p - 0.43) / 0.2);
         } else if (p < 0.76) {
           x = destinationX;
           y =
-            1.385 +
-            Math.floor(which / 2) * 0.09 +
-            (0.615 - Math.floor(which / 2) * 0.09) * smooth((p - 0.63) / 0.13);
+            1.42 +
+            Math.floor(which / 2) * 0.087 +
+            (0.58 - Math.floor(which / 2) * 0.087) * smooth((p - 0.63) / 0.13);
         } else {
           x = destinationX + (13.85 - destinationX) * smooth((p - 0.76) / 0.24);
           y = 2.0 - 0.65 * smooth((p - 0.9) / 0.1);

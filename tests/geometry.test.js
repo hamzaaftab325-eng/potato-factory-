@@ -23,3 +23,27 @@ for (const [name, create] of [
     g.dispose();
   });
 }
+
+test("Python slices retain thin raw faces and six distinct cooked silhouettes", () => {
+  const outlines = new Set();
+  for (let variant = 0; variant < 6; variant++) {
+    const raw = chipGeometry(variant, false),
+      fried = chipGeometry(variant);
+    raw.computeBoundingBox();
+    fried.computeBoundingBox();
+    const thickness = (raw.boundingBox.max.z - raw.boundingBox.min.z) * 0.33;
+    assert.ok(
+      thickness > 0.0013 && thickness < 0.002,
+      `raw slice ${thickness} m`,
+    );
+    assert.ok(fried.boundingBox.max.z - fried.boundingBox.min.z > 0.02);
+    assert.equal(
+      raw.attributes.position.count,
+      fried.attributes.position.count,
+    );
+    outlines.add(fried.attributes.position.getY(130).toFixed(6));
+    raw.dispose();
+    fried.dispose();
+  }
+  assert.equal(outlines.size, 6);
+});

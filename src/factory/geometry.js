@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import assets from "./generated/food-assets.js";
 const TAU = Math.PI * 2;
 
 export function potatoGeometry(widthSegments = 28, heightSegments = 20) {
@@ -18,61 +19,39 @@ export function potatoGeometry(widthSegments = 28, heightSegments = 20) {
   return g;
 }
 
-export function chipGeometry() {
-  const pos = [],
-    uv = [],
-    colors = [],
-    index = [],
-    N = 40,
-    R = 8;
-  const vertex = (ring, j, back) => {
-    let r = ring / R,
-      a = (j / N) * TAU,
-      edge = 1 + 0.038 * Math.sin(a * 5 + 0.4) + 0.022 * Math.cos(a * 9);
-    // Broad, thin oval slices with an irregular toasted edge and a gentle
-    // saddle curl. The broad face stays readable on the conveyor and in oil.
-    let x = Math.cos(a) * r * 0.178 * edge,
-      y = Math.sin(a) * r * 0.156 * edge;
-    let z =
-      0.006 * Math.sin(x * 19 + y * 7) +
-      0.017 * (x / 0.178) ** 2 -
-      0.01 * (y / 0.156) ** 2 +
-      0.008 * Math.sin(a * 3 + 0.6) * r ** 5 +
-      0.0015 * Math.sin(x * 113) * Math.cos(y * 107) * Math.sin(r * Math.PI);
-    z += (back ? -1 : 1) * (0.0022 + 0.0004 * Math.sin(a * 7) * r);
-    pos.push(x, y, z);
-    uv.push(x / 0.38 + 0.5, y / 0.34 + 0.5);
-    const mottled =
-        0.97 + 0.03 * Math.sin(x * 134 + y * 86) * Math.cos(y * 137),
-      rim = 1 - 0.12 * r ** 10;
-    colors.push(mottled, mottled * rim, mottled * (1 - 0.22 * r ** 10));
-  };
-  for (let b = 0; b < 2; b++)
-    for (let ring = 0; ring <= R; ring++)
-      for (let j = 0; j <= N; j++) vertex(ring, j, b);
-  const stride = (R + 1) * (N + 1);
-  for (let b = 0; b < 2; b++)
-    for (let ring = 0; ring < R; ring++)
-      for (let j = 0; j < N; j++) {
-        let a = b * stride + ring * (N + 1) + j,
-          c = a + N + 1;
-        index.push(
-          ...(b
-            ? [a, c + 1, c, a, a + 1, c + 1]
-            : [a, c, c + 1, a, c + 1, a + 1]),
-        );
-      }
-  for (let j = 0; j < N; j++) {
-    let a = R * (N + 1) + j,
-      b = a + stride;
-    index.push(a, b, a + 1, a + 1, b, b + 1);
+// Python bakes six deterministic potato cross-sections, paired raw/cooked
+// surfaces, smoothed normals and UVs. Runtime only decodes shared typed buffers.
+const decoded = new Map();
+function unpack(text, Type = Float32Array) {
+  if (!decoded.has(text)) {
+    const bytes = Uint8Array.from(atob(text), (c) => c.charCodeAt(0));
+    decoded.set(text, new Type(bytes.buffer));
   }
+  return decoded.get(text);
+}
+export function chipGeometry(variant = 0, cooked = true, detail = true) {
+  const set = detail ? assets.chips : assets.chipsLow;
+  const source = set[((variant % set.length) + set.length) % set.length];
   const g = new THREE.BufferGeometry();
-  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-  g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
-  g.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-  g.setIndex(index);
-  g.computeVertexNormals();
+  for (const [name, size] of Object.entries({
+    position: 3,
+    normal: 3,
+    rawPosition: 3,
+    rawNormal: 3,
+    uv: 2,
+    color: 3,
+  })) {
+    const key =
+      !cooked && name === "position"
+        ? "rawPosition"
+        : !cooked && name === "normal"
+          ? "rawNormal"
+          : name;
+    g.setAttribute(name, new THREE.BufferAttribute(unpack(source[key]), size));
+  }
+  g.setIndex(new THREE.BufferAttribute(unpack(source.index, Uint16Array), 1));
+  g.computeBoundingBox();
+  g.computeBoundingSphere();
   return g;
 }
 

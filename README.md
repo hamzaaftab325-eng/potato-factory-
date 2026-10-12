@@ -1,6 +1,6 @@
 # CRISP — Crafted for the crunch.
 
-An original potato-chip brand and factory experience by Hamza Aftab. Built with JavaScript, Three.js and Vite. Architecture, machines, food, packaging, vehicles, textures, animation and sound are created in code.
+An original potato-chip brand and factory experience by Hamza Aftab. Built with Python-generated assets, JavaScript, Three.js and Vite. No Blender is required. Architecture, machines, food, packaging, vehicles, textures, animation and sound are created in code.
 
 ## The factory
 
@@ -12,15 +12,15 @@ The process moves through metered receiving, filtered washing, eight abrasive pe
 
 The collection uses 180 g concept family bags. Printed front and back film, sealed edges, folds and rounded volume share the same artwork across the production line and product view. Eight bags fill each carton over a sixteen-second case cycle. Flaps close, tape advances and a second vacuum carriage transfers finished cartons to staging pallets.
 
-Dispatch includes a cab-over rigid box truck with a sculpted cab, open window apertures, wheel-arch cutouts, steering pivots, treaded tyres, rear dual wheels, wipers, mirrors, glazing, lights, chassis rails, hinged rear doors and pallet loads. The receiving tipper carries a textured mound of potatoes with varied shapes and skin colours, a top-hinged tailgate and moving hydraulic rams. Potatoes fall onto the powered receiving elevator while its bed tips. The outbound truck arrives, stops in staging, unlocks and opens two rear doors outward to 180 degrees, reverses, secures at the dock, connects the bridge and receives two forklift-carried pallets. The bridge retracts, each leaf closes and the handles latch before a departure interlock permits the truck to move. The arrival and exit use separate road lanes and explicit tangent-continuous road arcs. Turning aprons are widened, posts sit outside the vehicle paths and the receiving driveway is clear of raised walkways. Wheel rotation follows signed travel distance; front wheels use separate inner and outer steering angles with eased steering movement. The receiving vehicle turns, reverses into position, unloads and leaves without changing heading abruptly. The checkpost stands across the road, away from the truck apron. Both trucks reset outside the factory perimeter.
+Dispatch includes a cab-over rigid box truck with a sculpted cab, open window apertures, wheel-arch cutouts, steering pivots, treaded tyres, rear dual wheels, wipers, mirrors, glazing, lights, chassis rails, hinged rear doors and pallet loads. The receiving tipper carries a textured mound of potatoes with varied shapes and skin colours, a top-hinged tailgate and moving hydraulic rams. Potatoes fall onto the powered receiving elevator while its bed tips. The outbound truck arrives, stops in staging, unlocks and opens two rear doors outward to 270 degrees against the body, reverses, secures at the dock, connects the bridge and receives two forklift-carried pallets. After loading, the bridge retracts and the sectional dock door follows its overhead track closed. The restraint releases, the truck pulls clear to a separate stop, then the cargo leaves close and latch before road departure. The arrival and exit use separate road lanes and explicit tangent-continuous road arcs. Turning aprons are widened, posts sit outside the vehicle paths and the receiving driveway is clear of raised walkways. Wheel rotation follows signed travel distance; front wheels use separate inner and outer steering angles with eased steering movement. The receiving vehicle turns, reverses into position, unloads and leaves without changing heading abruptly. The checkpost stands across the road, away from the truck apron. Both trucks reset outside the factory perimeter.
 
-Chip slices spend sixteen seconds in the fryer, with four-times-slower metering paddles. Soft moisture vapour rises towards the extraction hood, the chimney emits a light plume, small oil rings expand and restrained warm light sits under the hood. Chip slices have broad, thin oval faces, irregular edges, saddle curl, small blisters and toasted rims. Conveyor rotations keep their broad faces visible. The fryer is an open insulated tank: amber rippling oil is exposed above its submerged mesh, with small bubbles and a visible oil-level sight glass. Liquid surfaces retain local coordinates during geometry batching so their shader ripples move vertically.
+Python generates six irregular chip shapes with paired raw and cooked surfaces, plus simplified meshes for distant views. Raw slices are approximately 1.45 mm thick at the scene food scale. The same slices curl and turn golden as they move through the oil. Chip slices spend sixteen presentation seconds in the fryer, with four-times-slower metering paddles. Soft moisture vapour rises towards the extraction hood, the chimney emits a light plume, small oil rings expand and restrained warm light sits under the hood. Chip slices have broad, thin oval faces, irregular edges, saddle curl, small blisters and toasted rims. Conveyor rotations keep their broad faces visible. The fryer is an open insulated tank: amber rippling oil is exposed above its submerged mesh, with small bubbles and a visible oil-level sight glass. Liquid surfaces retain local coordinates during geometry batching so their shader ripples move vertically.
 
 ## Animation and sound
 
 Machine animation repeats every sixteen seconds. Logistics and the overview drone tour repeat every ninety-six seconds. Scroll position chooses the process camera, while the delivery chapter follows the truck as it moves. Reduced-motion preferences, pause controls, camera inspection and offscreen suspension remain available.
 
-Original procedural stereo sound includes water, slicing, frying, tumbling, packing, optional music and a separate ninety-six-second truck/dock/forklift stem. Audio uses the same elapsed-time clock as the scene. Each stem starts at its corresponding loop offset; source events align with sealing, loading, dock and door actions. Audio generation yields between stems so preparation does not happen in one uninterrupted block. Sound starts only after a visitor enables it.
+Original procedural stereo sound includes water, slicing, frying, tumbling, packing, optional music and a separate ninety-six-second truck/dock/forklift stem. Audio uses the same elapsed-time clock as the scene. Each stem starts at its corresponding loop offset; source events align with sealing, loading, dock and door actions. Audio generation runs in a Web Worker, transferring completed sample buffers back to the main thread. A yielding fallback remains for restricted browsers. Camera-relative stereo positions, distance attenuation and filtering follow the active machinery. Sound starts only after a visitor enables it.
 
 The first-paint and WebGL fallback image is a code-built SVG campus illustration. The interactive view uses real 3D geometry. No remote models, video backgrounds, stock recordings or paid assets are required.
 
@@ -28,9 +28,9 @@ The first-paint and WebGL fallback image is a code-built SVG campus illustration
 
 AUTO is the default on desktop and mobile. It respects native screen pixels (up to 1.5× DPR) and caps desktop buffers at 2560 × 1440. The optional **4K MAX** setting allows up to 3840 × 2160. Both modes observe rendered-frame cadence and CPU work: sustained missed frames reduce resolution, and six seconds of headroom allow gradual recovery. This is an adaptive ceiling, not an exported 4K video or a guaranteed frame rate.
 
-The previous desktop configuration forced UHD-sized buffers, multisampled HDR, 4096-pixel shadow maps and a second full-scene SSAO geometry pass. Mobile avoided much of that cost. The new renderer removes the SSAO and MSAA passes, halves bloom targets, updates tighter 2048/1024 shadow maps at 30/15 Hz, and stops bloom at the lowest budgets. HDR tone mapping, FXAA, metal reflections and 1024-pixel food artwork remain.
+The previous desktop configuration forced UHD-sized buffers, multisampled HDR, 4096-pixel shadow maps and a second full-scene SSAO geometry pass. Mobile avoided much of that cost. The new renderer removes the SSAO and MSAA passes, halves bloom targets, updates tighter 2048/1024 shadow maps at 30/15 Hz, and stops bloom at the lowest budgets. HDR tone mapping, FXAA, metal reflections, Python-baked surface maps and printed bag artwork remain.
 
-Spatial material batches let close-up cameras cull distant equipment. Conveyor contents and bounded effects skip updates when outside the view. The raw truck keeps its visible potato surface and replaces buried duplicate geometry with the existing filled bed. For a native 1920 × 1080 canvas, AUTO starts with one quarter of the UHD drawing-buffer pixels; total GPU savings depend on the visible scene and device.
+Spatial material batches let close-up cameras cull distant equipment. Food-flow and seasoning meshes use 210 vertices per chip at distant camera ranges and 738 for close views. Small hardware uses fewer bevel segments; continuous surfaces retain smooth normals. Conveyor contents and bounded effects skip updates when outside the view. The raw truck keeps its visible potato surface and replaces buried duplicate geometry with the existing filled bed. For a native 1920 × 1080 canvas, AUTO starts with one quarter of the UHD drawing-buffer pixels; total GPU savings depend on the visible scene and device.
 
 Camera controls provide zoom in, zoom out and reset. Inspection also supports wheel zoom, +/− and 0; page scrolling stays available outside inspection. Zoom eases smoothly while the animation is paused and respects camera limits. Changing between the factory and product view resets zoom.
 
@@ -43,7 +43,16 @@ npm ci
 npm run dev
 ```
 
-Node.js 24 is required. Open the local Vite URL through a web server; ES modules cannot run by opening the HTML file directly.
+Node.js 24 is required. Generated assets are checked in, so deployment does not need Python. To regenerate them locally:
+
+```sh
+python3 -m pip install -r tools/requirements.txt
+npm run assets:generate
+```
+
+The deterministic Python generator creates raw/cooked food geometry at two detail levels and tileable normal/roughness maps. All assets and sounds are original code-generated content.
+
+ Open the local Vite URL through a web server; ES modules cannot run by opening the HTML file directly.
 
 | Setting               | Value           |
 | --------------------- | --------------- |
@@ -75,12 +84,19 @@ The Git repository is `hamzaaftab325-eng/potato-factory-`; the production branch
 | `src/factory/geometry.js`      | Food and bag geometry                                 |
 | `src/factory/surfaces.js`      | Procedural surface textures                           |
 | `src/factory/timing.js`        | Machine, case and logistics phases                    |
-| `src/factory/audio.js`         | Synchronized original sound stems                     |
+| `src/factory/audio.js`         | Synchronized playback and spatial mixing              |
+| `src/factory/audio-synthesis.js` | Pure procedural sound generation                     |
+| `src/factory/audio-worker.js`  | Sound preparation away from the render thread         |
+| `src/factory/industrial.js`    | Oil skid, service connections, drainage and inspection |
+| `src/factory/food-material.js` | Continuous peeling and frying transformations         |
+| `tools/generate_factory_assets.py` | Reproducible Python geometry and surface generator |
 | `src/factory/scene.js`         | Rendering, camera, controls and animation integration |
 
 ## Revision status
 
-This revision preserves the six scroll chapters, slower frying, packing choreography, ninety-six-second logistics, clear truck routes and outward door/latch sequence. The production build and 19 focused rendering-budget, UI, camera and geometry checks passed. Cab/body clearance and the contained tipper load are corrected. No browser preview, visual QA, GPU measurement on the owner's desktop or audio listening review is included. Actual production frame rate and the Vercel deployment still need confirmation on the target device.
+This revision preserves the six scroll chapters, zoom, quality controls, drone overview and ninety-six-second logistics cycle. It adds Python food meshes and surface maps, progressive peeling/cooking, linked rollers, horizontal-motion distribution trays, a plate heat-exchanger/filter/pump skid, drain returns and oil drips, radial weighing gates, a continuous film web, correctly sized formed bags and their gravity discharge, packet inspection, and corrected carton fill heights. Cargo doors fold outside the body and close only after the truck clears the dock. The tipper load empties down to the bed floor; forklift wheels roll with travel.
+
+The focused source checks cover geometry, docking interlocks, sound timing, controls and adaptive rendering; the production build packages the worker and generated assets. No browser preview, visual QA, target-desktop GPU measurement or listening review was performed. The 4K setting is a maximum drawing-buffer size and does not promise 4K/60 on every device.
 
 This is an original portfolio interpretation with fictional packaging and delivery routes, rather than a manufacturing digital twin. Production rates, vehicle travel and handling choreography are compressed for the animation. The site does not process orders.
 

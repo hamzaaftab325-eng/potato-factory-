@@ -1,9 +1,17 @@
 import * as THREE from "three";
+import chipNormalUrl from "./generated/chip-normal.png";
+import chipRoughnessUrl from "./generated/chip-roughness.png";
+import steelRoughnessUrl from "./generated/steel-roughness.png";
+import rubberRoughnessUrl from "./generated/rubber-roughness.png";
 
 // Deliberately restrained, tileable surface detail. Metal roughness stays in
 // linear space; food colour maps are sRGB. No asset downloads are required.
-export function createSurfaceTextures(random, anisotropy = 4) {
-  const make = (paint, color = false, size = 1024) => {
+export function createSurfaceTextures(
+  random,
+  anisotropy = 4,
+  onLoad = () => {},
+) {
+  const make = (paint, color = false, size = 512) => {
     const c = document.createElement("canvas");
     c.width = c.height = size;
     paint(c.getContext("2d"), size);
@@ -182,7 +190,19 @@ export function createSurfaceTextures(random, anisotropy = 4) {
     false,
     512,
   );
+  const loader = new THREE.TextureLoader();
+  const baked = (url) => {
+    const map = loader.load(url, onLoad);
+    map.wrapS = map.wrapT = THREE.RepeatWrapping;
+    map.anisotropy = Math.min(anisotropy, 8);
+    map.colorSpace = THREE.NoColorSpace;
+    return map;
+  };
   return {
+    chipNormal: baked(chipNormalUrl),
+    chipRoughness: baked(chipRoughnessUrl),
+    steelRoughness: baked(steelRoughnessUrl),
+    rubberRoughness: baked(rubberRoughnessUrl),
     metal,
     potato,
     chip,
