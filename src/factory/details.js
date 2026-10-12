@@ -3,6 +3,7 @@ import { bagPhase, smooth } from "./timing.js";
 export function addFactoryDetails(C) {
   const {
     scene,
+    machinePaint,
     M,
     box,
     cylinder,
@@ -134,7 +135,7 @@ export function addFactoryDetails(C) {
     }
   }
   function cabinet(x, y, z, w = 0.75, h = 0.75) {
-    box(x, y, z, w, h, 0.28, M.steel);
+    box(x, y, z, w, h, 0.28, machinePaint(x, z));
     box(x, y, z + 0.155, w - 0.08, h - 0.08, 0.025, steelDark);
     for (let dx of [-w / 2 + 0.065, w / 2 - 0.065])
       for (let dy of [-h / 2 + 0.065, h / 2 - 0.065])
@@ -300,7 +301,7 @@ export function addFactoryDetails(C) {
     scene.add(lift);
     box(0, -0.085, 0, length, 0.12, 0.62, M.dark, lift);
     for (let s of [-1, 1]) {
-      box(0, 0.08, s * 0.32, length, 0.18, 0.047, M.steel, lift);
+      box(0, 0.08, s * 0.32, length, 0.18, 0.047, paint, lift);
     }
     for (let xx of [-length / 2 + 0.08, length / 2 - 0.08])
       cylinder(xx, 0, 0, 0.09, 0.62, M.chrome, lift, "z");
@@ -421,15 +422,15 @@ export function addFactoryDetails(C) {
       );
     }
     for (let dx of [-0.7, 0.7])
-      box(x + dx, 2.22, z + 0.78, 0.07, 2.55, 0.07, enamel);
-    box(x, 3.48, z + 0.78, 1.47, 0.055, 0.07, enamel);
-    box(x, 1.03, z + 0.78, 1.47, 0.055, 0.07, enamel);
+      box(x + dx, 2.22, z + 0.78, 0.07, 2.55, 0.07, paint);
+    box(x, 3.48, z + 0.78, 1.47, 0.055, 0.07, paint);
+    box(x, 1.03, z + 0.78, 1.47, 0.055, 0.07, paint);
     box(x, 2.22, z + 0.78, 1.3, 2.35, 0.012, M.glass);
     // Folded stainless service panels ground the forming assembly in a real cabinet.
-    box(x, 1.23, z + 0.79, 1.33, 0.37, 0.03, M.steel);
-    box(x, 2.4, z - 0.8, 1.38, 1.92, 0.045, M.steel);
-    box(x - 0.69, 2.22, z, 0.035, 2.35, 1.53, M.steel);
-    box(x + 0.69, 2.96, z, 0.035, 0.89, 1.53, M.steel);
+    box(x, 1.23, z + 0.79, 1.33, 0.37, 0.03, paint);
+    box(x, 2.4, z - 0.8, 1.38, 1.92, 0.045, paint);
+    box(x - 0.69, 2.22, z, 0.035, 2.35, 1.53, paint);
+    box(x + 0.69, 2.96, z, 0.035, 0.89, 1.53, paint);
     box(x, 3.36, z + 0.81, 1.31, 0.095, 0.025, paint);
     // Longitudinal fin seal and two knurled film pull-down rollers.
     box(x, 2.33, z + 0.215, 0.047, 0.64, 0.04, M.chrome);

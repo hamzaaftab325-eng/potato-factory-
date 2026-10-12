@@ -141,24 +141,24 @@ export function addShippingLine(C) {
   // Shared overhead gantry with independent vacuum heads for all three lanes.
   for (const x of [13.35, 15.65]) {
     for (const z of [-3.17, 3.17]) {
-      box(x, 1.9, z, 0.1, 2.65, 0.1, M.steel);
-      box(x, 0.66, z, 0.32, 0.12, 0.28, M.steel);
+      box(x, 1.9, z, 0.1, 2.65, 0.1, M.casePaint);
+      box(x, 0.66, z, 0.32, 0.12, 0.28, M.casePaint);
     }
-    box(x, 3.23, 0, 0.16, 0.18, 6.48, M.steel);
+    box(x, 3.23, 0, 0.16, 0.18, 6.48, M.casePaint);
   }
   for (let f = 0; f < 3; f++) {
     const z = (f - 1) * 2.25;
     // Outfeed inspection arch has a dark tunnel, lens and status light.
-    box(12.67, 1.54, z, 0.3, 0.15, 1.19, M.steel);
+    box(12.67, 1.54, z, 0.3, 0.15, 1.19, M.casePaint);
     for (const s of [-1, 1])
-      box(12.67, 1.29, z + s * 0.59, 0.3, 0.51, 0.08, M.steel);
+      box(12.67, 1.29, z + s * 0.59, 0.3, 0.51, 0.08, M.casePaint);
     cylinder(12.67, 1.47, z, 0.055, 0.085, M.black);
     box(12.67, 1.63, z + 0.41, 0.1, 0.022, 0.08, M.led);
     conveyor(14.75, 19.35, z, 1.42, 1.035);
     // Roller outfeed is distinct from the food conveyors.
     for (let x = 17.1; x < 19.36; x += 0.13)
       cylinder(x, 1.11, z, 0.052, 1.22, M.chrome, scene, "z");
-    box(15.35, 0.84, z, 1.73, 0.52, 1.5, M.teal);
+    box(15.35, 0.84, z, 1.73, 0.52, 1.5, M.casePaint);
     for (const s of [-1, 1])
       box(16.74, 1.35, z + s * 0.32, 2.15, 0.11, 0.09, M.steel);
     box(14.53, 3.23, z, 2.36, 0.12, 0.15, M.dark);
@@ -176,7 +176,7 @@ export function addShippingLine(C) {
     carried.rotation.x = -Math.PI / 2;
     const rod = cylinder(14, 2.5, z, 0.026, 1, M.chrome);
     dynamic.push(rod);
-    const carriage = box(14, 3.2, z, 0.38, 0.25, 0.35, M.steel);
+    const carriage = box(14, 3.2, z, 0.38, 0.25, 0.35, M.casePaint);
     dynamic.push(carriage);
     const boxes = [carton(f), carton(f), carton(f, true)];
     boxes.forEach((c) => dynamic.push(c.g));
@@ -191,11 +191,11 @@ export function addShippingLine(C) {
         0.024,
         M.chrome,
       );
-      box(17.52, 1.7, z + s * 0.43, 0.09, 1.22, 0.09, M.steel);
+      box(17.52, 1.7, z + s * 0.43, 0.09, 1.22, 0.09, M.casePaint);
       box(17.52, 1.61, z + s * 0.303, 1.36, 0.23, 0.12, M.dark);
     }
-    box(17.53, 1.79, z, 1.05, 0.12, 1.61, M.steel);
-    box(17.6, 1.53, z, 0.64, 0.27, 0.22, M.steel);
+    box(17.53, 1.79, z, 1.05, 0.12, 1.61, M.casePaint);
+    box(17.6, 1.53, z, 0.64, 0.27, 0.22, M.casePaint);
     cylinder(17.56, 1.93, z, 0.17, 0.115, tape, scene, "z");
     cylinder(17.56, 1.93, z, 0.084, 0.125, M.dark, scene, "z");
     for (const x of [17.22, 17.93])
@@ -213,14 +213,14 @@ export function addShippingLine(C) {
     const palletHead = new THREE.Group();
     scene.add(palletHead);
     dynamic.push(palletHead);
-    box(0, 0, 0, 0.65, 0.11, 0.85, M.teal, palletHead);
+    box(0, 0, 0, 0.65, 0.11, 0.85, M.casePaint, palletHead);
     for (const dz of [-0.27, 0.27])
       cylinder(0, -0.07, dz, 0.075, 0.04, M.rubber, palletHead);
     for (const x of [19.3, 22.1]) {
-      box(x, 2.16, z + 0.78, 0.09, 3.16, 0.09, M.teal);
-      box(x, 3.72, z, 0.12, 0.14, 1.68, M.teal);
+      box(x, 2.16, z + 0.78, 0.09, 3.16, 0.09, M.casePaint);
+      box(x, 3.72, z, 0.12, 0.14, 1.68, M.casePaint);
     }
-    box(20.7, 3.72, z, 2.98, 0.12, 0.11, M.steel);
+    box(20.7, 3.72, z, 2.98, 0.12, 0.11, M.casePaint);
     for (let x = 19.4; x < 21.3; x += 0.16)
       cylinder(x, 1.11, z, 0.052, 1.22, M.chrome, scene, "z");
     const liftRod = cylinder(20, 3.1, z, 0.029, 1.0, M.chrome);

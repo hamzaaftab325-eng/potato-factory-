@@ -5,6 +5,7 @@ import * as THREE from "three";
 export function addProcessMachines(C) {
   const {
     scene,
+    machinePaint,
     M,
     box,
     cylinder,
@@ -107,7 +108,7 @@ export function addProcessMachines(C) {
     }
   }
   function hmi(x, y, z, title, reading) {
-    box(x, y, z, 0.48, 0.59, 0.15, M.steel);
+    box(x, y, z, 0.48, 0.59, 0.15, machinePaint(x, z));
     box(x, y + 0.08, z + 0.081, 0.37, 0.29, 0.012, M.dark);
     plate(title, x, y + 0.155, z + 0.09, 0.32, 0.052);
     plate(reading, x, y + 0.055, z + 0.09, 0.32, 0.09, "#082326");
@@ -246,7 +247,7 @@ export function addProcessMachines(C) {
   // Receiving hopper, metered infeed, and a proper enclosed recirculating washer.
   hopper(-13.4, 1.91, 0, 1.64, 1.35, 0.65, 0.62);
   feet(-13.4, 0, 1.25, 1.07, 1.66);
-  box(-13.4, 1.34, 0, 1.55, 0.2, 1.16, M.steel);
+  box(-13.4, 1.34, 0, 1.55, 0.2, 1.16, M.washPaint);
   for (let i = 0; i < 160; i++) {
     const p = mesh(
       potatoG,
@@ -260,7 +261,7 @@ export function addProcessMachines(C) {
   }
   plate("01 / RECEIVING & WASHING", -13.4, 1.84, 0.6, 1.1, 0.13);
   transfer([-12.9, 1.91, 0], [-11.35, 1.63, 0], 0.88, "potato", M.potato, 15);
-  box(-10.22, 1.18, 0, 2.45, 0.76, 1.62, M.blue);
+  box(-10.22, 1.18, 0, 2.45, 0.76, 1.62, M.washPaint);
   box(-10.22, 0.8, 0, 2.38, 0.12, 1.56, M.dark);
   feet(-10.2, 0, 2.1, 1.4, 1.3);
   liquid(-10.22, 1.58, 0, 2.25, 1.36, M.water);
@@ -289,7 +290,7 @@ export function addProcessMachines(C) {
     for (const x of [-11.41, -9.03])
       box(x, 1.95, side * 0.87, 0.04, 0.51, 0.04, M.steel);
     for (const x of [-10.95, -10.22, -9.49]) {
-      box(x, 1.18, side * 0.826, 0.67, 0.53, 0.02, M.blue);
+      box(x, 1.18, side * 0.826, 0.67, 0.53, 0.02, M.washPaint);
       if (side === 1) for (const dx of [-0.28, 0.28]) bolt(x + dx, 1.4, 0.85);
     }
   }
@@ -312,14 +313,14 @@ export function addProcessMachines(C) {
   // Only the rollers turn; spray bars and the peel-waste pan remain fixed.
   const peeler = new THREE.Group();
   scene.add(peeler);
-  box(-8.02, 1.16, 0, 1.95, 0.61, 1.65, M.blue, peeler);
+  box(-8.02, 1.16, 0, 1.95, 0.61, 1.65, M.peelPaint, peeler);
   box(-8.02, 0.9, 0, 1.84, 0.08, 1.56, M.steel, peeler);
   for (const side of [-1, 1]) {
     box(-8.02, 1.91, side * 0.83, 1.88, 0.88, 0.025, M.glass, peeler);
     for (const y of [1.48, 2.35])
-      box(-8.02, y, side * 0.85, 1.96, 0.045, 0.055, M.blue, peeler);
+      box(-8.02, y, side * 0.85, 1.96, 0.045, 0.055, M.peelPaint, peeler);
     for (const x of [-8.97, -7.07])
-      box(x, 1.92, side * 0.85, 0.05, 0.92, 0.055, M.blue, peeler);
+      box(x, 1.92, side * 0.85, 0.05, 0.92, 0.055, M.peelPaint, peeler);
   }
   for (let i = 0; i < 8; i++) {
     const z = (i - 3.5) * 0.185,
@@ -329,7 +330,7 @@ export function addProcessMachines(C) {
     dynamic.push(roll);
     for (const x of [-8.94, -7.1]) {
       cylinder(x, y, z, 0.065, 0.11, M.chrome, scene, "x");
-      box(x, y, z, 0.07, 0.17, 0.16, M.blue, peeler);
+      box(x, y, z, 0.07, 0.17, 0.16, M.peelPaint, peeler);
     }
   }
   for (const x of [-8.61, -8.03, -7.45]) {
@@ -363,11 +364,11 @@ export function addProcessMachines(C) {
   // cylindrical impeller. The narrow section window reveals the cutting head,
   // without making the machine resemble an exposed fan.
   feet(-5.28, 0, 1.12, 1.35, 1.28);
-  box(-5.28, 1.15, 0, 1.49, 0.3, 1.58, M.blue);
+  box(-5.28, 1.15, 0, 1.49, 0.3, 1.58, M.cutPaint);
   cylinder(-5.28, 1.42, 0, 0.35, 0.3, M.dark);
   const cutShell = mesh(
     new THREE.CylinderGeometry(0.68, 0.68, 0.87, 72, 1, true, 0.58, TAU - 1.16),
-    steelInside,
+    Object.assign(M.cutPaint.clone(), { side: THREE.DoubleSide }),
     -5.28,
     2.08,
     0,
@@ -460,25 +461,25 @@ export function addProcessMachines(C) {
     ],
     0.032,
   );
-  box(-3.85, 1.88, 0, 0.1, 0.08, 1.38, M.steel);
+  box(-3.85, 1.88, 0, 0.1, 0.08, 1.38, M.rinsePaint);
   for (const z of [-0.36, 0, 0.36]) sprays.push({ x: -3.85, y: 1.82, z });
-  box(-3.12, 1.6, 0, 0.22, 0.15, 1.28, M.dark);
+  box(-3.12, 1.6, 0, 0.22, 0.15, 1.28, M.rinsePaint);
   plate("RINSE / AIR KNIFE", -3.55, 0.99, 0.65, 1.08, 0.11);
 
   // Continuous fryer: insulated vessel, lift-up extraction hood, viewing slots,
   // metering wheels, a submerged mesh belt and a sloping oil-drain discharge.
   // Open tank, rather than a solid cuboid covering the liquid surface.
-  box(-0.5, 0.82, 0, 4.58, 0.31, 2.27, M.graphite, scene, 0.08);
+  box(-0.5, 0.82, 0, 4.58, 0.31, 2.27, M.fryPaint, scene, 0.08);
   box(-0.5, 1.02, 0, 4.29, 0.1, 1.99, M.steel);
   for (const z of [-1.08, 1.08])
-    box(-0.5, 1.25, z, 4.58, 0.57, 0.13, M.graphite);
-  for (const x of [-2.72, 1.72]) box(x, 1.25, 0, 0.13, 0.57, 2.11, M.graphite);
+    box(-0.5, 1.25, z, 4.58, 0.57, 0.13, M.fryPaint);
+  for (const x of [-2.72, 1.72]) box(x, 1.25, 0, 0.13, 0.57, 2.11, M.fryPaint);
   liquid(-0.5, 1.53, 0, 4.27, 1.97, M.oil);
   feet(-0.5, 0, 3.95, 1.95, 1.2);
   for (const z of [-1.1, 1.1]) box(-0.5, 1.59, z, 4.75, 0.16, 0.15, M.chrome);
   for (const x of [-2.78, 1.78]) box(x, 1.58, 0, 0.17, 0.16, 2.31, M.chrome);
   for (const x of [-2.0, -0.5, 1.0]) {
-    box(x, 1.1, 1.153, 1.4, 0.67, 0.055, M.graphite);
+    box(x, 1.1, 1.153, 1.4, 0.67, 0.055, M.fryPaint);
     for (const xx of [x - 0.58, x + 0.58])
       for (const y of [0.85, 1.34]) bolt(xx, y, 1.196);
     box(x + 0.48, 1.13, 1.2, 0.034, 0.24, 0.07, M.dark);
@@ -486,16 +487,16 @@ export function addProcessMachines(C) {
     plate("INSULATED / HOT SURFACE", x, 0.91, 1.19, 1.02, 0.1);
   }
   // Raised hood leaves a deliberate viewing gap along the near side.
-  box(-0.5, 2.76, -0.15, 4.45, 0.18, 2.1, M.steel, scene, 0.09);
-  box(-0.5, 2.49, -1.13, 4.44, 0.55, 0.08, M.steel);
+  box(-0.5, 2.76, -0.15, 4.45, 0.18, 2.1, M.fryPaint, scene, 0.09);
+  box(-0.5, 2.49, -1.13, 4.44, 0.55, 0.08, M.fryPaint);
   for (const x of [-2.72, 1.72]) {
-    box(x, 2.49, -0.16, 0.075, 0.56, 2.07, M.steel);
+    box(x, 2.49, -0.16, 0.075, 0.56, 2.07, M.fryPaint);
     cylinder(x, 2.04, -1.24, 0.05, 1.34, M.chrome);
     cylinder(x, 1.84, -1.24, 0.09, 0.7, M.steel);
     motor(x, 1.19, -1.39, "x");
   }
   for (const x of [-1.98, -0.5, 0.98]) {
-    box(x, 2.49, 0.91, 1.35, 0.38, 0.037, M.steel);
+    box(x, 2.49, 0.91, 1.35, 0.38, 0.037, M.fryPaint);
     box(x, 2.5, 0.938, 0.93, 0.21, 0.012, M.dark);
     box(x, 2.5, 0.95, 0.87, 0.16, 0.012, M.glass);
     box(x, 2.65, 0.96, 0.26, 0.025, 0.065, M.chrome);
@@ -583,8 +584,9 @@ export function addProcessMachines(C) {
   transfer([1.6, 1.51, 0], [2.68, 1.86, 0], 1.68, "chip", M.chip, 36);
   box(2.1, 1.34, 0, 1.14, 0.045, 1.62, M.steel);
   transfer([2.68, 1.86, 0], [3.52, 1.34, 0], 1.66, "chip", M.chip, 24);
-  for (const z of [-0.96, 0.96]) box(2.66, 2.02, z, 0.045, 1.21, 0.05, M.steel);
-  box(2.66, 2.61, 0, 0.5, 0.17, 2.02, M.steel);
+  for (const z of [-0.96, 0.96])
+    box(2.66, 2.02, z, 0.045, 1.21, 0.05, M.coolPaint);
+  box(2.66, 2.61, 0, 0.5, 0.17, 2.02, M.coolPaint);
   for (const z of [-0.4, 0.4]) {
     cylinder(2.66, 2.73, z, 0.23, 0.13, M.dark);
     cylinder(2.66, 2.8, z, 0.18, 0.025, perforated);

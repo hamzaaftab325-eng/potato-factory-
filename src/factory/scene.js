@@ -205,6 +205,37 @@ export function createFactory(canvas, options = {}) {
     roughness: 0.3,
     clearcoat: 0.6,
   });
+  // Coordinated enamel colours identify each machine through the full line.
+  for (const [name, color] of Object.entries({
+    washPaint: "#267cc9",
+    peelPaint: "#20a58d",
+    cutPaint: "#7457b5",
+    rinsePaint: "#2d9fae",
+    fryPaint: "#df8a32",
+    coolPaint: "#38949e",
+    casePaint: "#596cb5",
+  })) {
+    M[name] = new THREE.MeshPhysicalMaterial({
+      color,
+      metalness: 0.22,
+      roughness: 0.34,
+      clearcoat: 0.45,
+      clearcoatRoughness: 0.25,
+      roughnessMap: textures.enamel,
+      bumpMap: textures.enamel,
+      bumpScale: 0.00035,
+    });
+  }
+  function machinePaint(x, z = 0) {
+    if (x < -9.2) return M.washPaint;
+    if (x < -6.4) return M.peelPaint;
+    if (x < -4.4) return M.cutPaint;
+    if (x < -2.8) return M.rinsePaint;
+    if (x < 1.9) return M.fryPaint;
+    if (x < 4.3) return M.coolPaint;
+    if (x < 13.3) return [M.yellow, M.red, M.green][z < -1 ? 0 : z > 1 ? 2 : 1];
+    return M.casePaint;
+  }
   M.dark.color.set("#152125");
   M.floor.color.set("#082326");
   M.floor.roughness = 0.31;
@@ -356,9 +387,18 @@ export function createFactory(canvas, options = {}) {
     g.position.set(x, y, z);
     if (axis === "x") g.rotation.y = Math.PI / 2;
     scene.add(g);
-    cylinder(0, 0, 0, 0.23, 0.52, M.motor, g, "z");
+    cylinder(0, 0, 0, 0.23, 0.52, machinePaint(x, z), g, "z");
     for (let i = 0; i < 9; i++)
-      cylinder(0, 0, -0.24 + i * 0.055, 0.26, 0.022, M.motor, g, "z");
+      cylinder(
+        0,
+        0,
+        -0.24 + i * 0.055,
+        0.26,
+        0.022,
+        machinePaint(x, z),
+        g,
+        "z",
+      );
     box(0, 0.26, 0, 0.28, 0.12, 0.27, M.dark, g);
     cylinder(0, 0, 0.36, 0.1, 0.2, M.chrome, g, "z");
     box(0, -0.29, 0, 0.62, 0.1, 0.5, M.steel, g);
@@ -379,11 +419,11 @@ export function createFactory(canvas, options = {}) {
           0.085,
           legTop - 0.77,
           0.085,
-          M.steel,
+          machinePaint(x, z),
         );
-        box(x + dx, top - 0.05, z + dz, 0.16, 0.1, 0.16, M.steel);
+        box(x + dx, top - 0.05, z + dz, 0.16, 0.1, 0.16, machinePaint(x, z));
       }
-    box(x, 0.83, z, w, 0.055, 0.065, M.steel);
+    box(x, 0.83, z, w, 0.055, 0.065, machinePaint(x, z));
   }
   const beltAnims = [],
     spinAnims = [],
@@ -398,7 +438,15 @@ export function createFactory(canvas, options = {}) {
     box(x, y + 0.016, z, len, 0.055, width - 0.08, M.rubber);
     for (let s of [-1, 1]) {
       box(x, y + 0.13, z + s * (width / 2 + 0.055), len, 0.095, 0.1, M.chrome);
-      box(x, y - 0.08, z + s * (width / 2 + 0.06), len, 0.2, 0.09, M.steel);
+      box(
+        x,
+        y - 0.08,
+        z + s * (width / 2 + 0.06),
+        len,
+        0.2,
+        0.09,
+        machinePaint(x, z),
+      );
       for (let xx = a + 0.15; xx < b; xx += 0.6)
         bolt(xx, y - 0.08, z + s * (width / 2 + 0.12));
     }
@@ -579,6 +627,7 @@ export function createFactory(canvas, options = {}) {
   ])
     label(text, x, 0.59, 3.08, 1.8);
   const process = addProcessMachines({
+    machinePaint,
     scene,
     M,
     box,
@@ -696,7 +745,7 @@ export function createFactory(canvas, options = {}) {
     let z = (f - 1) * 2.25,
       x = 5.95;
     feet(x, z, 1.95, 1.24, 1.65);
-    box(x, 0.99, z, 2.1, 0.13, 1.65, M.dark);
+    box(x, 0.99, z, 2.1, 0.13, 1.65, flavourColors[f]);
     let g = new THREE.Group();
     g.position.set(x, 2.01, z);
     g.rotation.y = Math.PI / 2;
@@ -704,6 +753,15 @@ export function createFactory(canvas, options = {}) {
     g.rotation.z = -0.06;
     scene.add(g);
     let shell = mesh(drumG, M.steel, 0, 0, 0, g);
+    const paintedSleeve = mesh(
+      new THREE.CylinderGeometry(0.798, 0.798, 1.18, 64, 1, true),
+      flavourColors[f],
+      0,
+      0,
+      0,
+      shell,
+    );
+    paintedSleeve.rotation.x = Math.PI / 2;
     // Narrow enamel identification bands leave the food drum in stainless steel.
     for (const zz of [-0.61, 0.61]) {
       const band = mesh(
@@ -799,11 +857,11 @@ export function createFactory(canvas, options = {}) {
       paint = flavourColors[f],
       bagMat = bagMaterials[f];
     feet(x, z, 1.35, 1.3, 1.2);
-    box(x, 1.05, z, 1.5, 0.16, 1.64, M.teal);
+    box(x, 1.05, z, 1.5, 0.16, 1.64, flavourColors[f]);
     for (let dx of [-0.67, 0.67])
       for (let dz of [-0.71, 0.71])
         box(x + dx, 2.25, z + dz, 0.075, 2.48, 0.075, M.chrome);
-    box(x, 3.5, z, 1.6, 0.15, 1.76, M.steel);
+    box(x, 3.5, z, 1.6, 0.15, 1.76, flavourColors[f]);
     box(x, 3.32, z - 0.58, 0.95, 0.95, 0.31, M.dark);
     cylinder(x, 3.62, z, 0.28, 0.44, M.steel);
     const roll = cylinder(x, 3.53, z - 1.02, 0.24, 0.65, paint, scene, "x");
@@ -928,6 +986,7 @@ export function createFactory(canvas, options = {}) {
       cylinder(x, 1.37, z, 0.085, 0.18, M.led);
     }
   const detail = addFactoryDetails({
+    machinePaint,
     scene,
     M,
     box,

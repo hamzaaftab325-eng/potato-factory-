@@ -111,7 +111,7 @@ export function addIndustrialServices({
       cylinder(x, 0.605, z, 0.065, 0.05, M.rubber);
   }
   for (const x of [-1.94, -1.09])
-    box(x, 1.38, -2.64, 0.095, 1.22, 0.69, M.blue);
+    box(x, 1.38, -2.64, 0.095, 1.22, 0.69, M.fryPaint);
   for (let i = 0; i < 21; i++)
     box(-1.85 + i * 0.034, 1.39, -2.64, 0.019, 1.02, 0.62, M.steel);
   for (const y of [0.89, 1.88])
@@ -126,7 +126,7 @@ export function addIndustrialServices({
     0.095,
     0.34,
   ).rotation.y = -Math.PI / 2;
-  cylinder(0.55, 1.36, -2.62, 0.24, 1.04, M.steel);
+  cylinder(0.55, 1.36, -2.62, 0.24, 1.04, M.fryPaint);
   for (const y of [0.88, 1.87]) {
     cylinder(0.55, y, -2.62, 0.267, 0.06, M.chrome);
     for (let i = 0; i < 8; i++)
@@ -209,7 +209,7 @@ export function addIndustrialServices({
     0.052,
     M.steel,
   );
-  box(-8.55, 0.72, -1.36, 1.2, 0.13, 0.63, M.blue);
+  box(-8.55, 0.72, -1.36, 1.2, 0.13, 0.63, M.peelPaint);
   for (let x = -9.05; x < -8.05; x += 0.1)
     box(x, 0.794, -1.36, 0.025, 0.018, 0.58, M.steel);
   plate(
