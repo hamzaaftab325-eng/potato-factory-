@@ -220,11 +220,11 @@ test("play, sound, optional music and inspect controls report their state", asyn
   }
 });
 
-test("zoom controls and fixed HD rendering stay usable across scroll chapters", async () => {
+test("zoom controls and fixed 2K rendering stay usable across scroll chapters", async () => {
   const t = setup();
   try {
     await t.ui.start();
-    assert.equal(t.$(".quality-badge").textContent.trim(), "HD");
+    assert.equal(t.$(".quality-badge").textContent.trim(), "2K");
     assert.equal(t.$("#quality-toggle"), null);
     assert.equal(t.$("#zoom-in").disabled, false);
     t.$("#zoom-in").click();
@@ -320,7 +320,7 @@ test("every internal link, image and ARIA control has a real target", () => {
   for (const e of d.querySelectorAll("[aria-controls]"))
     assert.ok(d.getElementById(e.getAttribute("aria-controls")));
   for (const img of d.querySelectorAll("img")) {
-    assert.ok(img.alt.trim());
+    if (!img.closest('[aria-hidden="true"]')) assert.ok(img.alt.trim());
     assert.ok(
       fs.existsSync(
         new URL(`../public${img.getAttribute("src")}`, import.meta.url),

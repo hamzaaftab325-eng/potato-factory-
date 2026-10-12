@@ -1,7 +1,7 @@
 const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
 
-// HD is the single rendering mode. Native pixels, adaptive scaling and GPU
-// limits keep the canvas inside a 1920 × 1080 drawing-buffer ceiling.
+// One 2K mode targets QHD even when the displayed canvas is smaller.
+// A bounded 20% adjustment preserves detail without rebuilding a quality mode.
 export function drawingBudget({
   width,
   height,
@@ -11,8 +11,11 @@ export function drawingBudget({
 }) {
   width = Math.max(1, width);
   height = Math.max(1, height);
-  const ceiling = [1920, 1080];
-  const native = Math.min(dpr, 1.5);
+  const ceiling = [2560, 1440];
+  const native = Math.max(
+    dpr,
+    Math.min(3, ceiling[0] / width, ceiling[1] / height),
+  );
   const ratio =
     Math.min(
       native,
@@ -20,7 +23,7 @@ export function drawingBudget({
       ceiling[1] / height,
       maxTextureSize / width,
       maxTextureSize / height,
-    ) * clamp(scale, 0.55, 1);
+    ) * clamp(scale, 0.8, 1);
   return {
     ratio,
     width: Math.max(1, Math.floor(width * ratio)),
@@ -65,7 +68,7 @@ export class AdaptiveRenderBudget {
     this.elapsed = this.cost = this.samples = 0;
     const previous = this.scale;
     if (cadence > target * 1.32 || costMean > target * 0.95) {
-      this.scale = Math.max(0.55, this.scale * 0.84);
+      this.scale = Math.max(0.8, this.scale * 0.9);
       this.fastWindows = 0;
     } else if (cadence < target * 1.12 && costMean < target * 0.65) {
       if (++this.fastWindows >= 4) {

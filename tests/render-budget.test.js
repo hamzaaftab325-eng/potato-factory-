@@ -6,16 +6,16 @@ import {
   zoomDistance,
 } from "../src/factory/render-budget.js";
 
-test("HD caps native, high-DPI and legacy detail requests at 1080p", () => {
+test("2K targets QHD on full-size and compact desktop canvases", () => {
   for (const dpr of [1, 2, 3]) {
     const result = drawingBudget({
-      width: 1920,
-      height: 1080,
+      width: 900,
+      height: 506.25,
       dpr,
       detail: true,
     });
-    assert.equal(result.width, 1920);
-    assert.equal(result.height, 1080);
+    assert.equal(result.width, 2560);
+    assert.equal(result.height, 1440);
   }
 });
 
@@ -33,8 +33,8 @@ test("portrait, ultrawide and high-DPI buffers stay inside their pixel/GPU ceili
         maxTextureSize,
         detail,
       });
-      assert.ok(result.width <= Math.min(1920, maxTextureSize));
-      assert.ok(result.height <= Math.min(1080, maxTextureSize));
+      assert.ok(result.width <= Math.min(2560, maxTextureSize));
+      assert.ok(result.height <= Math.min(1440, maxTextureSize));
       assert.ok(Math.abs(result.width / result.height - width / height) < 0.01);
     }
   }
@@ -51,7 +51,7 @@ test("sustained missed frames reduce workload; recovery is gradual and bounded",
   const budget = new AdaptiveRenderBudget(60);
   assert.equal(frames(budget, 1000 / 30, 22, 2400), 0);
   assert.ok(frames(budget, 1000 / 30, 22, 12000) > 0);
-  assert.equal(budget.scale, 0.55);
+  assert.equal(budget.scale, 0.8);
   const low = budget.scale;
   frames(budget, 1000 / 60, 4, 1600);
   assert.equal(budget.scale, low);
@@ -76,5 +76,5 @@ test("zoom is reversible and constrained to readable camera distances", () => {
 test("persistent sub-4fps playback also recovers its rendering budget", () => {
   const budget = new AdaptiveRenderBudget(60);
   assert.ok(frames(budget, 500, 400, 25000) > 0);
-  assert.equal(budget.scale, 0.55);
+  assert.equal(budget.scale, 0.8);
 });

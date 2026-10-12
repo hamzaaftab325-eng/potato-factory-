@@ -42,7 +42,7 @@ export function createFactory(canvas, options = {}) {
     frameCount = 0,
     lastRendered = 0;
   let contextLost = false;
-  const budget = new AdaptiveRenderBudget(window.innerWidth < 700 ? 30 : 60);
+  const budget = new AdaptiveRenderBudget(30);
   let zoom = 1,
     desiredZoom = 1,
     lastShadow = -Infinity;
@@ -1464,7 +1464,7 @@ export function createFactory(canvas, options = {}) {
     width = nextWidth;
     height = nextHeight;
     const viewportChanged = camera.aspect !== width / height;
-    budget.fps = window.innerWidth < 700 ? 30 : 60;
+    budget.fps = 30;
     if (viewportChanged) budget.reset();
     const { ratio } = drawingBudget({
       width,
@@ -1474,6 +1474,8 @@ export function createFactory(canvas, options = {}) {
       scale: budget.scale,
       maxTextureSize: renderer.capabilities.maxTextureSize,
     });
+    // Supersampled 2K edges already receive the browser’s downsampling filter.
+    fxaa.enabled = ratio < 1.75;
     renderer.setPixelRatio(ratio);
     renderer.setSize(width, height, false);
     composer.setPixelRatio(renderer.getPixelRatio());
@@ -1484,7 +1486,7 @@ export function createFactory(canvas, options = {}) {
     );
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    bloom.enabled = budget.scale >= 0.7;
+    bloom.enabled = budget.scale >= 0.9;
     dirty = true;
   }
   const observer = new ResizeObserver(resize);
@@ -1509,7 +1511,7 @@ export function createFactory(canvas, options = {}) {
       Math.abs(yaw - desired.yaw) > 0.0005 ||
       Math.abs(elevation - desired.elev) > 0.0005;
     if (!active() && !dirty && !cameraMoving && frameCount >= 2) return;
-    const fps = window.innerWidth < 700 ? 30 : 60;
+    const fps = 30;
     if (active() && !dirty && real - lastRendered < 1 / fps - 0.002) return;
     // Camera easing uses elapsed time between rendered frames, including
     // callbacks skipped by the mobile frame limiter.
@@ -1931,7 +1933,7 @@ export function createFactory(canvas, options = {}) {
         audioOn,
         musicOn,
         inspect,
-        quality: "HD",
+        quality: "2K",
         qualityScale: budget.scale,
         zoom: Math.round(100 / desiredZoom),
         renderWidth: canvas.width,

@@ -69,7 +69,7 @@ export function initLoadingScreen() {
       if (finished) return;
       if (value === "assemble") {
         screen.dataset.stage = "2";
-        status.textContent = "Bringing every little detail to life";
+        status.textContent = "Sealing the crunch. Preparing your factory.";
       } else if (value === "ready")
         finish("Your factory is ready. Step inside.");
       else if (value === "fallback")
