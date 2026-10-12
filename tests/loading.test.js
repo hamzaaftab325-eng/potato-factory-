@@ -9,6 +9,7 @@ function setup(
   loadArt = async () => ({
     createPacketLoader: () => ({ pause() {}, dispose() {} }),
   }),
+  { introDuration = 0, presented = true } = {},
 ) {
   const dom = new JSDOM(
     readFileSync(new URL("../index.html", import.meta.url), "utf8"),
@@ -26,10 +27,22 @@ function setup(
   // The loader uses the browser's timer cancellation, as it does in production.
   const oldClear = globalThis.clearTimeout;
   globalThis.clearTimeout = window.clearTimeout;
-  const loading = initLoadingScreen({ loadArt });
+  let clock = 0;
+  const loading = initLoadingScreen({
+    loadArt,
+    introDuration,
+    now: () => clock,
+  });
+  if (presented)
+    document
+      .querySelector("#loader-product-fallback")
+      .dispatchEvent(new window.Event("load"));
   return {
     loading,
     timers,
+    advance(ms) {
+      clock += ms;
+    },
     $(s) {
       return document.querySelector(s);
     },
@@ -116,6 +129,75 @@ test("the product keeps animating during assembly and releases graphics after re
     assert.equal(pauses, 1);
     [...t.timers.values()].find((t) => t.delay === 500).fn();
     assert.equal(disposed, 1);
+  } finally {
+    t.close();
+  }
+});
+
+test("a fast factory waits for a presented packet and its brief intro", async () => {
+  let resolveArt;
+  const pending = new Promise((resolve) => {
+    resolveArt = resolve;
+  });
+  const t = setup(false, () => pending, {
+    introDuration: 1800,
+    presented: false,
+  });
+  try {
+    t.loading.stage("ready");
+    assert.equal(
+      t.$("#factory-loader").classList.contains("is-leaving"),
+      false,
+    );
+    assert.equal(t.$("#main").inert, true);
+    resolveArt({ createPacketLoader: () => ({ pause() {}, dispose() {} }) });
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.equal(t.$("#factory-loader").classList.contains("has-packet"), true);
+    assert.equal(
+      t.$("#factory-loader").classList.contains("is-leaving"),
+      false,
+    );
+    const intro = [...t.timers.values()].find((t) => t.delay === 1800);
+    assert.ok(intro);
+    t.advance(1800);
+    intro.fn();
+    assert.equal(t.$("#factory-loader").classList.contains("is-leaving"), true);
+  } finally {
+    t.close();
+  }
+});
+
+test("the displayed fallback receives an intro even when WebGL art fails", async () => {
+  const t = setup(
+    false,
+    async () => {
+      throw new Error("No WebGL context");
+    },
+    { introDuration: 1800 },
+  );
+  try {
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    t.loading.stage("ready");
+    assert.equal(
+      t.$("#factory-loader").classList.contains("without-product"),
+      true,
+    );
+    assert.equal(
+      t.$("#factory-loader").classList.contains("is-leaving"),
+      false,
+    );
+    assert.ok([...t.timers.values()].some((t) => t.delay === 1800));
+    t.$("#loader-skip").click();
+    assert.equal(t.$("#factory-loader").classList.contains("is-leaving"), true);
+    assert.equal(
+      [...t.timers.values()].some((t) => t.delay === 1800),
+      false,
+    );
   } finally {
     t.close();
   }

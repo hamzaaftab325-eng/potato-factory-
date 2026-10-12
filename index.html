@@ -41,7 +41,18 @@
       <div class="loader-art" aria-hidden="true">
         <div class="loader-halo"></div>
         <div class="loader-orbit"></div>
-        <canvas id="loader-product-canvas"></canvas>
+        <div class="loader-presentation">
+          <img
+            id="loader-product-fallback"
+            class="loader-product-fallback"
+            src="/loader/collection-packet.png"
+            alt=""
+            width="900"
+            height="875"
+            fetchpriority="high"
+          />
+          <canvas id="loader-product-canvas"></canvas>
+        </div>
         <span class="loader-art-label">GOLDEN SEA SALT · 180 g</span>
       </div>
       <div class="loader-copy">

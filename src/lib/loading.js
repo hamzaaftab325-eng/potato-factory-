@@ -1,5 +1,7 @@
 export function initLoadingScreen({
   loadArt = () => import("./loading-packet.js"),
+  now = () => performance.now(),
+  introDuration = 1800,
 } = {}) {
   const screen = document.querySelector("#factory-loader");
   const button = document.querySelector("#loader-skip");
@@ -13,9 +15,35 @@ export function initLoadingScreen({
   ];
   const priorInert = content.map((el) => el.inert);
   const events = new window.AbortController();
-  let finished = false;
+  let finished = false,
+    readyRequested = false,
+    artSettled = false,
+    imageFailed = false;
+  let readyMessage = "Your factory is ready. Step inside.";
   let hideTimer,
-    product = null;
+    introTimer,
+    product = null,
+    shownAt = null;
+  const fallback = document.querySelector("#loader-product-fallback");
+  function presented() {
+    if (finished) return;
+    if (shownAt === null) shownAt = now();
+    screen.classList.add("has-packet");
+    scheduleExit();
+  }
+  function scheduleExit() {
+    if (!readyRequested || finished) return;
+    if (reduced.matches || (artSettled && imageFailed && shownAt === null)) {
+      finish(readyMessage);
+      return;
+    }
+    // Start the brief intro from an actual displayed packet, not module load.
+    if (shownAt === null) return;
+    clearTimeout(introTimer);
+    const remaining = Math.max(0, introDuration - (now() - shownAt));
+    if (remaining === 0) finish(readyMessage);
+    else introTimer = window.setTimeout(() => finish(readyMessage), remaining);
+  }
   const fontsReady = document.fonts?.ready ?? Promise.resolve();
   Promise.all([loadArt(), fontsReady])
     .then(([{ createPacketLoader }]) => {
@@ -24,9 +52,14 @@ export function initLoadingScreen({
         document.querySelector("#loader-product-canvas"),
         { reducedMotion: reduced.matches },
       );
+      artSettled = true;
+      screen.classList.add("is-live-packet");
+      presented();
     })
     .catch(() => {
+      artSettled = true;
       screen.classList.add("without-product");
+      scheduleExit();
     });
   document.body.classList.add("factory-loading");
   content.forEach((el) => {
@@ -38,6 +71,7 @@ export function initLoadingScreen({
     finished = true;
     product?.pause();
     clearTimeout(timeout);
+    clearTimeout(introTimer);
     status.textContent = message;
     screen.dataset.stage = "3";
     screen.classList.add("is-leaving");
@@ -62,6 +96,16 @@ export function initLoadingScreen({
       reduced.matches ? 0 : 500,
     );
   }
+  fallback.addEventListener("load", presented, { signal: events.signal });
+  fallback.addEventListener(
+    "error",
+    () => {
+      imageFailed = true;
+      scheduleExit();
+    },
+    { signal: events.signal },
+  );
+  if (fallback.complete && fallback.naturalWidth > 0) presented();
   const timeout = window.setTimeout(
     () =>
       finish("The page is ready to explore. The factory is still warming up."),
@@ -87,10 +131,22 @@ export function initLoadingScreen({
       if (value === "assemble") {
         screen.dataset.stage = "2";
         status.textContent = "Bringing every little detail to life";
-      } else if (value === "ready")
-        finish("Your factory is ready. Step inside.");
-      else if (value === "fallback")
-        finish("Welcome to CRISP. Explore the story and flavours.");
+      } else if (value === "ready") {
+        readyRequested = true;
+        screen.dataset.stage = "3";
+        status.textContent = "Your factory is ready. Step inside.";
+        button.innerHTML =
+          'Enter the factory <span aria-hidden="true">↗</span>';
+        scheduleExit();
+      } else if (value === "fallback") {
+        readyRequested = true;
+        readyMessage = "Welcome to CRISP. Explore the story and flavours.";
+        status.textContent = readyMessage;
+        screen.dataset.stage = "3";
+        button.innerHTML =
+          'Explore the page <span aria-hidden="true">↗</span>';
+        scheduleExit();
+      }
     },
     dispose() {
       finish("Welcome to CRISP.");
